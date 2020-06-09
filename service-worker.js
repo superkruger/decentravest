@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/decentravest/precache-manifest.8607718ee10542816a29a5b2849f412c.js"
+  "/decentravest/precache-manifest.36bf61d3d7fed21ec6c7ff7b9499f097.js"
 );
 
 self.addEventListener('message', (event) => {
