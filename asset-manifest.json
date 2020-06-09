@@ -1,25 +1,25 @@
 {
   "files": {
-    "main.css": "/www.decentravest.com/static/css/main.8b8dbf91.chunk.css",
-    "main.js": "/www.decentravest.com/static/js/main.20046159.chunk.js",
-    "main.js.map": "/www.decentravest.com/static/js/main.20046159.chunk.js.map",
-    "runtime-main.js": "/www.decentravest.com/static/js/runtime-main.2a756202.js",
-    "runtime-main.js.map": "/www.decentravest.com/static/js/runtime-main.2a756202.js.map",
-    "static/css/2.af3c1da9.chunk.css": "/www.decentravest.com/static/css/2.af3c1da9.chunk.css",
-    "static/js/2.a9b7c857.chunk.js": "/www.decentravest.com/static/js/2.a9b7c857.chunk.js",
-    "static/js/2.a9b7c857.chunk.js.map": "/www.decentravest.com/static/js/2.a9b7c857.chunk.js.map",
-    "index.html": "/www.decentravest.com/index.html",
-    "precache-manifest.0415b1902361fc825dce32f4b78ffb83.js": "/www.decentravest.com/precache-manifest.0415b1902361fc825dce32f4b78ffb83.js",
-    "service-worker.js": "/www.decentravest.com/service-worker.js",
-    "static/css/2.af3c1da9.chunk.css.map": "/www.decentravest.com/static/css/2.af3c1da9.chunk.css.map",
-    "static/css/main.8b8dbf91.chunk.css.map": "/www.decentravest.com/static/css/main.8b8dbf91.chunk.css.map",
-    "static/js/2.a9b7c857.chunk.js.LICENSE.txt": "/www.decentravest.com/static/js/2.a9b7c857.chunk.js.LICENSE.txt"
+    "main.css": "/static/css/main.8b8dbf91.chunk.css",
+    "main.js": "/static/js/main.1c51336e.chunk.js",
+    "main.js.map": "/static/js/main.1c51336e.chunk.js.map",
+    "runtime-main.js": "/static/js/runtime-main.af476af6.js",
+    "runtime-main.js.map": "/static/js/runtime-main.af476af6.js.map",
+    "static/css/2.af3c1da9.chunk.css": "/static/css/2.af3c1da9.chunk.css",
+    "static/js/2.3f68b5c5.chunk.js": "/static/js/2.3f68b5c5.chunk.js",
+    "static/js/2.3f68b5c5.chunk.js.map": "/static/js/2.3f68b5c5.chunk.js.map",
+    "index.html": "/index.html",
+    "precache-manifest.535f7d9173b1eae3913d9e2fd9c1b33c.js": "/precache-manifest.535f7d9173b1eae3913d9e2fd9c1b33c.js",
+    "service-worker.js": "/service-worker.js",
+    "static/css/2.af3c1da9.chunk.css.map": "/static/css/2.af3c1da9.chunk.css.map",
+    "static/css/main.8b8dbf91.chunk.css.map": "/static/css/main.8b8dbf91.chunk.css.map",
+    "static/js/2.3f68b5c5.chunk.js.LICENSE.txt": "/static/js/2.3f68b5c5.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
-    "static/js/runtime-main.2a756202.js",
+    "static/js/runtime-main.af476af6.js",
     "static/css/2.af3c1da9.chunk.css",
-    "static/js/2.a9b7c857.chunk.js",
+    "static/js/2.3f68b5c5.chunk.js",
     "static/css/main.8b8dbf91.chunk.css",
-    "static/js/main.20046159.chunk.js"
+    "static/js/main.1c51336e.chunk.js"
   ]
 }
