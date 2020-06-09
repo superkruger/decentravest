@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/decentravest/static/css/main.050523cc.chunk.css",
-    "main.js": "/decentravest/static/js/main.8fac9cf7.chunk.js",
-    "main.js.map": "/decentravest/static/js/main.8fac9cf7.chunk.js.map",
+    "main.js": "/decentravest/static/js/main.93f51fc2.chunk.js",
+    "main.js.map": "/decentravest/static/js/main.93f51fc2.chunk.js.map",
     "runtime-main.js": "/decentravest/static/js/runtime-main.b14199b3.js",
     "runtime-main.js.map": "/decentravest/static/js/runtime-main.b14199b3.js.map",
     "static/js/2.1cd5262e.chunk.js": "/decentravest/static/js/2.1cd5262e.chunk.js",
     "static/js/2.1cd5262e.chunk.js.map": "/decentravest/static/js/2.1cd5262e.chunk.js.map",
     "index.html": "/decentravest/index.html",
-    "precache-manifest.2fdfd2d65a527601d5dffd53b7784628.js": "/decentravest/precache-manifest.2fdfd2d65a527601d5dffd53b7784628.js",
+    "precache-manifest.8607718ee10542816a29a5b2849f412c.js": "/decentravest/precache-manifest.8607718ee10542816a29a5b2849f412c.js",
     "service-worker.js": "/decentravest/service-worker.js",
     "static/css/main.050523cc.chunk.css.map": "/decentravest/static/css/main.050523cc.chunk.css.map",
     "static/js/2.1cd5262e.chunk.js.LICENSE.txt": "/decentravest/static/js/2.1cd5262e.chunk.js.LICENSE.txt"
@@ -17,6 +17,6 @@
     "static/js/runtime-main.b14199b3.js",
     "static/js/2.1cd5262e.chunk.js",
     "static/css/main.050523cc.chunk.css",
-    "static/js/main.8fac9cf7.chunk.js"
+    "static/js/main.93f51fc2.chunk.js"
   ]
 }

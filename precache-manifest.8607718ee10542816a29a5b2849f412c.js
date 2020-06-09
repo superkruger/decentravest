@@ -1,10 +1,10 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "940f367e5a919a6c07c2cc797804a9e1",
+    "revision": "00afae81b14acdcab3a818c0f6f5de66",
     "url": "/decentravest/index.html"
   },
   {
-    "revision": "2f5272eb5c704b9e5a69",
+    "revision": "40de19a50f4ab19e2aea",
     "url": "/decentravest/static/css/main.050523cc.chunk.css"
   },
   {
@@ -16,8 +16,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/decentravest/static/js/2.1cd5262e.chunk.js.LICENSE.txt"
   },
   {
-    "revision": "2f5272eb5c704b9e5a69",
-    "url": "/decentravest/static/js/main.8fac9cf7.chunk.js"
+    "revision": "40de19a50f4ab19e2aea",
+    "url": "/decentravest/static/js/main.93f51fc2.chunk.js"
   },
   {
     "revision": "ed921f5b39d63a15120d",
