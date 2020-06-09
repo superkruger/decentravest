@@ -1,25 +1,25 @@
 {
   "files": {
-    "main.css": "/decentravest/static/css/main.8b8dbf91.chunk.css",
-    "main.js": "/decentravest/static/js/main.1fec8ffb.chunk.js",
-    "main.js.map": "/decentravest/static/js/main.1fec8ffb.chunk.js.map",
-    "runtime-main.js": "/decentravest/static/js/runtime-main.b14199b3.js",
-    "runtime-main.js.map": "/decentravest/static/js/runtime-main.b14199b3.js.map",
-    "static/css/2.af3c1da9.chunk.css": "/decentravest/static/css/2.af3c1da9.chunk.css",
-    "static/js/2.b6ac96b6.chunk.js": "/decentravest/static/js/2.b6ac96b6.chunk.js",
-    "static/js/2.b6ac96b6.chunk.js.map": "/decentravest/static/js/2.b6ac96b6.chunk.js.map",
-    "index.html": "/decentravest/index.html",
-    "precache-manifest.36bf61d3d7fed21ec6c7ff7b9499f097.js": "/decentravest/precache-manifest.36bf61d3d7fed21ec6c7ff7b9499f097.js",
-    "service-worker.js": "/decentravest/service-worker.js",
-    "static/css/2.af3c1da9.chunk.css.map": "/decentravest/static/css/2.af3c1da9.chunk.css.map",
-    "static/css/main.8b8dbf91.chunk.css.map": "/decentravest/static/css/main.8b8dbf91.chunk.css.map",
-    "static/js/2.b6ac96b6.chunk.js.LICENSE.txt": "/decentravest/static/js/2.b6ac96b6.chunk.js.LICENSE.txt"
+    "main.css": "/www.decentravest.com/static/css/main.8b8dbf91.chunk.css",
+    "main.js": "/www.decentravest.com/static/js/main.20046159.chunk.js",
+    "main.js.map": "/www.decentravest.com/static/js/main.20046159.chunk.js.map",
+    "runtime-main.js": "/www.decentravest.com/static/js/runtime-main.2a756202.js",
+    "runtime-main.js.map": "/www.decentravest.com/static/js/runtime-main.2a756202.js.map",
+    "static/css/2.af3c1da9.chunk.css": "/www.decentravest.com/static/css/2.af3c1da9.chunk.css",
+    "static/js/2.a9b7c857.chunk.js": "/www.decentravest.com/static/js/2.a9b7c857.chunk.js",
+    "static/js/2.a9b7c857.chunk.js.map": "/www.decentravest.com/static/js/2.a9b7c857.chunk.js.map",
+    "index.html": "/www.decentravest.com/index.html",
+    "precache-manifest.0415b1902361fc825dce32f4b78ffb83.js": "/www.decentravest.com/precache-manifest.0415b1902361fc825dce32f4b78ffb83.js",
+    "service-worker.js": "/www.decentravest.com/service-worker.js",
+    "static/css/2.af3c1da9.chunk.css.map": "/www.decentravest.com/static/css/2.af3c1da9.chunk.css.map",
+    "static/css/main.8b8dbf91.chunk.css.map": "/www.decentravest.com/static/css/main.8b8dbf91.chunk.css.map",
+    "static/js/2.a9b7c857.chunk.js.LICENSE.txt": "/www.decentravest.com/static/js/2.a9b7c857.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
-    "static/js/runtime-main.b14199b3.js",
+    "static/js/runtime-main.2a756202.js",
     "static/css/2.af3c1da9.chunk.css",
-    "static/js/2.b6ac96b6.chunk.js",
+    "static/js/2.a9b7c857.chunk.js",
     "static/css/main.8b8dbf91.chunk.css",
-    "static/js/main.1fec8ffb.chunk.js"
+    "static/js/main.20046159.chunk.js"
   ]
 }
