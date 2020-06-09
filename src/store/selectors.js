@@ -58,17 +58,16 @@ const decoratePositionProfit = (position) => {
 
 	if (position.status === 'CLOSED') {
 		let firstAction = position.standardActions.find(a => a.type === 'ISOLATED_OPEN')
-		let lastAction = position.standardActions.find(a => a.type === 'ISOLATED_FULL_CLOSE')
+		let lastAction = position.standardActions.find(a => a.type === 'ISOLATED_FULL_CLOSE' || a.type === 'WITHDRAW')
 		if (firstAction !== undefined && lastAction !== undefined) {
-			console.log('firstAction', firstAction)
-			console.log('lastAction', lastAction)
+			
+			
 			amount = lastAction.transferAmount.minus(firstAction.transferAmount)
-			console.log('amount', amount.toString())
+
+
 			formattedAmount = formatEtherBalance(amount)
 		}
 	}
-
-	console.log('formattedAmount', formattedAmount)
 
 	return ({
 		amount: amount,

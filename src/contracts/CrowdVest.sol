@@ -25,13 +25,14 @@ contract CrowdVest {
 
     event Trader(address indexed trader, uint256 traderId, uint256 investorProfitPercent);
     event Investor(address indexed investor, uint256 investorId);
-    event Deposit(address indexed investor, uint256 investorId, uint256 amount, uint256 balance);
-    event Withdraw(address indexed investor, uint256 investorId, uint256 amount, uint256 balance);
+    event InvestorDeposit(address indexed investor, uint256 investorId, uint256 amount, uint256 balance);
+    event InvestorWithdraw(address indexed investor, uint256 investorId, uint256 amount, uint256 balance);
+    event TraderWithdraw(address indexed trader, uint256 traderId, uint256 amount, uint256 balance);
     event Invest(uint256 id, address indexed investor, address indexed trader, uint256 amount, uint256 balance);
-    event RequestExit(address indexed trader, uint256 investmentId, uint256 date, uint256 value, uint256 investorProfit, uint256 platformFee);
+    event RequestExit(address indexed trader, uint256 investmentId, uint256 date, uint256 value, uint256 traderProfit, uint256 investorProfit, uint256 platformFee);
     event CancelExit(address indexed trader, uint256 investmentId);
     event RejectExit(address indexed trader, uint256 investmentId);
-    event ApproveExit(address indexed trader, uint256 investmentId, uint256 nettAmount);
+    event ApproveExit(address indexed trader, uint256 investmentId, uint256 traderAmount, uint256 investorAmount);
 
     enum InvestmentState {
         Invested,
@@ -61,6 +62,7 @@ contract CrowdVest {
         uint256 startDate;
         uint256 endDate;
         uint256 value;
+        uint256 traderProfit;
         uint256 investorProfit;
         uint256 platformFee;
         InvestmentState state;
@@ -112,23 +114,35 @@ contract CrowdVest {
     /**
         Investor deposits money into the contract for the purposes of later investment
     */
-    function deposit() public payable {
+    function investorDeposit() public payable {
         _Investor storage _investor = investors[msg.sender];
         require(_investor.user == msg.sender);
         _investor.balance = _investor.balance.add(msg.value);
-        emit Deposit(msg.sender, _investor.id, msg.value, _investor.balance);
+        emit InvestorDeposit(msg.sender, _investor.id, msg.value, _investor.balance);
     }
 
     /**
         Investor withdraws previously deposited funds, perhaps including profits (and losses)
     */
-    function withdraw(uint256 _amount) public {
+    function investorWithdraw(uint256 _amount) public {
         _Investor storage _investor = investors[msg.sender];
         require(_investor.user == msg.sender);
         require(_investor.balance >= _amount);
         _investor.balance = _investor.balance.sub(_amount);
         msg.sender.transfer(_amount);
-        emit Withdraw(msg.sender, _investor.id, _amount, _investor.balance);
+        emit InvestorWithdraw(msg.sender, _investor.id, _amount, _investor.balance);
+    }
+
+    /**
+        Trader withdraws profits
+    */
+    function traderWithdraw(uint256 _amount) public {
+        _Trader storage _trader = traders[msg.sender];
+        require(_trader.user == msg.sender);
+        require(_trader.balance >= _amount);
+        _trader.balance = _trader.balance.sub(_amount);
+        msg.sender.transfer(_amount);
+        emit TraderWithdraw(msg.sender, _trader.id, _amount, _trader.balance);
     }
 
     /**
@@ -156,14 +170,15 @@ contract CrowdVest {
                 0,
                 0,
                 0,
+                0,
                 InvestmentState.Invested
             );
 
         emit Invest(
-            _trader.investmentCount, 
-            msg.sender, 
-            _trader.user, 
-            _amount, 
+            _trader.investmentCount,
+            msg.sender,
+            _trader.user,
+            _amount,
             _investor.balance
         );
     }
@@ -187,11 +202,13 @@ contract CrowdVest {
             uint256 _traderProfit = _profit.mul(_traderProfitPercent).div(10000);
             uint256 _fee = _profit.sub(_investorProfit).sub(_traderProfit);
 
+            investments[_traderAddress][_investmentId].traderProfit = _traderProfit;
             investments[_traderAddress][_investmentId].investorProfit = _investorProfit;
             investments[_traderAddress][_investmentId].platformFee = _fee;
 
         } else if (_value <= investments[_traderAddress][_investmentId].amount) {
             // break even or loss
+            investments[_traderAddress][_investmentId].traderProfit = 0;
             investments[_traderAddress][_investmentId].investorProfit = 0;
             investments[_traderAddress][_investmentId].platformFee = 0;
         }
@@ -205,6 +222,7 @@ contract CrowdVest {
             _investmentId, 
             investments[_traderAddress][_investmentId].endDate, 
             _value, 
+            investments[_traderAddress][_investmentId].traderProfit, 
             investments[_traderAddress][_investmentId].investorProfit, 
             investments[_traderAddress][_investmentId].platformFee
         );
@@ -254,36 +272,41 @@ contract CrowdVest {
         require(investments[msg.sender][_investmentId].state == InvestmentState.ExitRequested);
         require(_trader.balance >= investments[msg.sender][_investmentId].amount);
         
-        uint256 _nettAmount = 0;
+        uint256 _nettInvestorAmount = 0;
 
         if (investments[msg.sender][_investmentId].value > investments[msg.sender][_investmentId].amount) {
             // profit
-            _nettAmount = investments[msg.sender][_investmentId].investorProfit.add(investments[msg.sender][_investmentId].amount);
-            require(_nettAmount.add(investments[msg.sender][_investmentId].platformFee) == msg.value);
+            _nettInvestorAmount = investments[msg.sender][_investmentId].investorProfit.add(investments[msg.sender][_investmentId].amount);
+            require(
+                _nettInvestorAmount
+                .add(investments[msg.sender][_investmentId].platformFee)
+                .add(investments[msg.sender][_investmentId].traderProfit) == msg.value
+            );
 
+            _trader.balance = _trader.balance.add(investments[msg.sender][_investmentId].traderProfit);
             feeAccount.transfer(investments[msg.sender][_investmentId].platformFee);
 
         } else if (investments[msg.sender][_investmentId].value == investments[msg.sender][_investmentId].amount) {
             // break even
-            _nettAmount = investments[msg.sender][_investmentId].amount;
-            require(_nettAmount == msg.value);
+            _nettInvestorAmount = investments[msg.sender][_investmentId].amount;
+            require(_nettInvestorAmount == msg.value);
         } else {
             // loss
-            _nettAmount = investments[msg.sender][_investmentId].amount - (investments[msg.sender][_investmentId].amount - investments[msg.sender][_investmentId].value);
-            require(_nettAmount == msg.value);
+            _nettInvestorAmount = investments[msg.sender][_investmentId].amount - (investments[msg.sender][_investmentId].amount - investments[msg.sender][_investmentId].value);
+            require(_nettInvestorAmount == msg.value);
         }
 
         investments[msg.sender][_investmentId].state = InvestmentState.Divested;
         // subtract the original invested amount from the trader balance
         _trader.balance = _trader.balance.sub(investments[msg.sender][_investmentId].amount);
-
         // add the nettAmount to the investor balance
-        _investor.balance = _investor.balance.add(_nettAmount);
+        _investor.balance = _investor.balance.add(_nettInvestorAmount);
 
         emit ApproveExit(
             msg.sender,
             _investmentId,
-            _nettAmount
+            investments[msg.sender][_investmentId].traderProfit,
+            _nettInvestorAmount
         );
     }
 }

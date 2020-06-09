@@ -26,15 +26,17 @@ class App extends Component {
 
   async loadBlockchainData(dispatch) {
     const web3 = loadWeb3(dispatch)
-    await window.ethereum.enable();
+    if (window.ethereum !== undefined) {
+      await window.ethereum.enable();
 
-    window.ethereum.on('accountsChanged', function (accounts) {
-      dispatch(web3AccountLoaded(accounts[0]))
-    })
+      window.ethereum.on('accountsChanged', function (accounts) {
+        dispatch(web3AccountLoaded(accounts[0]))
+      })
 
-    window.ethereum.on('chainChanged', () => {
-      document.location.reload()
-    })
+      window.ethereum.on('chainChanged', () => {
+        document.location.reload()
+      })
+    }
     
     await web3.eth.net.getNetworkType()
     const networkId = await web3.eth.net.getId()
@@ -48,22 +50,22 @@ class App extends Component {
   }
 
   render() {
+              // { !this.props.crowdvestLoaded ? 
+          //   <div>connect Metamask</div> : 
+            
+          //     this.props.joined ?
+              
+          //       this.props.trader ?
+          //       <Trader /> :
+          //       <Investor />
+          //      :
+          //     <Join />
+            
+          // }
     return (
       <div className="App">
         <header className="App-header">
-          CrowdVest
-          { !this.props.crowdvestLoaded ? 
-            <div>connect Metamask</div> : 
-            
-              this.props.joined ?
-              
-                this.props.trader ?
-                <Trader /> :
-                <Investor />
-               :
-              <Join />
-            
-          }
+          Decentralised Investment
         </header>
       </div>
     )

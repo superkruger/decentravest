@@ -140,7 +140,7 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 				amount = ether(1)
 				investorId = 1
 				await platform.joinAsInvestor({from: investor1})
-				result = await platform.deposit({from: investor1, value: amount})
+				result = await platform.investorDeposit({from: investor1, value: amount})
 			})
 
 			it('tracks ether deposit', async () => {
@@ -149,9 +149,9 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 				investorObj.balance.toString().should.eq(amount.toString())
 			})
 
-			it('emits a Deposit event', async () => {
+			it('emits an InvestorDeposit event', async () => {
 				const log = result.logs[0]
-				log.event.should.eq('Deposit')
+				log.event.should.eq('InvestorDeposit')
 				const event = log.args
 				event.investor.toString().should.eq(investor1, 'investor is correct')
 				event.investorId.toString().should.eq(investorId.toString(), 'investorId is correct')
@@ -170,11 +170,11 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 			})
 
 			it('not an investor', async () => {
-				result = await platform.deposit({from: trader1, value: amount}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.investorDeposit({from: trader1, value: amount}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('investor not found', async () => {
-				result = await platform.deposit({from: investor2, value: amount}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.investorDeposit({from: investor2, value: amount}).should.be.rejectedWith(EVM_REVERT)
 			})
 		})
 	})
@@ -189,13 +189,13 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 			amount = ether(0.6)
 			investorId = 1
 			await platform.joinAsInvestor({from: investor1})
-			await platform.deposit({from: investor1, value: ether(1)})
+			await platform.investorDeposit({from: investor1, value: ether(1)})
 		})
 
 		describe('success', () => {
 
 			beforeEach(async () => {
-				result = await platform.withdraw(amount, {from: investor1})
+				result = await platform.investorWithdraw(amount, {from: investor1})
 			})
 
 			it('tracks ether withdraw', async () => {
@@ -204,9 +204,9 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 				investorObj.balance.toString().should.eq(ether(0.4).toString())
 			})
 
-			it('emits a Withdraw event', async () => {
+			it('emits a InvestorWithdraw event', async () => {
 				const log = result.logs[0]
-				log.event.should.eq('Withdraw')
+				log.event.should.eq('InvestorWithdraw')
 				const event = log.args
 				event.investor.toString().should.eq(investor1, 'investor is correct')
 				event.investorId.toString().should.eq(investorId.toString(), 'investorId is correct')
@@ -218,16 +218,16 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 		describe('failure', () => {
 
 			it('not an investor', async () => {
-				result = await platform.withdraw(amount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.investorWithdraw(amount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('investor not found', async () => {
-				result = await platform.withdraw(amount, {from: investor2}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.investorWithdraw(amount, {from: investor2}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('insufficient balance', async () => {
 				amount = ether(2)
-				result = await platform.withdraw(amount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.investorWithdraw(amount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 			})
 		})
 	})
@@ -248,7 +248,7 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 
 			await platform.joinAsTrader(investorProfitPercent, {from: trader1})
 			await platform.joinAsInvestor({from: investor1})
-			await platform.deposit({from: investor1, value: ether(1)})
+			await platform.investorDeposit({from: investor1, value: ether(1)})
 		})
 
 		describe('success', () => {
@@ -326,16 +326,17 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 
 			await platform.joinAsTrader(investorProfitPercent, {from: trader1})
 			await platform.joinAsInvestor({from: investor1})
-			await platform.deposit({from: investor1, value: ether(1)})
+			await platform.investorDeposit({from: investor1, value: ether(1)})
 			await platform.invest(trader1, amount, {from: investor1})
 		})
 
 		describe('profit success', () => {
 
-			let investorProfit, platformFee
+			let traderProfit, investorProfit, platformFee
 
 			beforeEach(async () => {
 				investorProfit = ether(0.1) * 79 / 100
+				traderProfit = ether(0.1) * 19 / 100
 				platformFee = ether(0.1) - (ether(0.1) * 19 / 100) - investorProfit
 
 				result = await platform.requestExit(trader1, investmentId, value, {from: investor1})
@@ -348,6 +349,7 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 				investmentObj.endDate.toString().should.not.eq('0'.toString())
 				investmentObj.value.toString().should.eq(value.toString())
 				investmentObj.state.toString().should.eq('1')
+				investmentObj.traderProfit.toString().should.eq(traderProfit.toString())
 				investmentObj.investorProfit.toString().should.eq(investorProfit.toString())
 				investmentObj.platformFee.toString().should.eq(platformFee.toString())
 			})
@@ -360,6 +362,7 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 				event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
 				event.date.toString().should.not.eq('0', 'date is correct')
 				event.value.toString().should.eq(value.toString(), 'value is correct')
+				event.traderProfit.toString().should.eq(traderProfit.toString())
 				event.investorProfit.toString().should.eq(investorProfit.toString())
 				event.platformFee.toString().should.eq(platformFee.toString())
 			})
@@ -379,6 +382,7 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 				investmentObj.endDate.toString().should.not.eq('0'.toString())
 				investmentObj.value.toString().should.eq(value.toString())
 				investmentObj.state.toString().should.eq('1')
+				investmentObj.traderProfit.toString().should.eq('0')
 				investmentObj.investorProfit.toString().should.eq('0')
 				investmentObj.platformFee.toString().should.eq('0')
 			})
@@ -391,6 +395,7 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 				event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
 				event.date.toString().should.not.eq('0', 'date is correct')
 				event.value.toString().should.eq(value.toString(), 'value is correct')
+				event.traderProfit.toString().should.eq('0')
 				event.investorProfit.toString().should.eq('0')
 				event.platformFee.toString().should.eq('0')
 			})
@@ -410,6 +415,7 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 				investmentObj.endDate.toString().should.not.eq('0'.toString())
 				investmentObj.value.toString().should.eq(value.toString())
 				investmentObj.state.toString().should.eq('1')
+				investmentObj.traderProfit.toString().should.eq('0')
 				investmentObj.investorProfit.toString().should.eq('0')
 				investmentObj.platformFee.toString().should.eq('0')
 			})
@@ -422,6 +428,7 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 				event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
 				event.date.toString().should.not.eq('0', 'date is correct')
 				event.value.toString().should.eq(value.toString(), 'value is correct')
+				event.traderProfit.toString().should.eq('0')
 				event.investorProfit.toString().should.eq('0')
 				event.platformFee.toString().should.eq('0')
 			})
@@ -432,7 +439,7 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 			beforeEach(async () => {
 				await platform.joinAsTrader(investorProfitPercent, {from: trader2})
 				await platform.joinAsInvestor({from: investor2})
-				await platform.deposit({from: investor2, value: ether(1)})
+				await platform.investorDeposit({from: investor2, value: ether(1)})
 				await platform.invest(trader2, amount, {from: investor2})
 			})
 
@@ -471,7 +478,7 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 
 			await platform.joinAsTrader(investorProfitPercent, {from: trader1})
 			await platform.joinAsInvestor({from: investor1})
-			await platform.deposit({from: investor1, value: ether(1)})
+			await platform.investorDeposit({from: investor1, value: ether(1)})
 			await platform.invest(trader1, amount, {from: investor1})
 			await platform.requestExit(trader1, investmentId, value, {from: investor1})
 		})
@@ -503,7 +510,7 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 			beforeEach(async () => {
 				await platform.joinAsTrader(investorProfitPercent, {from: trader2})
 				await platform.joinAsInvestor({from: investor2})
-				await platform.deposit({from: investor2, value: ether(1)})
+				await platform.investorDeposit({from: investor2, value: ether(1)})
 				await platform.invest(trader2, amount, {from: investor2})
 			})
 
@@ -542,7 +549,7 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 
 			await platform.joinAsTrader(investorProfitPercent, {from: trader1})
 			await platform.joinAsInvestor({from: investor1})
-			await platform.deposit({from: investor1, value: ether(1)})
+			await platform.investorDeposit({from: investor1, value: ether(1)})
 			await platform.invest(trader1, amount, {from: investor1})
 			await platform.requestExit(trader1, investmentId, value, {from: investor1})
 		})
@@ -574,7 +581,7 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 			beforeEach(async () => {
 				await platform.joinAsTrader(investorProfitPercent, {from: trader2})
 				await platform.joinAsInvestor({from: investor2})
-				await platform.deposit({from: investor2, value: ether(1)})
+				await platform.investorDeposit({from: investor2, value: ether(1)})
 				await platform.invest(trader2, amount, {from: investor2})
 			})
 
@@ -613,7 +620,7 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 
 			await platform.joinAsTrader(investorProfitPercent, {from: trader1})
 			await platform.joinAsInvestor({from: investor1})
-			await platform.deposit({from: investor1, value: ether(1)})
+			await platform.investorDeposit({from: investor1, value: ether(1)})
 			await platform.invest(trader1, amount, {from: investor1})
 		})
 
@@ -623,7 +630,7 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 			beforeEach(async () => {
 
 				value = ether(0.7)
-				settlementAmount = ether(0.681) // 0.6 + 0.079 + 0.002
+				settlementAmount = ether(0.7) // 0.6 + 0.019 + 0.079 + 0.002
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
 				result = await platform.approveExit(investmentId, investor1, {from: trader1, value: settlementAmount})
@@ -636,7 +643,7 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 				investmentObj = await platform.investments(trader1, 1)
 
 				investorObj.balance.toString().should.eq(ether(1.079).toString(), 'investor balance correct') // 0.4 + 0.6 + 0.079
-				traderObj.balance.toString().should.eq(ether(0).toString(), 'trader balance correct')
+				traderObj.balance.toString().should.eq(ether(0.019).toString(), 'trader balance correct')
 				investmentObj.state.toString().should.eq('3', 'investment state correct')
 			})
 
@@ -646,7 +653,8 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 				const event = log.args
 				event.trader.toString().should.eq(trader1, 'trader is correct')
 				event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
-				event.nettAmount.toString().should.eq(ether(0.679).toString(), 'nettAmount is correct') // 0.6 + 0.079
+				event.traderAmount.toString().should.eq(ether(0.019).toString(), 'traderAmount is correct') // profit
+				event.investorAmount.toString().should.eq(ether(0.679).toString(), 'investorAmount is correct') // amount + profit
 			})
 		})
 
@@ -678,7 +686,8 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 				const event = log.args
 				event.trader.toString().should.eq(trader1, 'trader is correct')
 				event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
-				event.nettAmount.toString().should.eq(ether(0.6).toString(), 'nettAmount is correct')
+				event.traderAmount.toString().should.eq(ether(0).toString(), 'traderAmount is correct')
+				event.investorAmount.toString().should.eq(ether(0.6).toString(), 'investorAmount is correct')
 			})
 		})
 
@@ -710,7 +719,8 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 				const event = log.args
 				event.trader.toString().should.eq(trader1, 'trader is correct')
 				event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
-				event.nettAmount.toString().should.eq(ether(0.5).toString(), 'nettAmount is correct')
+				event.traderAmount.toString().should.eq(ether(0).toString(), 'traderAmount is correct')
+				event.investorAmount.toString().should.eq(ether(0.5).toString(), 'investorAmount is correct')
 			})
 		})
 
@@ -718,12 +728,12 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 
 			beforeEach(async () => {
 				value = ether(0.7)
-				settlementAmount = ether(0.681)
+				settlementAmount = ether(0.7)
 
-				platform.requestExit(trader1, investmentId, value, {from: investor1})
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
 				await platform.joinAsTrader(investorProfitPercent, {from: trader2})
 				await platform.joinAsInvestor({from: investor2})
-				await platform.deposit({from: investor2, value: ether(1)})
+				await platform.investorDeposit({from: investor2, value: ether(1)})
 				await platform.invest(trader2, amount, {from: investor2})
 			})
 
@@ -751,10 +761,10 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 				value = ether(0.6)
 				settlementAmount = ether(0.6)
 
-				platform.requestExit(trader1, investmentId, value, {from: investor1})
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
 				await platform.joinAsTrader(investorProfitPercent, {from: trader2})
 				await platform.joinAsInvestor({from: investor2})
-				await platform.deposit({from: investor2, value: ether(1)})
+				await platform.investorDeposit({from: investor2, value: ether(1)})
 				await platform.invest(trader2, amount, {from: investor2})
 			})
 
@@ -782,10 +792,10 @@ contract('CrowdVest', ([deployer, feeAccount, trader1, trader2, investor1, inves
 				value = ether(0.5)
 				settlementAmount = ether(0.5)
 
-				platform.requestExit(trader1, investmentId, value, {from: investor1})
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
 				await platform.joinAsTrader(investorProfitPercent, {from: trader2})
 				await platform.joinAsInvestor({from: investor2})
-				await platform.deposit({from: investor2, value: ether(1)})
+				await platform.investorDeposit({from: investor2, value: ether(1)})
 				await platform.invest(trader2, amount, {from: investor2})
 			})
 
