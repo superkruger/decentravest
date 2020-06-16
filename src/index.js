@@ -6,6 +6,9 @@ import App from './components/App';
 import configureStore from './store/configureStore'
 import * as serviceWorker from './serviceWorker';
 
+// Importing the Bootstrap CSS
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 ReactDOM.render(
   <Provider store = {configureStore()}>
 		<Router basename={process.env.PUBLIC_URL}>

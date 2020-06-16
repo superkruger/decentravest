@@ -7,7 +7,6 @@ import {
 	traderLoaded,
 	investorLoaded
 } from './actions.js'
-import { etherToWei } from '../helpers'
 
 export const loadWeb3 = (dispatch) => {
 	let web3 = new Web3(window['ethereum'] || Web3.givenProvider || 'http://127.0.0.1:7545')
@@ -30,10 +29,10 @@ export const loadCrowdvest = async (account, web3, networkId, dispatch) => {
 		const trader = await crowdvest.methods.traders(account).call()
 		const investor = await crowdvest.methods.investors(account).call()
 
-		if (trader.id != 0) {
+		if (trader.id !== 0) {
 			dispatch(traderLoaded(trader))
 		}
-		if (investor.id != 0) {
+		if (investor.id !== 0) {
 			dispatch(investorLoaded(investor))
 		}
 

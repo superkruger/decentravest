@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import Join from './Join'
-import Trader from './Trader'
-import Investor from './Investor'
+import Intro from './Intro'
+// import Join from './Join'
+// import Trader from './Trader'
+// import Investor from './Investor'
 import './App.css'
 import { 
   loadWeb3, 
@@ -21,7 +22,7 @@ import { web3AccountLoaded } from '../store/actions'
 
 class App extends Component {
   componentWillMount() {
-    this.loadBlockchainData(this.props.dispatch)
+    //this.loadBlockchainData(this.props.dispatch)
   }
 
   async loadBlockchainData(dispatch) {
@@ -44,7 +45,7 @@ class App extends Component {
     
     const crowdvest = await loadCrowdvest(account, web3, networkId, dispatch)
     if(!crowdvest) {
-      window.alert('Crowdvest smart contract not detected on the current network. Please select another network with Metamask.')
+      console.log('Smart contract not detected on the current network. Please select another network with Metamask.')
       return
     }
   }
@@ -63,10 +64,8 @@ class App extends Component {
             
           // }
     return (
-      <div className="App">
-        <header className="App-header">
-          Decentralised Investment
-        </header>
+      <div className="content App">
+          <Intro />
       </div>
     )
   }
