@@ -1,1 +1,0 @@
-{"version":3,"sources":["App.css"],"names":[],"mappings":"AAAA,UACE,UAAW,CACX,UAAW,CACX,WACF,CAEA,SACE,iBAAkB,CAClB,OAAQ,CACR,SACF","file":"main.da2f9687.chunk.css","sourcesContent":[".logo img {\n  float: left;\n  width: 60px;\n  height: 60px;\n}\n\n.logo h1 {\n  position: relative;\n  top: 6px;\n  left: 10px;\n}\n"]}
