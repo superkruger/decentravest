@@ -1,26 +1,11 @@
-.App {
-  text-align: center;
+.logo img {
+  float: left;
+  width: 60px;
+  height: 60px;
 }
 
-.App-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: #282c34;
+.logo h1 {
+  position: relative;
+  top: 6px;
+  left: 10px;
 }
-
-.App-footer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 1vmin);
-  color: #282c34;
-}
-
-.App-link {
-  color: #61dafb;
-}
-

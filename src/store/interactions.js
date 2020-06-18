@@ -1,5 +1,5 @@
 import Web3 from 'web3'
-import CrowdVest from '../contracts/abis/CrowdVest.json'
+import DecentraVest from '../contracts/abis/DecentraVest.json'
 import { 
 	web3Loaded,
 	web3AccountLoaded,
@@ -24,7 +24,7 @@ export const loadAccount = async (web3, dispatch) => {
 
 export const loadCrowdvest = async (account, web3, networkId, dispatch) => {
 	try {
-		const crowdvest = await new web3.eth.Contract(CrowdVest.abi, CrowdVest.networks[networkId].address, {handleRevert: true})
+		const crowdvest = await new web3.eth.Contract(DecentraVest.abi, DecentraVest.networks[networkId].address, {handleRevert: true})
 
 		const trader = await crowdvest.methods.traders(account).call()
 		const investor = await crowdvest.methods.investors(account).call()
