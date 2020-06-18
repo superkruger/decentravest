@@ -1,5 +1,7 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
+import Header from './Header'
+import Footer from './Footer'
 import Intro from './Intro'
 // import Join from './Join'
 // import Trader from './Trader'
@@ -64,8 +66,10 @@ class App extends Component {
             
           // }
     return (
-      <div className="content App">
-          <Intro />
+      <div className="content">
+        <Header />
+        <Intro />
+        <Footer />
       </div>
     )
   }

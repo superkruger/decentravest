@@ -12,12 +12,7 @@ class Intro extends Component {
           <Row>
             <Col sm={12}>
               <div className="card bg-light text-dark">
-                <div className="card-header">
-                  <div className="logo">
-                    <img src={`${process.env.PUBLIC_URL}/android-chrome-192x192.png`} width="60" height="60" alt=""/>
-                    <h1>Decentravest</h1>
-                  </div>
-                </div>
+                
                 <div className="card-body">
                   <Player
                     playsInline
@@ -26,11 +21,51 @@ class Intro extends Component {
                   />
                 </div>
                 <div className="card-footer badge">
-                  Coming soon in 2020 (at least the year won't be that crappy)
+                  We're launching in phases, see below for a timeline
                 </div>
               </div>
             </Col>
           </Row>
+          <Row>
+            <Col sm={12}>
+              <div className="tl">
+                <div className="tl-container tl-left">
+                  <div className="tl-content">
+                    <h2>First batch of traders</h2>
+                    <p>
+                      <em>(launching soon!!)</em><br/>
+                      Are you a successful trader on <a href="https://dydx.exchange/" target="_blank" rel="noopener">dydx.exchange</a>?<br/>
+                      Would you like to trade risk-free?<br/><br/>
+                      Sign up below with your Metamask wallet that you use for trading, and you'll be entered into the pool.<br/><br/>
+                      <em>For the first batch, we'll waive all platform fees for the duration of the first investment phase!!</em>
+                    </p>
+                  </div>
+                </div>
+                <div className="tl-container tl-right">
+                  <div className="tl-content">
+                    <h2>Trader selection</h2>
+                    <p>We'll select the best traders from the pool to partake in the first opening phase.</p>
+                  </div>
+                </div>
+                <div className="tl-container tl-left">
+                  <div className="tl-content">
+                    <h2>First batch of investors</h2>
+                    <p>
+                      Each of the selected traders will have a limited number of slots available for investors.<br/><br/>
+                      Investors will need some minimum amount to invest, and this first investment phase will continue until we're satisfied everything works properly.
+                    </p>
+                  </div>
+                </div>
+                <div className="tl-container tl-right">
+                  <div className="tl-content">
+                    <h2>Open season</h2>
+                    <p>We'll open the platform to all traders and investors.</p>
+                  </div>
+                </div>
+              </div>
+            </Col>
+          </Row>
+
         </Container>
       </div>
     )
