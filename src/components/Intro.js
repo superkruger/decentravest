@@ -1,8 +1,7 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Container, Row, Col } from 'react-bootstrap'
-import "video-react/dist/video-react.css"
-import { Player } from 'video-react';
+import { Player } from 'video-react'
 
 class Intro extends Component {
 
