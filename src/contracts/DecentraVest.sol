@@ -1,5 +1,5 @@
 // "SPDX-License-Identifier: UNLICENSED"
-pragma solidity 0.6.8;
+pragma solidity >=0.4.21 <0.7.0;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -37,7 +37,7 @@ contract DecentraVest {
     event Withdraw(address indexed token, address indexed user, uint256 amount, uint256 balance);
     event Invest(uint256 id, address indexed investor, address indexed trader, address indexed token, uint256 amount);
     event RequestExit(address indexed trader, uint256 investmentId, uint256 date, uint256 value, uint256 traderProfit, uint256 investorProfit, uint256 traderFee, uint256 investorFee);
-    event RejectExit(address indexed trader, uint256 investmentId);
+    event RejectExit(address indexed trader, uint256 investmentId, uint256 value);
     event ApproveExit(address indexed trader, uint256 investmentId, uint256 traderAmount, uint256 investorAmount);
 
     enum InvestmentState {
@@ -88,7 +88,7 @@ contract DecentraVest {
     }
 
     // reverts if ether is sent directly
-    fallback() external {
+    function () external {
         revert();
     }
 
@@ -146,53 +146,19 @@ contract DecentraVest {
         Investor invests
     */
     function investEther(address _traderAddress) external payable {
-        _Investor storage _investor = investors[msg.sender];
-        require(_investor.user == msg.sender);
-
-        _Trader storage _trader = traders[_traderAddress];
-        require(_trader.user == _traderAddress);
-
-        // falls within trader allocations
-        require(allocations[_trader.user][ETHER].total - allocations[_trader.user][ETHER].invested >= msg.value);
-
-        allocations[_trader.user][ETHER].invested = allocations[_trader.user][ETHER].invested.add(msg.value);
-        
-        investmentCount = investmentCount.add(1);
-        investments[investmentCount] = _Investment({
-                id: investmentCount,
-                trader: _trader.user,
-                investor: _investor.user,
-                token: ETHER,
-                amount: msg.value,
-                startDate: now,
-                endDate: 0,
-                value: 0,
-                traderProfit: 0,
-                investorProfit: 0,
-                traderFee: 0,
-                investorFee: 0,
-                state: InvestmentState.Invested
-            });
-
-        _trader.investmentCount = _trader.investmentCount.add(1);
-        traderInvestments[_trader.user][_trader.investmentCount] = investmentCount;
-
-        _investor.investmentCount = _investor.investmentCount.add(1);
-        investorInvestments[_investor.user][_investor.investmentCount] = investmentCount;
-
-        emit Invest(
-            investmentCount,
-            msg.sender,
-            _trader.user,
-            ETHER,
-            msg.value
-        );
+        _invest(_traderAddress, ETHER, msg.value);
     }
 
     /**
         Investor invests
     */
     function investToken(address _traderAddress, address _token, uint256 _amount) external {
+        require(IERC20(_token).transferFrom(msg.sender, address(this), _amount));
+        //require(IERC20(_token).transfer(address(this), _amount));
+        _invest(_traderAddress, _token, _amount);
+    }
+
+    function _invest(address _traderAddress, address _token, uint256 _amount) private {
         _Investor storage _investor = investors[msg.sender];
         require(_investor.user == msg.sender);
 
@@ -201,8 +167,6 @@ contract DecentraVest {
 
         // falls within trader allocations
         require(allocations[_trader.user][_token].total - allocations[_trader.user][_token].invested >= _amount);
-
-        require(IERC20(_token).transfer(address(this), _amount));
 
         allocations[_trader.user][_token].invested = allocations[_trader.user][_token].invested.add(_amount);
         
@@ -294,7 +258,7 @@ contract DecentraVest {
         Perhaps the investor made a false profit claim
         This will now enter a dispute workflow managed on the client
     */
-    function rejectExit(uint256 _investmentId) external {
+    function rejectExit(uint256 _investmentId, uint256 _value) external {
         require(investments[_investmentId].trader == msg.sender);
         require(investments[_investmentId].state == InvestmentState.ExitRequested);
         
@@ -302,7 +266,8 @@ contract DecentraVest {
 
         emit RejectExit(
             msg.sender, 
-            _investmentId
+            _investmentId,
+            _value
         );
     }
 
@@ -317,6 +282,7 @@ contract DecentraVest {
         Trader approves the exit by paying the nett profit back to the contract, under the name of the investor
     */
     function approveExitToken(uint256 _investmentId, address _investorAddress, address _token, uint256 _amount) external {
+        require(IERC20(_token).transferFrom(msg.sender, address(this), _amount));
         approveExit(_investmentId, _investorAddress, _token, _amount);
     }
 
@@ -390,7 +356,8 @@ contract DecentraVest {
     function withdrawToken(address _token, uint256 _amount) external {
         require(_token != ETHER);
         require(balances[msg.sender][_token] >= _amount);
-        require(IERC20(_token).transferFrom(address(this), msg.sender, _amount));
+        // require(IERC20(_token).transferFrom(address(this), msg.sender, _amount));
+        require(IERC20(_token).transfer(msg.sender, _amount));
         balances[msg.sender][_token] = balances[msg.sender][_token].sub(_amount);
         emit Withdraw(_token, msg.sender, _amount, balances[msg.sender][_token]);
     }
