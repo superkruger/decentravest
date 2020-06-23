@@ -70,7 +70,6 @@
     ]
   },
   "devDependencies": {
-    "web3": "1.2.7",
     "@babel/plugin-transform-runtime": "^7.10.3",
     "@openzeppelin/cli": "^2.8.2",
     "@openzeppelin/test-environment": "^0.1.4",
@@ -78,6 +77,8 @@
     "chai": "^4.2.0",
     "ganache-cli": "^6.9.1",
     "gh-pages": "^2.2.0",
-    "mocha": "^8.0.1"
+    "husky": "^4.2.5",
+    "mocha": "^8.0.1",
+    "web3": "1.2.7"
   }
 }
