@@ -36,8 +36,7 @@ class Intro extends Component {
                       <em>(launching soon!!)</em><br/>
                       Are you a successful trader on <a href="https://dydx.exchange/" target="_blank" rel="noopener">dydx.exchange</a>?<br/>
                       Would you like to trade risk-free?<br/><br/>
-                      Sign up below with your Metamask wallet that you use for trading, and you'll be entered into the pool.<br/><br/>
-                      <em>For the first batch, we'll waive all platform fees for the duration of the first investment phase!!</em>
+                      Sign up below with your Metamask wallet that you use for trading, and you'll be entered into the pool.
                     </p>
                   </div>
                 </div>
