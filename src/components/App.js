@@ -24,7 +24,7 @@ import { web3AccountLoaded } from '../store/actions'
 
 class App extends Component {
   componentWillMount() {
-    //this.loadBlockchainData(this.props.dispatch)
+    this.loadBlockchainData(this.props.dispatch)
   }
 
   async loadBlockchainData(dispatch) {

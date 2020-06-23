@@ -2,6 +2,7 @@ export const EVM_REVERT = 'VM Exception while processing transaction: revert'
 export const ETHER = '0x0000000000000000000000000000000000000000'
 
 const BigNumber = require('bignumber.js')
+const web3 = require("web3");
 
 export const ether = (n) => {
 	return new web3.utils.BN(

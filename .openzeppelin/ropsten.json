@@ -1,0 +1,482 @@
+{
+  "contracts": {
+    "TraderPaired": {
+      "address": "0xEa774D3A6Eb116E474E5d723d1Ee34660B4708E5",
+      "constructorCode": "608060405261524f806100136000396000f3fe",
+      "bodyBytecodeHash": "8480169b564088ac0f910dbc5b0005fe456f5f71502bbe93786ed09b90118a0f",
+      "localBytecodeHash": "0041aa145b32e30bc7e180f0faad5f53b6e30fb9a33c82be293168c1e9614989",
+      "deployedBytecodeHash": "0041aa145b32e30bc7e180f0faad5f53b6e30fb9a33c82be293168c1e9614989",
+      "types": {
+        "t_bool": {
+          "id": "t_bool",
+          "kind": "elementary",
+          "label": "bool"
+        },
+        "t_uint256": {
+          "id": "t_uint256",
+          "kind": "elementary",
+          "label": "uint256"
+        },
+        "t_array:50<t_uint256>": {
+          "id": "t_array:50<t_uint256>",
+          "valueType": "t_uint256",
+          "length": "50",
+          "kind": "array",
+          "label": "uint256[50]"
+        },
+        "t_struct<Roles.Role>": {
+          "id": "t_struct<Roles.Role>",
+          "kind": "struct",
+          "label": "Roles.Role",
+          "members": [
+            {
+              "label": "bearer",
+              "astId": 35,
+              "type": "t_mapping<t_bool>",
+              "src": "150:32:1"
+            }
+          ]
+        },
+        "t_mapping<t_bool>": {
+          "id": "t_mapping<t_bool>",
+          "valueType": "t_bool",
+          "label": "mapping(key => bool)",
+          "kind": "mapping"
+        },
+        "t_address": {
+          "id": "t_address",
+          "kind": "elementary",
+          "label": "address"
+        },
+        "t_struct<TraderPaired._Investment>": {
+          "id": "t_struct<TraderPaired._Investment>",
+          "kind": "struct",
+          "label": "TraderPaired._Investment",
+          "members": [
+            {
+              "label": "id",
+              "astId": 844,
+              "type": "t_uint256",
+              "src": "2890:10:7"
+            },
+            {
+              "label": "trader",
+              "astId": 846,
+              "type": "t_address_payable",
+              "src": "2910:22:7"
+            },
+            {
+              "label": "investor",
+              "astId": 848,
+              "type": "t_address_payable",
+              "src": "2942:24:7"
+            },
+            {
+              "label": "token",
+              "astId": 850,
+              "type": "t_address",
+              "src": "2976:13:7"
+            },
+            {
+              "label": "amount",
+              "astId": 852,
+              "type": "t_uint256",
+              "src": "2999:14:7"
+            },
+            {
+              "label": "startDate",
+              "astId": 854,
+              "type": "t_uint256",
+              "src": "3023:17:7"
+            },
+            {
+              "label": "endDate",
+              "astId": 856,
+              "type": "t_uint256",
+              "src": "3050:15:7"
+            },
+            {
+              "label": "value",
+              "astId": 858,
+              "type": "t_uint256",
+              "src": "3075:13:7"
+            },
+            {
+              "label": "traderProfit",
+              "astId": 860,
+              "type": "t_uint256",
+              "src": "3098:20:7"
+            },
+            {
+              "label": "investorProfit",
+              "astId": 862,
+              "type": "t_uint256",
+              "src": "3128:22:7"
+            },
+            {
+              "label": "traderFee",
+              "astId": 864,
+              "type": "t_uint256",
+              "src": "3160:17:7"
+            },
+            {
+              "label": "investorFee",
+              "astId": 866,
+              "type": "t_uint256",
+              "src": "3187:19:7"
+            },
+            {
+              "label": "state",
+              "astId": 868,
+              "type": "t_enum<TraderPaired.InvestmentState>",
+              "src": "3216:21:7"
+            }
+          ]
+        },
+        "t_address_payable": {
+          "id": "t_address_payable",
+          "kind": "elementary",
+          "label": "address payable"
+        },
+        "t_enum<TraderPaired.InvestmentState>": {
+          "id": "t_enum<TraderPaired.InvestmentState>",
+          "kind": "enum",
+          "label": "TraderPaired.InvestmentState",
+          "members": [
+            "Invested",
+            "ExitRequested",
+            "ExitRejected",
+            "Divested"
+          ]
+        },
+        "t_mapping<t_struct<TraderPaired._Investment>>": {
+          "id": "t_mapping<t_struct<TraderPaired._Investment>>",
+          "valueType": "t_struct<TraderPaired._Investment>",
+          "label": "mapping(key => TraderPaired._Investment)",
+          "kind": "mapping"
+        },
+        "t_mapping<t_uint256>": {
+          "id": "t_mapping<t_uint256>",
+          "valueType": "t_uint256",
+          "label": "mapping(key => uint256)",
+          "kind": "mapping"
+        },
+        "t_struct<TraderPaired._Allocation>": {
+          "id": "t_struct<TraderPaired._Allocation>",
+          "kind": "struct",
+          "label": "TraderPaired._Allocation",
+          "members": [
+            {
+              "label": "total",
+              "astId": 832,
+              "type": "t_uint256",
+              "src": "2696:13:7"
+            },
+            {
+              "label": "invested",
+              "astId": 834,
+              "type": "t_uint256",
+              "src": "2719:16:7"
+            }
+          ]
+        },
+        "t_mapping<t_struct<TraderPaired._Allocation>>": {
+          "id": "t_mapping<t_struct<TraderPaired._Allocation>>",
+          "valueType": "t_struct<TraderPaired._Allocation>",
+          "label": "mapping(key => TraderPaired._Allocation)",
+          "kind": "mapping"
+        },
+        "t_struct<TraderPaired._Trader>": {
+          "id": "t_struct<TraderPaired._Trader>",
+          "kind": "struct",
+          "label": "TraderPaired._Trader",
+          "members": [
+            {
+              "label": "id",
+              "astId": 823,
+              "type": "t_uint256",
+              "src": "2542:10:7"
+            },
+            {
+              "label": "user",
+              "astId": 825,
+              "type": "t_address_payable",
+              "src": "2562:20:7"
+            },
+            {
+              "label": "investorProfitPercent",
+              "astId": 827,
+              "type": "t_uint256",
+              "src": "2592:29:7"
+            },
+            {
+              "label": "investmentCount",
+              "astId": 829,
+              "type": "t_uint256",
+              "src": "2631:23:7"
+            }
+          ]
+        },
+        "t_mapping<t_struct<TraderPaired._Trader>>": {
+          "id": "t_mapping<t_struct<TraderPaired._Trader>>",
+          "valueType": "t_struct<TraderPaired._Trader>",
+          "label": "mapping(key => TraderPaired._Trader)",
+          "kind": "mapping"
+        },
+        "t_struct<TraderPaired._Investor>": {
+          "id": "t_struct<TraderPaired._Investor>",
+          "kind": "struct",
+          "label": "TraderPaired._Investor",
+          "members": [
+            {
+              "label": "id",
+              "astId": 837,
+              "type": "t_uint256",
+              "src": "2775:10:7"
+            },
+            {
+              "label": "user",
+              "astId": 839,
+              "type": "t_address_payable",
+              "src": "2795:20:7"
+            },
+            {
+              "label": "investmentCount",
+              "astId": 841,
+              "type": "t_uint256",
+              "src": "2825:23:7"
+            }
+          ]
+        },
+        "t_mapping<t_struct<TraderPaired._Investor>>": {
+          "id": "t_mapping<t_struct<TraderPaired._Investor>>",
+          "valueType": "t_struct<TraderPaired._Investor>",
+          "label": "mapping(key => TraderPaired._Investor)",
+          "kind": "mapping"
+        },
+        "t_mapping<t_address>": {
+          "id": "t_mapping<t_address>",
+          "valueType": "t_address",
+          "label": "mapping(key => address)",
+          "kind": "mapping"
+        }
+      },
+      "storage": [
+        {
+          "contract": "Initializable",
+          "path": "@openzeppelin/upgrades/contracts/Initializable.sol",
+          "label": "initialized",
+          "astId": 598,
+          "type": "t_bool",
+          "src": "757:24:6"
+        },
+        {
+          "contract": "Initializable",
+          "path": "@openzeppelin/upgrades/contracts/Initializable.sol",
+          "label": "initializing",
+          "astId": 600,
+          "type": "t_bool",
+          "src": "876:25:6"
+        },
+        {
+          "contract": "Initializable",
+          "path": "@openzeppelin/upgrades/contracts/Initializable.sol",
+          "label": "______gap",
+          "astId": 662,
+          "type": "t_array:50<t_uint256>",
+          "src": "1982:29:6"
+        },
+        {
+          "contract": "PauserRole",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/access/roles/PauserRole.sol",
+          "label": "_pausers",
+          "astId": 132,
+          "type": "t_struct<Roles.Role>",
+          "src": "327:27:2"
+        },
+        {
+          "contract": "PauserRole",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/access/roles/PauserRole.sol",
+          "label": "______gap",
+          "astId": 232,
+          "type": "t_array:50<t_uint256>",
+          "src": "1193:29:2"
+        },
+        {
+          "contract": "Pausable",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/lifecycle/Pausable.sol",
+          "label": "_paused",
+          "astId": 254,
+          "type": "t_bool",
+          "src": "909:20:3"
+        },
+        {
+          "contract": "Pausable",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/lifecycle/Pausable.sol",
+          "label": "______gap",
+          "astId": 337,
+          "type": "t_array:50<t_uint256>",
+          "src": "2163:29:3"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "initialized",
+          "astId": 675,
+          "type": "t_bool",
+          "src": "399:24:7"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "feeAccount",
+          "astId": 682,
+          "type": "t_address",
+          "src": "532:25:7"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "traderFeePercent",
+          "astId": 684,
+          "type": "t_uint256",
+          "src": "597:31:7"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "investorFeePercent",
+          "astId": 686,
+          "type": "t_uint256",
+          "src": "723:33:7"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "investments",
+          "astId": 690,
+          "type": "t_mapping<t_struct<TraderPaired._Investment>>",
+          "src": "858:50:7"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "investmentCount",
+          "astId": 692,
+          "type": "t_uint256",
+          "src": "914:30:7"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "traderInvestments",
+          "astId": 698,
+          "type": "t_mapping<t_uint256>",
+          "src": "951:72:7"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "investorInvestments",
+          "astId": 704,
+          "type": "t_mapping<t_uint256>",
+          "src": "1029:74:7"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "allocations",
+          "astId": 710,
+          "type": "t_mapping<t_struct<TraderPaired._Allocation>>",
+          "src": "1109:70:7"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "balances",
+          "astId": 716,
+          "type": "t_mapping<t_uint256>",
+          "src": "1186:63:7"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "traders",
+          "astId": 720,
+          "type": "t_mapping<t_struct<TraderPaired._Trader>>",
+          "src": "1298:42:7"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "investors",
+          "astId": 724,
+          "type": "t_mapping<t_struct<TraderPaired._Investor>>",
+          "src": "1346:46:7"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "traderCount",
+          "astId": 726,
+          "type": "t_uint256",
+          "src": "1399:26:7"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "investorCount",
+          "astId": 728,
+          "type": "t_uint256",
+          "src": "1431:28:7"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "traderList",
+          "astId": 732,
+          "type": "t_mapping<t_address>",
+          "src": "1466:45:7"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "investorList",
+          "astId": 736,
+          "type": "t_mapping<t_address>",
+          "src": "1517:47:7"
+        }
+      ],
+      "warnings": {
+        "hasConstructor": false,
+        "hasSelfDestruct": false,
+        "hasDelegateCall": false,
+        "hasInitialValuesInDeclarations": false,
+        "uninitializedBaseContracts": []
+      }
+    }
+  },
+  "solidityLibs": {},
+  "proxies": {
+    "test/TraderPaired": [
+      {
+        "address": "0x280C94562c5E769e798275D53F6Ee6DDce2Ff3cc",
+        "version": "1.0.0",
+        "implementation": "0xEa774D3A6Eb116E474E5d723d1Ee34660B4708E5",
+        "admin": "0x67407A2515Ba05F5f3CE08bEBfe56dA2BA42C66A",
+        "kind": "Upgradeable"
+      }
+    ]
+  },
+  "manifestVersion": "2.2",
+  "version": "1.0.0",
+  "dependencies": {
+    "@openzeppelin/contracts-ethereum-package": {
+      "package": "0x2a9e7B63514438906A83a1e320dBBD814D417002",
+      "version": "2.5.0"
+    }
+  },
+  "proxyAdmin": {
+    "address": "0x67407A2515Ba05F5f3CE08bEBfe56dA2BA42C66A"
+  }
+}

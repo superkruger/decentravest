@@ -1,5 +1,5 @@
 import Web3 from 'web3'
-import DecentraVest from '../contracts/abis/DecentraVest.json'
+import TraderPaired from '../abis/TraderPaired.json'
 import { 
 	web3Loaded,
 	web3AccountLoaded,
@@ -9,7 +9,7 @@ import {
 } from './actions.js'
 
 export const loadWeb3 = (dispatch) => {
-	let web3 = new Web3(window['ethereum'] || Web3.givenProvider || 'http://127.0.0.1:7545')
+	let web3 = new Web3(window['ethereum'] || Web3.givenProvider || 'http://127.0.0.1:8545')
 	web3.eth.handleRevert = true
 	dispatch(web3Loaded(web3))
 	return web3
@@ -24,7 +24,7 @@ export const loadAccount = async (web3, dispatch) => {
 
 export const loadCrowdvest = async (account, web3, networkId, dispatch) => {
 	try {
-		const crowdvest = await new web3.eth.Contract(DecentraVest.abi, DecentraVest.networks[networkId].address, {handleRevert: true})
+		const crowdvest = await new web3.eth.Contract(TraderPaired.abi, TraderPaired.networks[networkId].address, {handleRevert: true})
 
 		const trader = await crowdvest.methods.traders(account).call()
 		const investor = await crowdvest.methods.investors(account).call()
