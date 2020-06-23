@@ -24,6 +24,8 @@ export const loadAccount = async (web3, dispatch) => {
 
 export const loadCrowdvest = async (account, web3, networkId, dispatch) => {
 	try {
+
+		console.log("TraderPaired address: ", TraderPaired.networks[networkId].address)
 		const crowdvest = await new web3.eth.Contract(TraderPaired.abi, TraderPaired.networks[networkId].address, {handleRevert: true})
 
 		const trader = await crowdvest.methods.traders(account).call()
