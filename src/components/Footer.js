@@ -16,7 +16,13 @@ class Footer extends Component {
               <Col sm={6}>
                 © 2020 Decentravest - All Rights Reserved
               </Col>
-              <Col sm={6}>
+              <Col sm={4}/>
+              <Col sm={1}>
+                <a href="https://t.me/decentravest" target="_blank" rel="noopener noreferrer">
+                  <i className="fa fa-telegram"></i>
+                </a>
+              </Col>
+              <Col sm={1}>
                 <a href="https://twitter.com/decentravest" target="_blank" rel="noopener noreferrer">
                   <i className="fa fa-twitter"></i>
                 </a>

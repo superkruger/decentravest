@@ -1,6 +1,9 @@
 import { get } from 'lodash'
 import { createSelector } from 'reselect'
-import { NEUTRAL, formatEtherBalance } from '../helpers'
+import { NEUTRAL, RED, GREEN, formatBalance } from '../helpers'
+
+const page = (state) => get(state, 'app.page', 'home')
+export const pageSelector = createSelector(page, a => a)
 
 const account = (state) => get(state, 'web3.account')
 export const accountSelector = createSelector(account, a => a)
@@ -8,22 +11,22 @@ export const accountSelector = createSelector(account, a => a)
 const web3 = state => get(state, 'web3.connection')
 export const web3Selector = createSelector(web3, w => w)
 
-const crowdvestLoaded = state => get(state, 'crowdvest.loaded', false)
-export const crowdvestLoadedSelector = createSelector(crowdvestLoaded, el => el)
+const traderPairedLoaded = state => get(state, 'traderPaired.loaded', false)
+export const traderPairedLoadedSelector = createSelector(traderPairedLoaded, el => el)
 
-const crowdvest = state => get(state, 'crowdvest.contract')
-export const crowdvestSelector = createSelector(crowdvest, e => e)
+const traderPaired = state => get(state, 'traderPaired.contract')
+export const traderPairedSelector = createSelector(traderPaired, e => e)
 
-const trader = state => get(state, 'crowdvest.trader')
+const trader = state => get(state, 'traderPaired.trader')
 export const traderSelector = createSelector(trader, e => e)
 
-const investor = state => get(state, 'crowdvest.investor')
+const investor = state => get(state, 'traderPaired.investor')
 export const investorSelector = createSelector(investor, e => e)
 
-const traderPositionsLoaded = state => get(state, 'crowdvest.traderpositions.loaded', false)
+const traderPositionsLoaded = state => get(state, 'traderPaired.traderpositions.loaded', false)
 export const traderPositionsLoadedSelector = createSelector(traderPositionsLoaded, e => e)
 
-const traderPositions = state => get(state, 'crowdvest.traderpositions.data')
+const traderPositions = state => get(state, 'traderPaired.traderpositions.data')
 export const traderPositionsSelector = createSelector(traderPositions, (positions) => {
 	console.log('Positions', positions)
 	if (positions !== undefined) {
@@ -50,27 +53,12 @@ const decorateTraderPosition = (position) => {
 }
 
 const decoratePositionProfit = (position) => {
-	let amount
-	let profitClass = NEUTRAL
-	let formattedAmount = 0
-
-	if (position.status === 'CLOSED') {
-		let firstAction = position.standardActions.find(a => a.type === 'ISOLATED_OPEN')
-		let lastAction = position.standardActions.find(a => a.type === 'ISOLATED_FULL_CLOSE' || a.type === 'WITHDRAW')
-		if (firstAction !== undefined && lastAction !== undefined) {
-			
-			
-			amount = lastAction.transferAmount.minus(firstAction.transferAmount)
-
-
-			formattedAmount = formatEtherBalance(amount)
-		}
-	}
-
 	return ({
-		amount: amount,
-		formattedAmount: formattedAmount,
-		profitClass: profitClass
+		formattedFeeAmount: formatBalance(position.fee, position.asset),
+		formattedProfit: formatBalance(position.profit, position.asset),
+		profitClass: position.profit.lt(0) ? RED : position.profit.gt(0) ? GREEN : NEUTRAL,
+		formattedNettProfit: formatBalance(position.nettProfit, position.asset),
+		nettProfitClass: position.nettProfit.lt(0) ? RED : position.nettProfit.gt(0) ? GREEN : NEUTRAL
 	})
 }
 

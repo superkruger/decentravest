@@ -6,7 +6,7 @@ import {
 } from '../store/dydxInteractions'
 import { 
   accountSelector, 
-  crowdvestSelector,
+  traderPairedSelector,
   traderSelector,
   traderPositionsSelector,
   traderPositionsLoadedSelector
@@ -30,9 +30,11 @@ class Trader extends Component {
                 <tr>
                   <th>Date</th>
                   <th>Type</th>
-                  <th>Status</th>
                   <th>Market</th>
+                  <th>Asset</th>
                   <th>Profit</th>
+                  <th>Fee</th>
+                  <th>Nett Profit</th>
                 </tr>
               </thead>
               { this.props.traderPositionsLoaded ? showPositions(this.props.traderPositions) : <Spinner type="table" /> }
@@ -52,9 +54,11 @@ function showPositions(positions) {
             <tr key={position.uuid}>
               <td className="text-muted">{position.formattedCreatedAt}</td>
               <td>{position.type}</td>
-              <td>{position.status}</td>
               <td>{position.market}</td>
-              <td>{position.profit.formattedAmount}</td>
+              <td>{position.asset}</td>
+              <td className={`text-${position.profit.profitClass}`}>{position.profit.formattedProfit}</td>
+              <td>{position.profit.formattedFeeAmount}</td>
+              <td className={`text-${position.profit.nettProfitClass}`}>{position.profit.formattedNettProfit}</td>
             </tr>
         )
       })
@@ -66,11 +70,11 @@ function showPositions(positions) {
 
 function mapStateToProps(state) {
   const account = accountSelector(state)
-  const crowdvest = crowdvestSelector(state)
+  const traderPaired = traderPairedSelector(state)
 
   return {
     account: account,
-    crowdvest: crowdvest,
+    traderPaired: traderPaired,
     trader: traderSelector(state),
     traderPositionsLoaded: traderPositionsLoadedSelector(state),
     traderPositions: traderPositionsSelector(state)

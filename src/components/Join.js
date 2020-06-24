@@ -4,7 +4,7 @@ import { Button } from 'react-bootstrap'
 import Spinner from './Spinner'
 import { 
   accountSelector, 
-  crowdvestSelector 
+  traderPairedSelector 
 } from '../store/selectors'
 import { 
   joinAsTrader, 
@@ -56,10 +56,10 @@ function InvestorButton(props) {
 }
 
 const traderJoin = async (props) => {
-  const { account, crowdvest, dispatch } = props
+  const { account, traderPaired, dispatch } = props
 
   try {
-    await joinAsTrader(account, crowdvest, dispatch)
+    await joinAsTrader(account, traderPaired, dispatch)
   } catch(e) {
     console.log(e)
     return;
@@ -67,10 +67,10 @@ const traderJoin = async (props) => {
 }
 
 const investorJoin = async (props) => {
-  const { account, crowdvest, dispatch } = props
+  const { account, traderPaired, dispatch } = props
 
   try {
-    await joinAsInvestor(account, crowdvest, dispatch)
+    await joinAsInvestor(account, traderPaired, dispatch)
   } catch(e) {
     console.log(e)
     return;
@@ -79,12 +79,12 @@ const investorJoin = async (props) => {
 
 function mapStateToProps(state) {
   const account = accountSelector(state)
-  const crowdvest = crowdvestSelector(state)
+  const traderPaired = traderPairedSelector(state)
 
   return {
     account: account,
-    crowdvest: crowdvest,
-    ready: account && crowdvest
+    traderPaired: traderPaired,
+    ready: account && traderPaired
   }
 }
 

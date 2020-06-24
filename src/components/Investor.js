@@ -3,7 +3,7 @@ import { connect } from 'react-redux'
 import Spinner from './Spinner'
 import { 
   accountSelector, 
-  crowdvestSelector,
+  traderPairedSelector,
   investorSelector
 } from '../store/selectors'
 
@@ -12,7 +12,7 @@ class Investor extends Component {
   render() {
     return (
       <div>
-        Investor
+        Not yet open for investors
       </div>
     )
   }
@@ -21,11 +21,11 @@ class Investor extends Component {
 
 function mapStateToProps(state) {
   const account = accountSelector(state)
-  const crowdvest = crowdvestSelector(state)
+  const traderPaired = traderPairedSelector(state)
 
   return {
     account: account,
-    crowdvest: crowdvest,
+    traderPaired: traderPaired,
     investor: investorSelector(state)
   }
 }

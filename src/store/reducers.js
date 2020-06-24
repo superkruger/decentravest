@@ -1,5 +1,14 @@
 import { combineReducers } from 'redux'
 
+function app (state = {}, action ) {
+	switch (action.type) {
+		case 'PAGE_SELECTED':
+			return { ...state, page: action.page }
+		default:
+			return state
+	}
+}
+
 function web3 (state = {}, action ) {
 	switch (action.type) {
 		case 'WEB3_LOADED':
@@ -11,9 +20,9 @@ function web3 (state = {}, action ) {
 	}
 }
 
-function crowdvest (state = {}, action ) {
+function traderPaired (state = {}, action ) {
 	switch (action.type) {
-		case 'CROWDVEST_LOADED':
+		case 'TRADERPAIRED_LOADED':
 			return { ...state, loaded: true, contract: action.contract }
 		case 'TRADER_LOADED':
 			return { ...state, trader: action.trader }
@@ -57,8 +66,9 @@ function crowdvest (state = {}, action ) {
 // }
 
 const rootReducer = combineReducers({
+	app,
 	web3,
-	crowdvest
+	traderPaired
 })
 
 export default rootReducer

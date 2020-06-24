@@ -12,9 +12,9 @@ export function web3AccountLoaded(account) {
 	}
 }
 
-export function crowdvestLoaded(contract) {
+export function traderPairedLoaded(contract) {
 	return {
-		type: 'CROWDVEST_LOADED',
+		type: 'TRADERPAIRED_LOADED',
 		contract
 	}
 }
@@ -30,6 +30,13 @@ export function investorLoaded(investor) {
 	return {
 		type: 'INVESTOR_LOADED',
 		investor
+	}
+}
+
+export function pageSelected(page) {
+	return {
+		type: 'PAGE_SELECTED',
+		page
 	}
 }
 

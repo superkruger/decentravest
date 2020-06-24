@@ -71,7 +71,7 @@ describe('TraderPaired', function () {
 			beforeEach(async () => {
 				traderId = 1
 				investorProfitPercent = 8000
-				result = await platform.joinAsTrader(investorProfitPercent, {from: trader1})
+				result = await platform.joinAsTrader({from: trader1})
 			})
 
 			it('tracks trader', async () => {
@@ -100,25 +100,25 @@ describe('TraderPaired', function () {
 
 			it('already trader', async () => {
 				investorProfitPercent = 8000
-				await platform.joinAsTrader(investorProfitPercent, {from: trader1})
-				result = await platform.joinAsTrader(investorProfitPercent, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				await platform.joinAsTrader({from: trader1})
+				result = await platform.joinAsTrader({from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('already investor', async () => {
 				investorProfitPercent = 8000
 				await platform.joinAsInvestor({from: trader1})
-				result = await platform.joinAsTrader(investorProfitPercent, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.joinAsTrader({from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
-			it('investorProfitPercent too large', async () => {
-				investorProfitPercent = 10000
-				result = await platform.joinAsTrader(investorProfitPercent, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
-			})
+			// it('investorProfitPercent too large', async () => {
+			// 	investorProfitPercent = 10000
+			// 	result = await platform.joinAsTrader(investorProfitPercent, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+			// })
 
-			it('investorProfitPercent too small', async () => {
-				investorProfitPercent = 50
-				result = await platform.joinAsTrader(investorProfitPercent, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
-			})
+			// it('investorProfitPercent too small', async () => {
+			// 	investorProfitPercent = 50
+			// 	result = await platform.joinAsTrader(investorProfitPercent, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+			// })
 		})
 	})
 
@@ -161,7 +161,7 @@ describe('TraderPaired', function () {
 
 			it('already trader', async () => {
 				let investorProfitPercent = 8000
-				await platform.joinAsTrader(investorProfitPercent, {from: investor1})
+				await platform.joinAsTrader({from: investor1})
 				result = await platform.joinAsInvestor({from: investor1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
@@ -182,7 +182,7 @@ describe('TraderPaired', function () {
 			beforeEach(async () => {
 				amount = ether(1)
 				let investorProfitPercent = 8000
-				await platform.joinAsTrader(investorProfitPercent, {from: trader1})
+				await platform.joinAsTrader({from: trader1})
 				result = await platform.allocate(ETHER, amount, {from: trader1})
 			})
 
@@ -208,7 +208,7 @@ describe('TraderPaired', function () {
 			beforeEach(async () => {
 				amount = tokens(1)
 				let investorProfitPercent = 8000
-				await platform.joinAsTrader(investorProfitPercent, {from: trader1})
+				await platform.joinAsTrader({from: trader1})
 				result = await platform.allocate(token.address, amount, {from: trader1})
 			})
 
@@ -233,7 +233,7 @@ describe('TraderPaired', function () {
 			beforeEach(async () => {
 				amount = ether(1)
 				let investorProfitPercent = 8000
-				await platform.joinAsTrader(investorProfitPercent, {from: trader1})
+				await platform.joinAsTrader({from: trader1})
 			})
 
 			it('not a trader', async () => {
@@ -257,7 +257,7 @@ describe('TraderPaired', function () {
 			traderId = 1
 			investorProfitPercent = 8000
 
-			await platform.joinAsTrader(investorProfitPercent, {from: trader1})
+			await platform.joinAsTrader({from: trader1})
 			await platform.joinAsInvestor({from: investor1})
 		})
 
@@ -434,7 +434,7 @@ describe('TraderPaired', function () {
 			investmentId = 1
 			investorProfitPercent = 8000
 
-			await platform.joinAsTrader(investorProfitPercent, {from: trader1})
+			await platform.joinAsTrader({from: trader1})
 			await platform.joinAsInvestor({from: investor1})
 			await platform.allocate(ETHER, ether(1), {from: trader1})
 			await platform.investEther(trader1, {from: investor1, value: amount})
@@ -564,7 +564,7 @@ describe('TraderPaired', function () {
 		describe('failure', () => {
 
 			beforeEach(async () => {
-				await platform.joinAsTrader(investorProfitPercent, {from: trader2})
+				await platform.joinAsTrader({from: trader2})
 				await platform.joinAsInvestor({from: investor2})
 				await platform.allocate(ETHER, ether(1), {from: trader2})
 				await platform.investEther(trader2, {from: investor2, value: amount})
@@ -608,7 +608,7 @@ describe('TraderPaired', function () {
 			investmentId = 1
 			investorProfitPercent = 8000
 
-			await platform.joinAsTrader(investorProfitPercent, {from: trader1})
+			await platform.joinAsTrader({from: trader1})
 			await platform.joinAsInvestor({from: investor1})
 			await platform.allocate(ETHER, ether(1), {from: trader1})
 			await platform.investEther(trader1, {from: investor1, value: amount})
@@ -767,7 +767,7 @@ describe('TraderPaired', function () {
 		describe('failure', () => {
 
 			beforeEach(async () => {
-				await platform.joinAsTrader(investorProfitPercent, {from: trader2})
+				await platform.joinAsTrader({from: trader2})
 				await platform.joinAsInvestor({from: investor2})
 				await platform.allocate(ETHER, ether(1), {from: trader2})
 				await platform.investEther(trader2, {from: investor2, value: amount})
@@ -810,7 +810,7 @@ describe('TraderPaired', function () {
 			investmentId = 1
 			investorProfitPercent = 8000
 
-			await platform.joinAsTrader(investorProfitPercent, {from: trader1})
+			await platform.joinAsTrader({from: trader1})
 			await platform.joinAsInvestor({from: investor1})
 			await platform.allocate(ETHER, ether(1), {from: trader1})
 			await platform.investEther(trader1, {from: investor1, value: amount})
@@ -845,7 +845,7 @@ describe('TraderPaired', function () {
 		describe('failure', () => {
 
 			beforeEach(async () => {
-				await platform.joinAsTrader(investorProfitPercent, {from: trader2})
+				await platform.joinAsTrader({from: trader2})
 				await platform.joinAsInvestor({from: investor2})
 				await platform.allocate(ETHER, ether(1), {from: trader2})
 				await platform.investEther(trader2, {from: investor2, value: amount})
@@ -886,7 +886,7 @@ describe('TraderPaired', function () {
 			investmentId = 1
 			investorProfitPercent = 8000
 
-			await platform.joinAsTrader(investorProfitPercent, {from: trader1})
+			await platform.joinAsTrader({from: trader1})
 			await platform.joinAsInvestor({from: investor1})
 		})
 
@@ -1053,7 +1053,7 @@ describe('TraderPaired', function () {
 				settlementAmount = ether(0.08) // 0.079 + 0.001
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
-				await platform.joinAsTrader(investorProfitPercent, {from: trader2})
+				await platform.joinAsTrader({from: trader2})
 				await platform.joinAsInvestor({from: investor2})
 				await platform.allocate(ETHER, ether(1), {from: trader2})
 				await platform.investEther(trader2, {from: investor2, value: amount})
@@ -1094,7 +1094,7 @@ describe('TraderPaired', function () {
 				settlementAmount = ether(0)
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
-				await platform.joinAsTrader(investorProfitPercent, {from: trader2})
+				await platform.joinAsTrader({from: trader2})
 				await platform.joinAsInvestor({from: investor2})
 				await platform.allocate(ETHER, ether(1), {from: trader2})
 				await platform.investEther(trader2, {from: investor2, value: amount})
@@ -1130,7 +1130,7 @@ describe('TraderPaired', function () {
 				settlementAmount = ether(0.001)
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
-				await platform.joinAsTrader(investorProfitPercent, {from: trader2})
+				await platform.joinAsTrader({from: trader2})
 				await platform.joinAsInvestor({from: investor2})
 				await platform.allocate(ETHER, ether(1), {from: trader2})
 				await platform.investEther(trader2, {from: investor2, value: amount})
@@ -1326,7 +1326,7 @@ describe('TraderPaired', function () {
 				settlementAmount = tokens(0.08) // 0.079 + 0.001
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
-				await platform.joinAsTrader(investorProfitPercent, {from: trader2})
+				await platform.joinAsTrader({from: trader2})
 				await platform.joinAsInvestor({from: investor2})
 				await platform.allocate(token.address, tokens(1), {from: trader2})
 				await token.approve(platform.address, amount, { from: investor2 })
@@ -1375,7 +1375,7 @@ describe('TraderPaired', function () {
 				settlementAmount = tokens(0)
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
-				await platform.joinAsTrader(investorProfitPercent, {from: trader2})
+				await platform.joinAsTrader({from: trader2})
 				await platform.joinAsInvestor({from: investor2})
 				await platform.allocate(token.address, tokens(1), {from: trader2})
 				await token.approve(platform.address, amount, { from: investor2 })
@@ -1417,7 +1417,7 @@ describe('TraderPaired', function () {
 				settlementAmount = tokens(0.001)
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
-				await platform.joinAsTrader(investorProfitPercent, {from: trader2})
+				await platform.joinAsTrader({from: trader2})
 				await platform.joinAsInvestor({from: investor2})
 				await platform.allocate(token.address, tokens(1), {from: trader2})
 				await token.approve(platform.address, amount, { from: investor2 })
@@ -1463,7 +1463,7 @@ describe('TraderPaired', function () {
 			investmentId = 1
 			investorProfitPercent = 8000
 
-			await platform.joinAsTrader(investorProfitPercent, {from: trader1})
+			await platform.joinAsTrader({from: trader1})
 			await platform.joinAsInvestor({from: investor1})
 		})
 
@@ -1803,7 +1803,7 @@ describe('TraderPaired', function () {
 			investmentId = 1
 			let investorProfitPercent = 8000
 
-			await platform.joinAsTrader(investorProfitPercent, {from: trader1})
+			await platform.joinAsTrader({from: trader1})
 			await platform.joinAsInvestor({from: investor1})
 			
 		})

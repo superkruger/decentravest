@@ -18,6 +18,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
     address public feeAccount; // account that will receive fees
     uint256 public traderFeePercent; // trader fee percentage in unit of 100, i.e. 100 == 1% and 5 == 0.05% and 10000 == 100%
     uint256 public investorFeePercent; // investor fee percentage in unit of 100, i.e. 100 == 1% and 5 == 0.05% and 10000 == 100%
+    uint256 public investorProfitPercent;
     uint256 public secondsToForceExit; // number of seconds required before an exit can be forced
     
     mapping(uint256 => _Investment) public investments;
@@ -39,7 +40,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
     mapping(uint256 => address) public investorList;
 
     event SetToken(address indexed token, bool valid);
-    event Trader(address indexed trader, uint256 traderId, uint256 investorProfitPercent);
+    event Trader(address indexed trader, uint256 traderId);
     event Investor(address indexed investor, uint256 investorId);
     event Allocate(address indexed trader, address token, uint256 amount);
     event Withdraw(address indexed token, address indexed user, uint256 amount, uint256 balance);
@@ -58,7 +59,6 @@ contract TraderPaired is Initializable, Ownable, Pausable {
     struct _Trader {
         uint256 id;
         address payable user;
-        uint256 investorProfitPercent;
         uint256 investmentCount;
     }
 
@@ -90,7 +90,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         InvestmentState state;
     }
 
-    function initialize(address payable _feeAccount, uint256 _traderFeePercent, uint256 _investorFeePercent, uint256 _secondsToForceExit) public initializer {
+    function initialize(address payable _feeAccount, uint256 _traderFeePercent, uint256 _investorFeePercent, uint256 _investorProfitPercent, uint256 _secondsToForceExit) public initializer {
         Ownable.initialize(msg.sender);
         Pausable.initialize(msg.sender);
 
@@ -98,6 +98,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         feeAccount = _feeAccount;
         traderFeePercent = _traderFeePercent;
         investorFeePercent = _investorFeePercent;
+        investorProfitPercent = _investorProfitPercent;
         secondsToForceExit = _secondsToForceExit;
     }
 
@@ -111,13 +112,9 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         emit SetToken(_token, _valid);
     }
 
-    function joinAsTrader(uint256 _investorProfitPercent) external whenNotPaused {
+    function joinAsTrader() external whenNotPaused {
         require(traders[msg.sender].user == address(0));
         require(investors[msg.sender].user == address(0));
-
-        require(
-            _investorProfitPercent < 10000 && 
-            _investorProfitPercent >= investorFeePercent);
 
         traderCount = traderCount.add(1);
         traderList[traderCount] = msg.sender;
@@ -125,12 +122,10 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         traders[msg.sender] = _Trader({
             id: traderCount, 
             user: msg.sender, 
-            investorProfitPercent: _investorProfitPercent, 
             investmentCount: 0
         });
-        
 
-        emit Trader(msg.sender, traderCount, _investorProfitPercent);
+        emit Trader(msg.sender, traderCount);
     }
 
     function joinAsInvestor() external whenNotPaused {
@@ -248,8 +243,8 @@ contract TraderPaired is Initializable, Ownable, Pausable {
 
         if (_value > investment.amount) {
             // profit
-            uint256 _investorProfitPercent = _trader.investorProfitPercent.sub(investorFeePercent);
-            uint256 _traderProfitPercent = uint256(10000).sub(_trader.investorProfitPercent).sub(traderFeePercent);
+            uint256 _investorProfitPercent = investorProfitPercent.sub(investorFeePercent);
+            uint256 _traderProfitPercent = uint256(10000).sub(investorProfitPercent).sub(traderFeePercent);
 
             uint256 _profit = _value - investment.amount;
             uint256 _investorProfit = _profit.mul(_investorProfitPercent).div(10000);

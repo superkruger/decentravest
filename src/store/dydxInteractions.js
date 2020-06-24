@@ -11,7 +11,7 @@ import { etherToWei } from '../helpers'
 export const loadTraderPositions = async (account, dispatch) => {
 	try {
 		// TODO: real account
-		axios.get('https://api.dydx.exchange/v1/positions?owner=0x6b98d58200439399218157B4A3246DA971039460')// + account)
+		axios.get('https://api.dydx.exchange/v1/positions?status=CLOSED&owner=0x6b98d58200439399218157B4A3246DA971039460')// + account)
 		  .then(function (response) {
 		    // handle success
 		    console.log('Response', response)
@@ -40,13 +40,29 @@ const mapTraderPositions = (positions, dispatch) => {
 }
 
 const mapTraderPosition = (position, dispatch) => {
+	const mappedStandardActions = mapStandardActions(position.standardActions)
+	
+	const fee = mappedStandardActions.reduce((total, action) => {
+		return total.plus(action.convertedFeeAmount)
+	}, new BigNumber(0))
+
+	let profit = new BigNumber(0)
+	const transfers = mappedStandardActions.filter(action => action.transferAmount)
+	if (transfers.length > 1) {
+		profit = transfers[0].transferAmount.minus(transfers[transfers.length - 1].transferAmount)
+	}
+
 	const mappedPosition = ({
 		uuid: position.uuid,
 		type: position.type,
 		status: position.status,
+		asset: mappedStandardActions[0].asset,
 		market: position.market,
 		createdAt: moment(position.createdAt),
-		standardActions: mapStandardActions(position.standardActions)
+		profit: profit,
+		fee: fee,
+		nettProfit: profit.minus(fee),
+		standardActions: mappedStandardActions
 	})
 
 	dispatch(traderPositionLoaded(mappedPosition))
@@ -64,27 +80,39 @@ const mapStandardActions = (standardActions) => {
 }
 
 const mapStandardAction = (standardAction) => {
-	const transferAmount = new BigNumber(standardAction.transferAmount)
-	const price = new BigNumber(standardAction.price)
-	let ethTransferAmount = transferAmount.toString()
+	const transferAmount = standardAction.transferAmount ? new BigNumber(standardAction.transferAmount) : null
+	const price = standardAction.price ? new BigNumber(standardAction.price) : null
+	const feeAmount = standardAction.feeAmount ? new BigNumber(standardAction.feeAmount) : null
+	const feeAsset = standardAction.feeAsset
+	let convertedFeeAmount = feeAmount
+	// let ethTransferAmount = transferAmount.toString()
 
-	if (standardAction.asset === 'DAI') {
-		ethTransferAmount = etherToWei(transferAmount.dividedBy(price.times(new BigNumber(10).exponentiatedBy(18)))).toString()
+	// if (standardAction.asset === 'DAI') {
+	// 	ethTransferAmount = etherToWei(transferAmount.dividedBy(price.times(new BigNumber(10).exponentiatedBy(18)))).toString()
+	// }
+
+	if (feeAsset) {
+		if(standardAction.asset !== standardAction.feeAsset) {
+			convertedFeeAmount = feeAmount.dividedBy(price)
+		}
+	} else {
+		convertedFeeAmount = new BigNumber(0)
 	}
 
 	const mappedStandardAction = ({
 		uuid: standardAction.uuid,
 		type: standardAction.type,
 		transferAmount: transferAmount,
-		ethTransferAmount: ethTransferAmount,
+		// ethTransferAmount: ethTransferAmount,
 		tradeAmount: new BigNumber(standardAction.tradeAmount),
 		price: price,
 		asset: standardAction.asset,
 		side: standardAction.side,
 		transactionHash: standardAction.transactionHash,
 		confirmedAt: moment(standardAction.confirmedAt),
-		feeAmount: new BigNumber(standardAction.feeAmount),
-		feeAsset: standardAction.feeAsset
+		feeAmount: feeAmount,
+		feeAsset: feeAsset,
+		convertedFeeAmount: convertedFeeAmount
 	})
 
 	return mappedStandardAction

@@ -3,7 +3,7 @@ import TraderPaired from '../abis/TraderPaired.json'
 import { 
 	web3Loaded,
 	web3AccountLoaded,
-	crowdvestLoaded,
+	traderPairedLoaded,
 	traderLoaded,
 	investorLoaded
 } from './actions.js'
@@ -22,34 +22,43 @@ export const loadAccount = async (web3, dispatch) => {
 	return account
 }
 
-export const loadCrowdvest = async (account, web3, networkId, dispatch) => {
+export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 	try {
+		if (TraderPaired.networks[networkId] !== undefined) {
+			// console.log("TraderPaired address: ", TraderPaired.networks[networkId].address)
+			const traderPaired = await new web3.eth.Contract(TraderPaired.abi, TraderPaired.networks[networkId].address, {handleRevert: true})
 
-		console.log("TraderPaired address: ", TraderPaired.networks[networkId].address)
-		const crowdvest = await new web3.eth.Contract(TraderPaired.abi, TraderPaired.networks[networkId].address, {handleRevert: true})
+			const trader = await traderPaired.methods.traders(account).call()
+			const investor = await traderPaired.methods.investors(account).call()
 
-		const trader = await crowdvest.methods.traders(account).call()
-		const investor = await crowdvest.methods.investors(account).call()
+			if (trader.id !== '0') {
+				dispatch(traderLoaded(trader))
+			}
+			if (investor.id !== '0') {
+				dispatch(investorLoaded(investor))
+			}
 
-		if (trader.id !== 0) {
-			dispatch(traderLoaded(trader))
+			dispatch(traderPairedLoaded(traderPaired))
+			return traderPaired
 		}
-		if (investor.id !== 0) {
-			dispatch(investorLoaded(investor))
-		}
-
-		dispatch(crowdvestLoaded(crowdvest))
-		return crowdvest
 	} catch (error) {
 		console.log('Contract not deployed to the current network', error)
-		return null
 	}
+	return null
 }
 
-export const joinAsTrader = async (account, crowdvest, dispatch) => {
+export const joinAsTrader = async (account, traderPaired, dispatch) => {
 	try {
-		crowdvest.methods.joinAsTrader(8000).send({from: account})
+		traderPaired.methods.joinAsTrader().send({from: account})
 		.on('transactionHash', (hash) => {
+		})
+		.on('receipt', async (receipt) => {
+
+			const trader = await traderPaired.methods.traders(account).call()
+
+			if (trader.id !== '0') {
+				dispatch(traderLoaded(trader))
+			}
 		})
 		.on('error', (error) => {
 			console.log('Could not joinAsTrader', error)
@@ -60,10 +69,19 @@ export const joinAsTrader = async (account, crowdvest, dispatch) => {
 	}
 }
 
-export const joinAsInvestor = async (account, crowdvest, dispatch) => {
+export const joinAsInvestor = async (account, traderPaired, dispatch) => {
 	try {
-		crowdvest.methods.joinAsInvestor().send({from: account})
-		.on('transactionHash', (hash) => {
+		traderPaired.methods.joinAsInvestor().send({from: account})
+		.on('transactionHash', async (hash) => {
+			
+		})
+		.on('receipt', async (receipt) => {
+
+			const investor = await traderPaired.methods.investors(account).call()
+			
+			if (investor.id !== '0') {
+				dispatch(investorLoaded(investor))
+			}
 		})
 		.on('error', (error) => {
 			console.log('Could not joinAsInvestor', error)
@@ -74,17 +92,8 @@ export const joinAsInvestor = async (account, crowdvest, dispatch) => {
 	}
 }
 
-// export const subscribeToCrowdVestEvents = async (crowdsale, dispatch) => {
-// 	crowdsale.events.ProjectStarted({}, (error, event) => {
+// export const subscribeTotTaderPairedEvents = async (traderPaired, dispatch) => {
+// 	traderPaired.events.ProjectStarted({}, (error, event) => {
 // 		dispatch(projectStarted(event.returnValues))
-// 	})
-// }
-
-// export const subscribeToProjectEvents = async (project, account, crowdsale, web3, dispatch) => {
-// 	project.events.FundingReceived({}, (error, event) => {
-// 		dispatch(fundingReceived(event.returnValues))
-// 	})
-// 	project.events.CreatorPaid({}, (error, event) => {
-// 		dispatch(creatorPaid(event.returnValues))
 // 	})
 // }
