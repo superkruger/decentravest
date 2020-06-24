@@ -10,8 +10,8 @@ module.exports = {
       protocol: 'http',
       host: 'localhost',
       port: 8545,
-      gas: 5000000,
-      gasPrice: 5e9,
+      gas: 6721975,
+      gasPrice: 20000000000,
       networkId: '*',
     },
     ropsten: {

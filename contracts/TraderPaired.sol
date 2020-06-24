@@ -2,15 +2,17 @@
 pragma solidity >=0.4.21 <0.7.0;
 
 import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
+import "@openzeppelin/upgrades/contracts/Initializable.sol";
+import "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/lifecycle/Pausable.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
 
-contract TraderPaired is Pausable {
+contract TraderPaired is Initializable, Ownable, Pausable {
     
 
 	using SafeMath for uint256;
 
-    bool private initialized;
+    mapping(address => bool) public tokens;
 
     address constant ETHER = address(0); // allows storage of ether in blank address in token mapping
     address public feeAccount; // account that will receive fees
@@ -35,6 +37,7 @@ contract TraderPaired is Pausable {
     mapping(uint256 => address) public traderList;
     mapping(uint256 => address) public investorList;
 
+    event SetToken(address indexed token, bool valid);
     event Trader(address indexed trader, uint256 traderId, uint256 investorProfitPercent);
     event Investor(address indexed investor, uint256 investorId);
     event Allocate(address indexed trader, address token, uint256 amount);
@@ -85,10 +88,11 @@ contract TraderPaired is Pausable {
         InvestmentState state;
     }
 
-    function initialize(address payable _feeAccount, uint256 _traderFeePercent, uint256 _investorFeePercent) public {
-        require(!initialized);
-        initialized = true;
+    function initialize(address payable _feeAccount, uint256 _traderFeePercent, uint256 _investorFeePercent) public initializer {
+        Ownable.initialize(msg.sender);
+        Pausable.initialize(msg.sender);
 
+        tokens[ETHER] = true;
         feeAccount = _feeAccount;
         traderFeePercent = _traderFeePercent;
         investorFeePercent = _investorFeePercent;
@@ -99,9 +103,14 @@ contract TraderPaired is Pausable {
         revert();
     }
 
+    function setToken(address _token, bool _valid) external onlyOwner {
+        tokens[_token] = _valid;
+        emit SetToken(_token, _valid);
+    }
+
     function joinAsTrader(uint256 _investorProfitPercent) external whenNotPaused {
-        require(traders[msg.sender].user == address(0), "Already registered as trader");
-        require(investors[msg.sender].user == address(0), "Already registered as investor");
+        require(traders[msg.sender].user == address(0));
+        require(investors[msg.sender].user == address(0));
 
         require(
             _investorProfitPercent < 10000 && 
@@ -122,8 +131,8 @@ contract TraderPaired is Pausable {
     }
 
     function joinAsInvestor() external whenNotPaused {
-        require(traders[msg.sender].user == address(0), "Already registered as trader");
-        require(investors[msg.sender].user == address(0), "Already registered as investor");
+        require(traders[msg.sender].user == address(0));
+        require(investors[msg.sender].user == address(0));
 
         investorCount = investorCount.add(1);
         investorList[investorCount] = msg.sender;
@@ -137,14 +146,12 @@ contract TraderPaired is Pausable {
     }
 
     function allocate(address _token, uint256 _amount) external whenNotPaused {
+        require(tokens[_token]);
         _Trader memory _trader = traders[msg.sender];
         require(_trader.user == msg.sender);
-        require(allocations[msg.sender][_token].total == 0);
+        // require(allocations[msg.sender][_token].total == 0);
 
-        allocations[msg.sender][_token] = _Allocation({
-                total: _amount,
-                invested: 0
-            });
+        allocations[msg.sender][_token].total = _amount;
 
         emit Allocate(msg.sender, _token, _amount);
     }
@@ -161,21 +168,22 @@ contract TraderPaired is Pausable {
     */
     function investToken(address _traderAddress, address _token, uint256 _amount) external whenNotPaused {
         require(IERC20(_token).transferFrom(msg.sender, address(this), _amount));
-        //require(IERC20(_token).transfer(address(this), _amount));
         _invest(_traderAddress, _token, _amount);
     }
 
     function _invest(address _traderAddress, address _token, uint256 _amount) internal {
+        require(tokens[_token]);
         _Investor storage _investor = investors[msg.sender];
         require(_investor.user == msg.sender);
 
         _Trader storage _trader = traders[_traderAddress];
         require(_trader.user == _traderAddress);
 
-        // falls within trader allocations
-        require(allocations[_trader.user][_token].total - allocations[_trader.user][_token].invested >= _amount);
+        _Allocation storage allocation = allocations[_trader.user][_token];
 
-        allocations[_trader.user][_token].invested = allocations[_trader.user][_token].invested.add(_amount);
+        // falls within trader allocations
+        require(allocation.total - allocation.invested >= _amount);
+        allocation.invested = allocation.invested.add(_amount);
         
         investmentCount = investmentCount.add(1);
         investments[investmentCount] = _Investment({
@@ -215,48 +223,51 @@ contract TraderPaired is Pausable {
     function requestExit(address _traderAddress, uint256 _investmentId, uint256 _value) external whenNotPaused {
         _Trader storage _trader = traders[_traderAddress];
         require(_trader.user == _traderAddress);
-        require(investments[_investmentId].investor == msg.sender);
-        require(investments[_investmentId].trader == _traderAddress);
-        require(investments[_investmentId].state == InvestmentState.Invested);
 
-        if (_value > investments[_investmentId].amount) {
+        _Investment storage investment = investments[_investmentId];
+
+        require(investment.investor == msg.sender);
+        require(investment.trader == _traderAddress);
+        require(investment.state == InvestmentState.Invested);
+
+        if (_value > investment.amount) {
             // profit
             uint256 _investorProfitPercent = _trader.investorProfitPercent.sub(investorFeePercent);
             uint256 _traderProfitPercent = uint256(10000).sub(_trader.investorProfitPercent).sub(traderFeePercent);
 
-            uint256 _profit = _value - investments[_investmentId].amount;
+            uint256 _profit = _value - investment.amount;
             uint256 _investorProfit = _profit.mul(_investorProfitPercent).div(10000);
             uint256 _traderProfit = _profit.mul(_traderProfitPercent).div(10000);
             uint256 _fee = _profit.sub(_investorProfit).sub(_traderProfit);
             uint256 _investorFee = _fee.div(2);
             uint256 _traderFee = _fee.sub(_investorFee);
 
-            investments[_investmentId].traderProfit = _traderProfit;
-            investments[_investmentId].investorProfit = _investorProfit;
-            investments[_investmentId].traderFee = _traderFee;
-            investments[_investmentId].investorFee = _investorFee;
+            investment.traderProfit = _traderProfit;
+            investment.investorProfit = _investorProfit;
+            investment.traderFee = _traderFee;
+            investment.investorFee = _investorFee;
 
         } else {
             // break even or loss
-            investments[_investmentId].traderProfit = 0;
-            investments[_investmentId].investorProfit = 0;
-            investments[_investmentId].traderFee = (investments[_investmentId].amount.sub(_value)).mul(traderFeePercent).div(10000);
-            investments[_investmentId].investorFee = 0;
+            investment.traderProfit = 0;
+            investment.investorProfit = 0;
+            investment.traderFee = (investment.amount.sub(_value)).mul(traderFeePercent).div(10000);
+            investment.investorFee = 0;
         }
 
-        investments[_investmentId].endDate = now;
-        investments[_investmentId].value = _value;
-        investments[_investmentId].state = InvestmentState.ExitRequested;
+        investment.endDate = now;
+        investment.value = _value;
+        investment.state = InvestmentState.ExitRequested;
 
         emit RequestExit(
             _traderAddress, 
             _investmentId, 
-            investments[_investmentId].endDate, 
+            investment.endDate, 
             _value, 
-            investments[_investmentId].traderProfit, 
-            investments[_investmentId].investorProfit, 
-            investments[_investmentId].traderFee,
-            investments[_investmentId].investorFee
+            investment.traderProfit, 
+            investment.investorProfit, 
+            investment.traderFee,
+            investment.investorFee
         );
     }
 
@@ -282,68 +293,71 @@ contract TraderPaired is Pausable {
         Trader approves the exit by paying the nett profit back to the contract, under the name of the investor
     */
     function approveExitEther(uint256 _investmentId, address _investorAddress) external payable whenNotPaused {
-        approveExit(_investmentId, _investorAddress, ETHER, msg.value);
+        approveExit(_investmentId, _investorAddress, msg.value);
     }
 
     /**
         Trader approves the exit by paying the nett profit back to the contract, under the name of the investor
     */
-    function approveExitToken(uint256 _investmentId, address _investorAddress, address _token, uint256 _amount) external whenNotPaused {
-        require(IERC20(_token).transferFrom(msg.sender, address(this), _amount));
-        approveExit(_investmentId, _investorAddress, _token, _amount);
+    function approveExitToken(uint256 _investmentId, address _investorAddress, uint256 _amount) external whenNotPaused {
+        require(IERC20(investments[_investmentId].token).transferFrom(msg.sender, address(this), _amount));
+        approveExit(_investmentId, _investorAddress, _amount);
     }
 
-    function approveExit(uint256 _investmentId, address _investorAddress, address _token, uint256 _amount) internal {
+    function approveExit(uint256 _investmentId, address _investorAddress, uint256 _amount) internal {
         _Trader storage _trader = traders[msg.sender];
         require(_trader.user == msg.sender);
         _Investor storage _investor = investors[_investorAddress];
+        _Investment storage investment = investments[_investmentId];
         require(_investor.user == _investorAddress);
-        require(investments[_investmentId].trader == msg.sender);
-        require(investments[_investmentId].state == InvestmentState.ExitRequested);
+        require(investment.trader == msg.sender);
+        require(investment.state == InvestmentState.ExitRequested);
+
+        address _token = investment.token;
 
         require(
-                investments[_investmentId].investorProfit
-                .add(investments[_investmentId].traderFee) == _amount
+                investment.investorProfit
+                .add(investment.traderFee) == _amount
             );
 
-        if (investments[_investmentId].value > investments[_investmentId].amount) {
+        if (investment.value > investment.amount) {
             // investment amount plus profit (minus fee)
             balances[_investorAddress][_token] = balances[_investorAddress][_token].add(
-                investments[_investmentId].amount.add(
-                    investments[_investmentId].investorProfit
+                investment.amount.add(
+                    investment.investorProfit
                 )
             );
             
             // fees
             balances[feeAccount][_token] = balances[feeAccount][_token]
-                .add(investments[_investmentId].traderFee)
-                .add(investments[_investmentId].investorFee);
+                .add(investment.traderFee)
+                .add(investment.investorFee);
 
         } else {
             // take losses away from investor
-            balances[_investorAddress][_token] = balances[_investorAddress][_token].add(investments[_investmentId].value);
+            balances[_investorAddress][_token] = balances[_investorAddress][_token].add(investment.value);
             
             // add losses to trader balance
             balances[msg.sender][_token] = balances[msg.sender][_token]
-                .add(investments[_investmentId].amount
-                    .sub(investments[_investmentId].value)
-                    .sub(investments[_investmentId].traderFee)
+                .add(investment.amount
+                    .sub(investment.value)
+                    .sub(investment.traderFee)
                 );
 
             // fees
             balances[feeAccount][_token] = balances[feeAccount][_token]
-                .add(investments[_investmentId].traderFee);
+                .add(investment.traderFee);
         }
 
-        allocations[_trader.user][investments[_investmentId].token].invested = allocations[_trader.user][investments[_investmentId].token].invested.sub(investments[_investmentId].amount);
+        allocations[_trader.user][investment.token].invested = allocations[_trader.user][investment.token].invested.sub(investment.amount);
         
-        investments[_investmentId].state = InvestmentState.Divested;
+        investment.state = InvestmentState.Divested;
 
         emit ApproveExit(
             msg.sender,
             _investmentId,
-            investments[_investmentId].traderProfit,
-            investments[_investmentId].investorProfit
+            investment.traderProfit,
+            investment.investorProfit
         );
     }
 

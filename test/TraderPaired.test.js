@@ -29,7 +29,9 @@ describe('TraderPaired', function () {
     	await token.transfer(investor2, tokens(100), { from: deployer })
 
 		platform = await TraderPaired.new()
+		console.log("Size", platform.constructor._json.bytecode.length)
 		await platform.initialize(feeAccount, traderFeePercent, investorFeePercent)
+		await platform.setToken(token.address, true)
 	})
 
 	describe('deployment', () => {
@@ -184,6 +186,7 @@ describe('TraderPaired', function () {
 
 			it('tracks ether allocation', async () => {
 				let allocation = await platform.allocations(trader1, ETHER)
+
 				allocation.total.toString().should.eq(amount.toString())
 				allocation.invested.toString().should.eq('0')
 			})
@@ -233,11 +236,6 @@ describe('TraderPaired', function () {
 
 			it('not a trader', async () => {
 				result = await platform.allocate(ETHER, amount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
-			})
-
-			it('already allocated', async () => {
-				await platform.allocate(ETHER, amount, {from: trader1})
-				result = await platform.allocate(ETHER, amount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 		})
 	})
@@ -964,7 +962,7 @@ describe('TraderPaired', function () {
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, token.address, settlementAmount, {from: trader1})
+				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1})
 			})
 
 			it('tracks approve', async () => {
@@ -1017,7 +1015,7 @@ describe('TraderPaired', function () {
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, token.address, settlementAmount, {from: trader1})
+				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1})
 			})
 
 			it('tracks approve', async () => {
@@ -1069,7 +1067,7 @@ describe('TraderPaired', function () {
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, token.address, settlementAmount, {from: trader1})
+				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1})
 			})
 
 			it('tracks approve', async () => {
@@ -1129,30 +1127,30 @@ describe('TraderPaired', function () {
 
 			it('not a trader', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, token.address, settlementAmount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('wrong settlementAmount', async () => {
 				settlementAmount = tokens(0.07)
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('investment not with trader', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(2, investor1, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(2, investor1, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('trader not found', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, token.address, settlementAmount, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('not in correct state', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				await platform.approveExitToken(investmentId, investor1, token.address, settlementAmount, {from: trader1})
+				await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1})
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 		})
 
@@ -1178,23 +1176,23 @@ describe('TraderPaired', function () {
 
 			it('not a trader', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, token.address, settlementAmount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('wrong settlementAmount', async () => {
 				settlementAmount = tokens(0.1)
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('investment not with trader', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(2, investor1, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(2, investor1, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('trader not found', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, token.address, settlementAmount, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
 			})
 		})
 
@@ -1220,23 +1218,23 @@ describe('TraderPaired', function () {
 
 			it('not a trader', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, token.address, settlementAmount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('wrong settlementAmount', async () => {
 				settlementAmount = ether(0.0001)
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('investment not with trader', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(2, investor1, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(2, investor1, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('trader not found', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, token.address, settlementAmount, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
 			})
 		})
 	})
@@ -1426,7 +1424,7 @@ describe('TraderPaired', function () {
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
 				await token.approve(platform.address, settlementAmount, {from: trader1})
-				await platform.approveExitToken(investmentId, investor1, token.address, settlementAmount, {from: trader1})
+				await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1})
 				result = await platform.withdrawToken(token.address, withdrawAmount, {from: investor1})
 			})
 
@@ -1468,7 +1466,7 @@ describe('TraderPaired', function () {
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
 				await token.approve(platform.address, settlementAmount, {from: trader1})
-				await platform.approveExitToken(investmentId, investor1, token.address, settlementAmount, {from: trader1})
+				await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1})
 				result = await platform.withdrawToken(token.address, withdrawAmount, {from: feeAccount})
 			})
 
@@ -1510,7 +1508,7 @@ describe('TraderPaired', function () {
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
 				await token.approve(platform.address, settlementAmount, {from: trader1})
-				await platform.approveExitToken(investmentId, investor1, token.address, settlementAmount, {from: trader1})
+				await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1})
 				result = await platform.withdrawToken(token.address, withdrawAmount, {from: trader1})
 			})
 
@@ -1552,7 +1550,7 @@ describe('TraderPaired', function () {
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
 				await token.approve(platform.address, settlementAmount, {from: trader1})
-				await platform.approveExitToken(investmentId, investor1, token.address, settlementAmount, {from: trader1})
+				await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1})
 			})
 
 			it('not an investor', async () => {
