@@ -26,3 +26,5 @@ export const addEther = (a, b) => {
 }
 
 export const addTokens = (a, b) => addEther(a, b)
+
+export const wait = ms => new Promise(resolve => setTimeout(resolve, ms))

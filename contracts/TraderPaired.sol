@@ -18,6 +18,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
     address public feeAccount; // account that will receive fees
     uint256 public traderFeePercent; // trader fee percentage in unit of 100, i.e. 100 == 1% and 5 == 0.05% and 10000 == 100%
     uint256 public investorFeePercent; // investor fee percentage in unit of 100, i.e. 100 == 1% and 5 == 0.05% and 10000 == 100%
+    uint256 public secondsToForceExit; // number of seconds required before an exit can be forced
     
     mapping(uint256 => _Investment) public investments;
     uint256 public investmentCount;
@@ -76,6 +77,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         uint256 id;
         address payable trader;
         address payable investor;
+        bool forced;
         address token;
         uint256 amount;
         uint256 startDate;
@@ -88,7 +90,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         InvestmentState state;
     }
 
-    function initialize(address payable _feeAccount, uint256 _traderFeePercent, uint256 _investorFeePercent) public initializer {
+    function initialize(address payable _feeAccount, uint256 _traderFeePercent, uint256 _investorFeePercent, uint256 _secondsToForceExit) public initializer {
         Ownable.initialize(msg.sender);
         Pausable.initialize(msg.sender);
 
@@ -96,6 +98,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         feeAccount = _feeAccount;
         traderFeePercent = _traderFeePercent;
         investorFeePercent = _investorFeePercent;
+        secondsToForceExit = _secondsToForceExit;
     }
 
     // reverts if ether is sent directly
@@ -190,6 +193,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
                 id: investmentCount,
                 trader: _trader.user,
                 investor: _investor.user,
+                forced: false,
                 token: _token,
                 amount: _amount,
                 startDate: now,
@@ -226,9 +230,21 @@ contract TraderPaired is Initializable, Ownable, Pausable {
 
         _Investment storage investment = investments[_investmentId];
 
-        require(investment.investor == msg.sender);
         require(investment.trader == _traderAddress);
-        require(investment.state == InvestmentState.Invested);
+        require(investment.investor == msg.sender);
+
+        if (investment.endDate == 0) {
+            require(investment.state == InvestmentState.Invested);
+        } else {
+            require(investment.state == InvestmentState.ExitRequested);
+            require(!investment.forced); // not yet forced
+            require((now - investment.endDate) >= secondsToForceExit); // can force an exit
+            require(investment.value == _value); // value is still the same
+
+            investment.forced = true;
+        }
+
+        address _token = investment.token;
 
         if (_value > investment.amount) {
             // profit
@@ -247,12 +263,33 @@ contract TraderPaired is Initializable, Ownable, Pausable {
             investment.traderFee = _traderFee;
             investment.investorFee = _investorFee;
 
+            if (investment.forced) {
+                // when forcing an exit with profit, the amount is immediately returned to the investor
+                balances[msg.sender][_token] = balances[msg.sender][_token].add(
+                    investment.amount
+                );
+
+                // immediately pay investor fee
+                balances[feeAccount][_token] = balances[feeAccount][_token]
+                    .add(investment.investorFee);
+            }
+
         } else {
             // break even or loss
             investment.traderProfit = 0;
             investment.investorProfit = 0;
             investment.traderFee = (investment.amount.sub(_value)).mul(traderFeePercent).div(10000);
             investment.investorFee = 0;
+
+            if (investment.forced) {
+                // take losses away from investor
+                balances[msg.sender][_token] = balances[msg.sender][_token].add(_value);
+
+                // when forcing an exit with loss, the losses are immedately returned to the trader
+                balances[_traderAddress][_token] = balances[_traderAddress][_token].add(
+                    investment.amount.sub(_value).sub(investment.traderFee)
+                );
+            }
         }
 
         investment.endDate = now;
@@ -260,7 +297,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         investment.state = InvestmentState.ExitRequested;
 
         emit RequestExit(
-            _traderAddress, 
+            _traderAddress,
             _investmentId, 
             investment.endDate, 
             _value, 
@@ -292,25 +329,28 @@ contract TraderPaired is Initializable, Ownable, Pausable {
     /**
         Trader approves the exit by paying the nett profit back to the contract, under the name of the investor
     */
-    function approveExitEther(uint256 _investmentId, address _investorAddress) external payable whenNotPaused {
-        approveExit(_investmentId, _investorAddress, msg.value);
+    function approveExitEther(address _investorAddress, uint256 _investmentId) external payable whenNotPaused {
+        approveExit(_investorAddress, _investmentId, msg.value);
     }
 
     /**
         Trader approves the exit by paying the nett profit back to the contract, under the name of the investor
     */
-    function approveExitToken(uint256 _investmentId, address _investorAddress, uint256 _amount) external whenNotPaused {
+    function approveExitToken(address _investorAddress, uint256 _investmentId, uint256 _amount) external whenNotPaused {
         require(IERC20(investments[_investmentId].token).transferFrom(msg.sender, address(this), _amount));
-        approveExit(_investmentId, _investorAddress, _amount);
+        approveExit(_investorAddress, _investmentId, _amount);
     }
 
-    function approveExit(uint256 _investmentId, address _investorAddress, uint256 _amount) internal {
+    function approveExit(address _investorAddress, uint256 _investmentId, uint256 _amount) internal {
         _Trader storage _trader = traders[msg.sender];
         require(_trader.user == msg.sender);
         _Investor storage _investor = investors[_investorAddress];
         _Investment storage investment = investments[_investmentId];
         require(_investor.user == _investorAddress);
+       
         require(investment.trader == msg.sender);
+        require(investment.investor == _investorAddress);
+
         require(investment.state == InvestmentState.ExitRequested);
 
         address _token = investment.token;
@@ -321,30 +361,44 @@ contract TraderPaired is Initializable, Ownable, Pausable {
             );
 
         if (investment.value > investment.amount) {
-            // investment amount plus profit (minus fee)
-            balances[_investorAddress][_token] = balances[_investorAddress][_token].add(
-                investment.amount.add(
+            if (investment.forced) {
+                // investment profit (minus fee)
+                balances[_investorAddress][_token] = balances[_investorAddress][_token].add(
                     investment.investorProfit
-                )
-            );
-            
-            // fees
-            balances[feeAccount][_token] = balances[feeAccount][_token]
-                .add(investment.traderFee)
-                .add(investment.investorFee);
-
-        } else {
-            // take losses away from investor
-            balances[_investorAddress][_token] = balances[_investorAddress][_token].add(investment.value);
-            
-            // add losses to trader balance
-            balances[msg.sender][_token] = balances[msg.sender][_token]
-                .add(investment.amount
-                    .sub(investment.value)
-                    .sub(investment.traderFee)
                 );
 
-            // fees
+                // pay trader fee
+                balances[feeAccount][_token] = balances[feeAccount][_token]
+                    .add(investment.traderFee);
+
+            } else {
+                // investment amount plus profit (minus fee)
+                balances[_investorAddress][_token] = balances[_investorAddress][_token].add(
+                    investment.amount.add(
+                        investment.investorProfit
+                    )
+                );
+
+                // pay trader and investor fee
+                balances[feeAccount][_token] = balances[feeAccount][_token]
+                    .add(investment.traderFee)
+                    .add(investment.investorFee);
+            }
+            
+        } else {
+            if (!investment.forced) {
+                // take losses away from investor
+                balances[_investorAddress][_token] = balances[_investorAddress][_token].add(investment.value);
+                
+                // add losses to trader balance
+                balances[msg.sender][_token] = balances[msg.sender][_token]
+                    .add(investment.amount
+                        .sub(investment.value)
+                        .sub(investment.traderFee)
+                    );
+            }
+
+            // trader fee
             balances[feeAccount][_token] = balances[feeAccount][_token]
                 .add(investment.traderFee);
         }

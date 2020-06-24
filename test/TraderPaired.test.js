@@ -4,7 +4,7 @@ const { BN, expectEvent, expectRevert, balance } = require('@openzeppelin/test-h
 const TraderPaired = contract.fromArtifact('TraderPaired');
 const Token = contract.fromArtifact('@openzeppelin/contracts-ethereum-package/StandaloneERC20');
 
-import { ether, tokens, addEther, addTokens, EVM_REVERT, ETHER } from './helpers'
+import { wait, ether, tokens, addEther, addTokens, EVM_REVERT, ETHER } from './helpers'
 
 require('chai')
 	.use(require('chai-as-promised'))
@@ -29,9 +29,11 @@ describe('TraderPaired', function () {
     	await token.transfer(investor2, tokens(100), { from: deployer })
 
 		platform = await TraderPaired.new()
-		console.log("Size", platform.constructor._json.bytecode.length)
-		await platform.initialize(feeAccount, traderFeePercent, investorFeePercent)
-		await platform.setToken(token.address, true)
+		// console.log("Size", platform.constructor._json.bytecode.length)
+		await platform.initialize(feeAccount, traderFeePercent, investorFeePercent, 1, {from: deployer})
+		await platform.setToken(token.address, true, {from: deployer})
+		await platform.pause({from: deployer})
+		await platform.unpause({from: deployer})
 	})
 
 	describe('deployment', () => {
@@ -465,6 +467,7 @@ describe('TraderPaired', function () {
 				investmentObj.investorProfit.toString().should.eq(investorProfit.toString())
 				investmentObj.traderFee.toString().should.eq(traderFee.toString())
 				investmentObj.investorFee.toString().should.eq(investorFee.toString())
+				investmentObj.forced.should.eq(false)
 			})
 
 			it('emits an RequestExit event', async () => {
@@ -502,6 +505,7 @@ describe('TraderPaired', function () {
 				investmentObj.investorProfit.toString().should.eq('0')
 				investmentObj.traderFee.toString().should.eq('0')
 				investmentObj.investorFee.toString().should.eq('0')
+				investmentObj.forced.should.eq(false)
 			})
 
 			it('emits an RequestExit event', async () => {
@@ -539,6 +543,210 @@ describe('TraderPaired', function () {
 				investmentObj.investorProfit.toString().should.eq('0')
 				investmentObj.traderFee.toString().should.eq(ether(0.001).toString())
 				investmentObj.investorFee.toString().should.eq('0')
+				investmentObj.forced.should.eq(false)
+			})
+
+			it('emits an RequestExit event', async () => {
+				const log = result.logs[0]
+				log.event.should.eq('RequestExit')
+				const event = log.args
+				event.trader.toString().should.eq(trader1, 'trader is correct')
+				event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
+				event.date.toString().should.not.eq('0', 'date is correct')
+				event.value.toString().should.eq(value.toString(), 'value is correct')
+				event.traderProfit.toString().should.eq('0')
+				event.investorProfit.toString().should.eq('0')
+				event.traderFee.toString().should.eq(ether(0.001).toString())
+				event.investorFee.toString().should.eq('0')
+			})
+		})
+
+		describe('failure', () => {
+
+			beforeEach(async () => {
+				await platform.joinAsTrader(investorProfitPercent, {from: trader2})
+				await platform.joinAsInvestor({from: investor2})
+				await platform.allocate(ETHER, ether(1), {from: trader2})
+				await platform.investEther(trader2, {from: investor2, value: amount})
+			})
+
+			it('not an investor', async () => {
+				result = await platform.requestExit(trader1, investmentId, value, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+			})
+
+			it('investment not with trader', async () => {
+				result = await platform.requestExit(trader2, investmentId, value, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+			})
+
+			it('trader not found', async () => {
+				result = await platform.requestExit(dummy, investmentId, value, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+			})
+
+			it('not in correct state', async () => {
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
+				result = await platform.requestExit(trader1, investmentId, value, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+			})
+		})
+	})
+
+	describe('force request exit', () => {
+
+		let result
+		let amount
+		let value
+		let investorId
+		let traderId
+		let investmentId
+		let investorProfitPercent
+
+
+		beforeEach(async () => {
+			amount = ether(0.6)
+			value = ether(0.7)
+			investorId = 1
+			traderId = 1
+			investmentId = 1
+			investorProfitPercent = 8000
+
+			await platform.joinAsTrader(investorProfitPercent, {from: trader1})
+			await platform.joinAsInvestor({from: investor1})
+			await platform.allocate(ETHER, ether(1), {from: trader1})
+			await platform.investEther(trader1, {from: investor1, value: amount})
+		})
+
+		describe('profit success', () => {
+
+			let traderProfit, investorProfit, platformFee, traderFee, investorFee
+
+			beforeEach(async () => {
+				investorProfit = ether(0.1) * 79 / 100
+				traderProfit = ether(0.1) * 19 / 100
+				platformFee = ether(0.1) - (ether(0.1) * 19 / 100) - investorProfit
+				investorFee = platformFee / 2
+				traderFee = platformFee - investorFee
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
+				await wait(1000);
+				result = await platform.requestExit(trader1, investmentId, value, {from: investor1})
+			})
+
+			it('tracks request', async () => {
+				let investmentObj
+				investmentObj = await platform.investments(1)
+
+				investmentObj.trader.should.eq(trader1)
+				investmentObj.investor.should.eq(investor1)
+				investmentObj.endDate.toString().should.not.eq('0'.toString())
+				investmentObj.value.toString().should.eq(value.toString())
+				investmentObj.state.toString().should.eq('1')
+				investmentObj.traderProfit.toString().should.eq(traderProfit.toString())
+				investmentObj.investorProfit.toString().should.eq(investorProfit.toString())
+				investmentObj.traderFee.toString().should.eq(traderFee.toString())
+				investmentObj.investorFee.toString().should.eq(investorFee.toString())
+				investmentObj.forced.should.eq(true)
+
+				let traderBalance = await platform.balances(trader1, ETHER)
+				let investorBalance = await platform.balances(investor1, ETHER)
+				let feeAccountBalance = await platform.balances(feeAccount, ETHER)
+
+				traderBalance.toString().should.eq('0')
+				investorBalance.toString().should.eq(amount.toString())
+				feeAccountBalance.toString().should.eq(investorFee.toString())
+			})
+
+			it('emits an RequestExit event', async () => {
+				const log = result.logs[0]
+				log.event.should.eq('RequestExit')
+				const event = log.args
+				event.trader.toString().should.eq(trader1, 'trader is correct')
+				event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
+				event.date.toString().should.not.eq('0', 'date is correct')
+				event.value.toString().should.eq(value.toString(), 'value is correct')
+				event.traderProfit.toString().should.eq(traderProfit.toString())
+				event.investorProfit.toString().should.eq(investorProfit.toString())
+				event.traderFee.toString().should.eq(traderFee.toString())
+				event.investorFee.toString().should.eq(investorFee.toString())
+			})
+		})
+
+		describe('breakeven success', () => {
+
+			beforeEach(async () => {
+				value = ether(0.6)
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
+				await wait(1000);
+				result = await platform.requestExit(trader1, investmentId, value, {from: investor1})
+			})
+
+			it('tracks request', async () => {
+				let investmentObj
+				investmentObj = await platform.investments(1)
+
+				investmentObj.trader.should.eq(trader1)
+				investmentObj.investor.should.eq(investor1)
+				investmentObj.endDate.toString().should.not.eq('0'.toString())
+				investmentObj.value.toString().should.eq(value.toString())
+				investmentObj.state.toString().should.eq('1')
+				investmentObj.traderProfit.toString().should.eq('0')
+				investmentObj.investorProfit.toString().should.eq('0')
+				investmentObj.traderFee.toString().should.eq('0')
+				investmentObj.investorFee.toString().should.eq('0')
+				investmentObj.forced.should.eq(true)
+
+				let traderBalance = await platform.balances(trader1, ETHER)
+				let investorBalance = await platform.balances(investor1, ETHER)
+				let feeAccountBalance = await platform.balances(feeAccount, ETHER)
+
+				traderBalance.toString().should.eq('0')
+				investorBalance.toString().should.eq(value.toString())
+				feeAccountBalance.toString().should.eq('0')
+			})
+
+			it('emits an RequestExit event', async () => {
+				const log = result.logs[0]
+				log.event.should.eq('RequestExit')
+				const event = log.args
+				event.trader.toString().should.eq(trader1, 'trader is correct')
+				event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
+				event.date.toString().should.not.eq('0', 'date is correct')
+				event.value.toString().should.eq(value.toString(), 'value is correct')
+				event.traderProfit.toString().should.eq('0')
+				event.investorProfit.toString().should.eq('0')
+				event.traderFee.toString().should.eq('0')
+				event.investorFee.toString().should.eq('0')
+			})
+		})
+
+		describe('loss success', () => {
+
+			beforeEach(async () => {
+				value = ether(0.5)
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
+				await wait(1000);
+				result = await platform.requestExit(trader1, investmentId, value, {from: investor1})
+			})
+
+			it('tracks request', async () => {
+				let investmentObj
+				investmentObj = await platform.investments(1)
+
+				investmentObj.trader.should.eq(trader1)
+				investmentObj.investor.should.eq(investor1)
+				investmentObj.endDate.toString().should.not.eq('0'.toString())
+				investmentObj.value.toString().should.eq(value.toString())
+				investmentObj.state.toString().should.eq('1')
+				investmentObj.traderProfit.toString().should.eq('0')
+				investmentObj.investorProfit.toString().should.eq('0')
+				investmentObj.traderFee.toString().should.eq(ether(0.001).toString())
+				investmentObj.investorFee.toString().should.eq('0')
+				investmentObj.forced.should.eq(true)
+
+				let traderBalance = await platform.balances(trader1, ETHER)
+				let investorBalance = await platform.balances(investor1, ETHER)
+				let feeAccountBalance = await platform.balances(feeAccount, ETHER)
+
+				traderBalance.toString().should.eq(ether(0.099).toString())
+				investorBalance.toString().should.eq(value.toString())
+				feeAccountBalance.toString().should.eq('0')
 			})
 
 			it('emits an RequestExit event', async () => {
@@ -694,7 +902,7 @@ describe('TraderPaired', function () {
 				settlementAmount = ether(0.08) // 0.079 + 0.001
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
-				result = await platform.approveExitEther(investmentId, investor1, {from: trader1, value: settlementAmount})
+				result = await platform.approveExitEther(investor1, investmentId, {from: trader1, value: settlementAmount})
 			})
 
 			it('tracks approve', async () => {
@@ -745,7 +953,7 @@ describe('TraderPaired', function () {
 				settlementAmount = ether(0)
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
-				result = await platform.approveExitEther(investmentId, investor1, {from: trader1, value: settlementAmount})
+				result = await platform.approveExitEther(investor1, investmentId, {from: trader1, value: settlementAmount})
 			})
 
 			it('tracks approve', async () => {
@@ -795,7 +1003,7 @@ describe('TraderPaired', function () {
 				settlementAmount = ether(0.001) // traderfee on loss
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
-				result = await platform.approveExitEther(investmentId, investor1, {from: trader1, value: settlementAmount})
+				result = await platform.approveExitEther(investor1, investmentId, {from: trader1, value: settlementAmount})
 			})
 
 			it('tracks approve', async () => {
@@ -852,25 +1060,25 @@ describe('TraderPaired', function () {
 			})
 
 			it('not a trader', async () => {
-				result = await platform.approveExitEther(investmentId, investor1, {from: investor1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitEther(investor1, investmentId, {from: investor1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('wrong settlementAmount', async () => {
 				settlementAmount = ether(0.07)
-				result = await platform.approveExitEther(investmentId, investor1, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitEther(investor1, investmentId, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('investment not with trader', async () => {
-				result = await platform.approveExitEther(2, investor1, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitEther(investor1, 2, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('trader not found', async () => {
-				result = await platform.approveExitEther(investmentId, investor1, {from: dummy, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitEther(investor1, investmentId, {from: dummy, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('not in correct state', async () => {
-				await platform.approveExitEther(investmentId, investor1, {from: trader1, value: settlementAmount})
-				result = await platform.approveExitEther(investmentId, investor1, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+				await platform.approveExitEther(investor1, investmentId, {from: trader1, value: settlementAmount})
+				result = await platform.approveExitEther(investor1, investmentId, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 			})
 		})
 
@@ -893,20 +1101,20 @@ describe('TraderPaired', function () {
 			})
 
 			it('not a trader', async () => {
-				result = await platform.approveExitEther(investmentId, investor1, {from: investor1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitEther(investor1, investmentId, {from: investor1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('wrong settlementAmount', async () => {
 				settlementAmount = ether(0.1)
-				result = await platform.approveExitEther(investmentId, investor1, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitEther(investor1, investmentId, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('investment not with trader', async () => {
-				result = await platform.approveExitEther(2, investor1, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitEther(investor1, 2, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('trader not found', async () => {
-				result = await platform.approveExitEther(investmentId, investor1, {from: dummy, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitEther(investor1, investmentId, {from: dummy, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 			})
 		})
 
@@ -929,20 +1137,20 @@ describe('TraderPaired', function () {
 			})
 
 			it('not a trader', async () => {
-				result = await platform.approveExitEther(investmentId, investor1, {from: investor1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitEther(investor1, investmentId, {from: investor1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('wrong settlementAmount', async () => {
 				settlementAmount = ether(0.0001)
-				result = await platform.approveExitEther(investmentId, investor1, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitEther(investor1, investmentId, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('investment not with trader', async () => {
-				result = await platform.approveExitEther(2, investor1, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitEther(investor1, 2, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('trader not found', async () => {
-				result = await platform.approveExitEther(investmentId, investor1, {from: dummy, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitEther(investor1, investmentId, {from: dummy, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 			})
 		})
 
@@ -962,7 +1170,7 @@ describe('TraderPaired', function () {
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1})
+				result = await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: trader1})
 			})
 
 			it('tracks approve', async () => {
@@ -1015,7 +1223,7 @@ describe('TraderPaired', function () {
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1})
+				result = await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: trader1})
 			})
 
 			it('tracks approve', async () => {
@@ -1067,7 +1275,7 @@ describe('TraderPaired', function () {
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1})
+				result = await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: trader1})
 			})
 
 			it('tracks approve', async () => {
@@ -1127,30 +1335,30 @@ describe('TraderPaired', function () {
 
 			it('not a trader', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('wrong settlementAmount', async () => {
 				settlementAmount = tokens(0.07)
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('investment not with trader', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(2, investor1, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investor1, 2, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('trader not found', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('not in correct state', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1})
+				await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: trader1})
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 		})
 
@@ -1176,23 +1384,23 @@ describe('TraderPaired', function () {
 
 			it('not a trader', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('wrong settlementAmount', async () => {
 				settlementAmount = tokens(0.1)
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('investment not with trader', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(2, investor1, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investor1, 2, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('trader not found', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
 			})
 		})
 
@@ -1218,23 +1426,366 @@ describe('TraderPaired', function () {
 
 			it('not a trader', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('wrong settlementAmount', async () => {
 				settlementAmount = ether(0.0001)
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('investment not with trader', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(2, investor1, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investor1, 2, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('trader not found', async () => {
 				await token.approve(platform.address, settlementAmount, { from: trader1 })
-				result = await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+				result = await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+			})
+		})
+	})
+
+	describe('forced approve exit', () => {
+
+		let result
+		let amount
+		let allocation
+		let value
+		let investmentId
+		let investorProfitPercent
+		let settlementAmount
+		let platformBalance
+
+		beforeEach(async () => {
+			
+			investmentId = 1
+			investorProfitPercent = 8000
+
+			await platform.joinAsTrader(investorProfitPercent, {from: trader1})
+			await platform.joinAsInvestor({from: investor1})
+		})
+
+		describe('ether profit success', () => {
+
+			beforeEach(async () => {
+				amount = ether(0.6)
+				allocation = ether(1)
+				await platform.allocate(ETHER, allocation, {from: trader1})
+				await platform.investEther(trader1, {from: investor1, value: amount})
+
+				value = ether(0.7)
+				settlementAmount = ether(0.08) // 0.079 + 0.001
+
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
+				await wait(1000)
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
+				result = await platform.approveExitEther(investor1, investmentId, {from: trader1, value: settlementAmount})
+			})
+
+			it('tracks approve', async () => {
+				let investorObj, traderObj, investmentObj, allocation, traderBalance, investorBalance, feeAccountBalance
+				investorObj = await platform.investors(investor1)
+				traderObj = await platform.traders(trader1)
+				investmentObj = await platform.investments(1)
+				allocation = await platform.allocations(trader1, ETHER)
+				traderBalance = await platform.balances(trader1, ETHER)
+				investorBalance = await platform.balances(investor1, ETHER)
+				feeAccountBalance = await platform.balances(feeAccount, ETHER)
+
+				platformBalance = await balance.current(platform.address, 'wei')
+				platformBalance.toString().should.eq(addEther(amount, settlementAmount))
+
+				allocation.invested.toString().should.eq(ether(0).toString())
+
+				investmentObj.trader.should.eq(trader1)
+				investmentObj.investor.should.eq(investor1)
+				investmentObj.state.toString().should.eq('3', 'investment state correct')
+
+				investorBalance.toString().should.eq(ether(0.679).toString(), 'investor balance correct') // 0.6 + 0.079
+				traderBalance.toString().should.eq(ether(0).toString(), 'trader balance correct')
+				feeAccountBalance.toString().should.eq(ether(0.002).toString(), 'feeAccount balance correct')
+				
+			})
+
+			it('emits an ApproveExit event', async () => {
+				const log = result.logs[0]
+				log.event.should.eq('ApproveExit')
+				const event = log.args
+				event.trader.toString().should.eq(trader1, 'trader is correct')
+				event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
+				event.traderAmount.toString().should.eq(ether(0.019).toString(), 'traderAmount is correct') // profit
+				event.investorAmount.toString().should.eq(ether(0.079).toString(), 'investorAmount is correct') // amount + profit
+			})
+		})
+
+		describe('ether breakeven success', () => {
+
+			beforeEach(async () => {
+				amount = ether(0.6)
+				allocation = ether(1)
+				await platform.allocate(ETHER, allocation, {from: trader1})
+				await platform.investEther(trader1, {from: investor1, value: amount})
+
+				value = ether(0.6)
+				settlementAmount = ether(0)
+
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
+				await wait(1000)
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
+				result = await platform.approveExitEther(investor1, investmentId, {from: trader1, value: settlementAmount})
+			})
+
+			it('tracks approve', async () => {
+				let investorObj, traderObj, investmentObj, allocation, traderBalance, investorBalance, feeAccountBalance
+				investorObj = await platform.investors(investor1)
+				traderObj = await platform.traders(trader1)
+				investmentObj = await platform.investments(1)
+				allocation = await platform.allocations(trader1, ETHER)
+				traderBalance = await platform.balances(trader1, ETHER)
+				investorBalance = await platform.balances(investor1, ETHER)
+				feeAccountBalance = await platform.balances(feeAccount, ETHER)
+
+				platformBalance = await balance.current(platform.address, 'wei')
+				platformBalance.toString().should.eq(addEther(amount, settlementAmount))
+
+				allocation.invested.toString().should.eq(ether(0).toString())
+
+				investmentObj.trader.should.eq(trader1)
+				investmentObj.investor.should.eq(investor1)
+				investmentObj.state.toString().should.eq('3', 'investment state correct')
+
+				investorBalance.toString().should.eq(ether(0.6).toString(), 'investor balance correct')
+				traderBalance.toString().should.eq(ether(0).toString(), 'trader balance correct')
+				feeAccountBalance.toString().should.eq(ether(0).toString(), 'feeAccount balance correct')
+			})
+
+			it('emits an ApproveExit event', async () => {
+				const log = result.logs[0]
+				log.event.should.eq('ApproveExit')
+				const event = log.args
+				event.trader.toString().should.eq(trader1, 'trader is correct')
+				event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
+				event.traderAmount.toString().should.eq(ether(0).toString(), 'traderAmount is correct')
+				event.investorAmount.toString().should.eq(ether(0).toString(), 'investorAmount is correct')
+			})
+		})
+
+		describe('ether loss success', () => {
+
+			beforeEach(async () => {
+				amount = ether(0.6)
+				allocation = ether(1)
+				await platform.allocate(ETHER, allocation, {from: trader1})
+				await platform.investEther(trader1, {from: investor1, value: amount})
+
+				value = ether(0.5)
+				settlementAmount = ether(0.001) // traderfee on loss
+
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
+				await wait(1000)
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
+				result = await platform.approveExitEther(investor1, investmentId, {from: trader1, value: settlementAmount})
+			})
+
+			it('tracks approve', async () => {
+				let investorObj, traderObj, investmentObj, allocation, traderBalance, investorBalance, feeAccountBalance
+				investorObj = await platform.investors(investor1)
+				traderObj = await platform.traders(trader1)
+				investmentObj = await platform.investments(1)
+				allocation = await platform.allocations(trader1, ETHER)
+				traderBalance = await platform.balances(trader1, ETHER)
+				investorBalance = await platform.balances(investor1, ETHER)
+				feeAccountBalance = await platform.balances(feeAccount, ETHER)
+
+				platformBalance = await balance.current(platform.address, 'wei')
+				platformBalance.toString().should.eq(addEther(amount, settlementAmount))
+
+				allocation.invested.toString().should.eq(ether(0).toString())
+
+				investmentObj.trader.should.eq(trader1)
+				investmentObj.investor.should.eq(investor1)
+				investmentObj.state.toString().should.eq('3', 'investment state correct')
+
+				investorBalance.toString().should.eq(ether(0.5).toString(), 'investor balance correct')
+				traderBalance.toString().should.eq(ether(0.099).toString(), 'trader balance correct')
+				feeAccountBalance.toString().should.eq(ether(0.001).toString(), 'feeAccount balance correct')
+			})
+
+			it('emits an ApproveExit event', async () => {
+				const log = result.logs[0]
+				log.event.should.eq('ApproveExit')
+				const event = log.args
+				event.trader.toString().should.eq(trader1, 'trader is correct')
+				event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
+				event.traderAmount.toString().should.eq(ether(0).toString(), 'traderAmount is correct')
+				event.investorAmount.toString().should.eq(ether(0).toString(), 'investorAmount is correct')
+			})
+		})
+
+		////////
+
+		describe('token profit success', () => {
+
+			beforeEach(async () => {
+				amount = tokens(0.6)
+				allocation = tokens(1)
+				await platform.allocate(token.address, allocation, {from: trader1})
+				await token.approve(platform.address, amount, { from: investor1 })
+				await platform.investToken(trader1, token.address, amount, {from: investor1})
+
+				value = tokens(0.7)
+				settlementAmount = tokens(0.08) // 0.079 + 0.001
+
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
+				await wait(1000)
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
+				await token.approve(platform.address, settlementAmount, { from: trader1 })
+				result = await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: trader1})
+			})
+
+			it('tracks approve', async () => {
+				let investorObj, traderObj, investmentObj, allocation, traderBalance, investorBalance, feeAccountBalance
+				investorObj = await platform.investors(investor1)
+				traderObj = await platform.traders(trader1)
+				investmentObj = await platform.investments(1)
+				allocation = await platform.allocations(trader1, token.address)
+				traderBalance = await platform.balances(trader1, token.address)
+				investorBalance = await platform.balances(investor1, token.address)
+				feeAccountBalance = await platform.balances(feeAccount, token.address)
+
+				platformBalance = await token.balanceOf(platform.address)
+				platformBalance.toString().should.eq(addTokens(amount, settlementAmount))
+
+				allocation.invested.toString().should.eq(tokens(0).toString())
+
+				investmentObj.trader.should.eq(trader1)
+				investmentObj.investor.should.eq(investor1)
+				investmentObj.state.toString().should.eq('3', 'investment state correct')
+
+				investorBalance.toString().should.eq(tokens(0.679).toString(), 'investor balance correct') // 0.6 + 0.079
+				traderBalance.toString().should.eq(tokens(0).toString(), 'trader balance correct')
+				feeAccountBalance.toString().should.eq(tokens(0.002).toString(), 'feeAccount balance correct')
+				
+			})
+
+			it('emits an ApproveExit event', async () => {
+				const log = result.logs[0]
+				log.event.should.eq('ApproveExit')
+				const event = log.args
+				event.trader.toString().should.eq(trader1, 'trader is correct')
+				event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
+				event.traderAmount.toString().should.eq(tokens(0.019).toString(), 'traderAmount is correct') // profit
+				event.investorAmount.toString().should.eq(tokens(0.079).toString(), 'investorAmount is correct') // amount + profit
+			})
+		})
+
+		describe('token breakeven success', () => {
+
+			beforeEach(async () => {
+				amount = tokens(0.6)
+				allocation = tokens(1)
+				await platform.allocate(token.address, allocation, {from: trader1})
+				await token.approve(platform.address, amount, { from: investor1 })
+				await platform.investToken(trader1, token.address, amount, {from: investor1})
+
+				value = tokens(0.6)
+				settlementAmount = tokens(0)
+
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
+				await wait(1000)
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
+				await token.approve(platform.address, settlementAmount, { from: trader1 })
+				result = await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: trader1})
+			})
+
+			it('tracks approve', async () => {
+				let investorObj, traderObj, investmentObj, allocation, traderBalance, investorBalance, feeAccountBalance
+				investorObj = await platform.investors(investor1)
+				traderObj = await platform.traders(trader1)
+				investmentObj = await platform.investments(1)
+				allocation = await platform.allocations(trader1, token.address)
+				traderBalance = await platform.balances(trader1, token.address)
+				investorBalance = await platform.balances(investor1, token.address)
+				feeAccountBalance = await platform.balances(feeAccount, token.address)
+
+				platformBalance = await token.balanceOf(platform.address)
+				platformBalance.toString().should.eq(addTokens(amount, settlementAmount))
+
+				allocation.invested.toString().should.eq(tokens(0).toString())
+
+				investmentObj.trader.should.eq(trader1)
+				investmentObj.investor.should.eq(investor1)
+				investmentObj.state.toString().should.eq('3', 'investment state correct')
+
+				investorBalance.toString().should.eq(tokens(0.6).toString(), 'investor balance correct')
+				traderBalance.toString().should.eq(tokens(0).toString(), 'trader balance correct')
+				feeAccountBalance.toString().should.eq(tokens(0).toString(), 'feeAccount balance correct')
+			})
+
+			it('emits an ApproveExit event', async () => {
+				const log = result.logs[0]
+				log.event.should.eq('ApproveExit')
+				const event = log.args
+				event.trader.toString().should.eq(trader1, 'trader is correct')
+				event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
+				event.traderAmount.toString().should.eq(tokens(0).toString(), 'traderAmount is correct')
+				event.investorAmount.toString().should.eq(tokens(0).toString(), 'investorAmount is correct')
+			})
+		})
+
+		describe('token loss success', () => {
+
+			beforeEach(async () => {
+				amount = tokens(0.6)
+				allocation = tokens(1)
+				await platform.allocate(token.address, allocation, {from: trader1})
+				await token.approve(platform.address, amount, { from: investor1 })
+				await platform.investToken(trader1, token.address, amount, {from: investor1})
+
+				value = tokens(0.5)
+				settlementAmount = tokens(0.001) // traderfee on loss
+
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
+				await wait(1000)
+				await platform.requestExit(trader1, investmentId, value, {from: investor1})
+				await token.approve(platform.address, settlementAmount, { from: trader1 })
+				result = await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: trader1})
+			})
+
+			it('tracks approve', async () => {
+				let investorObj, traderObj, investmentObj, allocation, traderBalance, investorBalance, feeAccountBalance
+				investorObj = await platform.investors(investor1)
+				traderObj = await platform.traders(trader1)
+				investmentObj = await platform.investments(1)
+				allocation = await platform.allocations(trader1, token.address)
+				traderBalance = await platform.balances(trader1, token.address)
+				investorBalance = await platform.balances(investor1, token.address)
+				feeAccountBalance = await platform.balances(feeAccount, token.address)
+
+				platformBalance = await token.balanceOf(platform.address)
+				platformBalance.toString().should.eq(addTokens(amount, settlementAmount))
+
+				allocation.invested.toString().should.eq(tokens(0).toString())
+
+				investmentObj.trader.should.eq(trader1)
+				investmentObj.investor.should.eq(investor1)
+				investmentObj.state.toString().should.eq('3', 'investment state correct')
+
+				investorBalance.toString().should.eq(tokens(0.5).toString(), 'investor balance correct')
+				traderBalance.toString().should.eq(tokens(0.099).toString(), 'trader balance correct')
+				feeAccountBalance.toString().should.eq(tokens(0.001).toString(), 'feeAccount balance correct')
+			})
+
+			it('emits an ApproveExit event', async () => {
+				const log = result.logs[0]
+				log.event.should.eq('ApproveExit')
+				const event = log.args
+				event.trader.toString().should.eq(trader1, 'trader is correct')
+				event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
+				event.traderAmount.toString().should.eq(tokens(0).toString(), 'traderAmount is correct')
+				event.investorAmount.toString().should.eq(tokens(0).toString(), 'investorAmount is correct')
 			})
 		})
 	})
@@ -1270,7 +1821,7 @@ describe('TraderPaired', function () {
 				await platform.investEther(trader1, {from: investor1, value: amount})
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
-				await platform.approveExitEther(investmentId, investor1, {from: trader1, value: settlementAmount})
+				await platform.approveExitEther(investor1, investmentId, {from: trader1, value: settlementAmount})
 				result = await platform.withdrawEther(withdrawAmount, {from: investor1})
 			})
 
@@ -1310,7 +1861,7 @@ describe('TraderPaired', function () {
 				await platform.investEther(trader1, {from: investor1, value: amount})
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
-				await platform.approveExitEther(investmentId, investor1, {from: trader1, value: settlementAmount})
+				await platform.approveExitEther(investor1, investmentId, {from: trader1, value: settlementAmount})
 				result = await platform.withdrawEther(withdrawAmount, {from: feeAccount})
 			})
 
@@ -1350,7 +1901,7 @@ describe('TraderPaired', function () {
 				await platform.investEther(trader1, {from: investor1, value: amount})
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
-				await platform.approveExitEther(investmentId, investor1, {from: trader1, value: settlementAmount})
+				await platform.approveExitEther(investor1, investmentId, {from: trader1, value: settlementAmount})
 				result = await platform.withdrawEther(withdrawAmount, {from: trader1})
 			})
 
@@ -1390,7 +1941,7 @@ describe('TraderPaired', function () {
 				await platform.investEther(trader1, {from: investor1, value: amount})
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
-				await platform.approveExitEther(investmentId, investor1, {from: trader1, value: settlementAmount})
+				await platform.approveExitEther(investor1, investmentId, {from: trader1, value: settlementAmount})
 			})
 
 			it('not an investor', async () => {
@@ -1424,7 +1975,7 @@ describe('TraderPaired', function () {
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
 				await token.approve(platform.address, settlementAmount, {from: trader1})
-				await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1})
+				await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: trader1})
 				result = await platform.withdrawToken(token.address, withdrawAmount, {from: investor1})
 			})
 
@@ -1466,7 +2017,7 @@ describe('TraderPaired', function () {
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
 				await token.approve(platform.address, settlementAmount, {from: trader1})
-				await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1})
+				await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: trader1})
 				result = await platform.withdrawToken(token.address, withdrawAmount, {from: feeAccount})
 			})
 
@@ -1508,7 +2059,7 @@ describe('TraderPaired', function () {
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
 				await token.approve(platform.address, settlementAmount, {from: trader1})
-				await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1})
+				await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: trader1})
 				result = await platform.withdrawToken(token.address, withdrawAmount, {from: trader1})
 			})
 
@@ -1550,7 +2101,7 @@ describe('TraderPaired', function () {
 
 				await platform.requestExit(trader1, investmentId, value, {from: investor1})
 				await token.approve(platform.address, settlementAmount, {from: trader1})
-				await platform.approveExitToken(investmentId, investor1, settlementAmount, {from: trader1})
+				await platform.approveExitToken(investor1, investmentId, settlementAmount, {from: trader1})
 			})
 
 			it('not an investor', async () => {
