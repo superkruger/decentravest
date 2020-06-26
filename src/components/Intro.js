@@ -36,15 +36,17 @@ class Intro extends Component {
                       <em>(Now Open!)</em><br/>
                       Are you a successful trader on <a href="https://trade.dydx.exchange/margin" target="_blank" rel="noopener">dydx.exchange</a>?<br/>
                       Would you like to trade risk-free?<br/><br/>
-                      Sign up with your Metamask wallet that you use for trading, and you'll be entered into the pool.<br/>
-                      For now, we <strong>ONLY</strong> support Isolated Margin trades with ETH, DAI or USDC.
+                      Sign up with your Metamask wallet that you use for trading, and you'll be entered into the pool.
                     </p>
                   </div>
                 </div>
                 <div className="tl-container tl-right">
                   <div className="tl-content">
                     <h2>Trader selection</h2>
-                    <p>We'll select the best traders from the pool to partake in the first opening phase.</p>
+                    <p>
+                      We'll select the best traders from the pool to partake in the first opening phase.<br/>
+                      For now, we <strong>ONLY</strong> support Isolated Margin trades with ETH, DAI or USDC.
+                    </p>
                   </div>
                 </div>
                 <div className="tl-container tl-left">
@@ -64,6 +66,14 @@ class Intro extends Component {
                 </div>
                 <div className="tl-container tl-left">
                   <div className="tl-content">
+                    <h2>More Wallets</h2>
+                    <p>
+                      Support more popular wallets, besides Metamask
+                    </p>
+                  </div>
+                </div>
+                <div className="tl-container tl-right">
+                  <div className="tl-content">
                     <h2>Opaque trading pool</h2>
                     <p>
                       From an Investors point of view, being able to choose the best Traders is great.<br/>
@@ -72,7 +82,7 @@ class Intro extends Component {
                     </p>
                   </div>
                 </div>
-                <div className="tl-container tl-right">
+                <div className="tl-container tl-left">
                   <div className="tl-content">
                     <h2>Decentralised Governance</h2>
                     <p>

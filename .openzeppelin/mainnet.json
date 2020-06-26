@@ -1,7 +1,7 @@
 {
   "contracts": {
     "TraderPaired": {
-      "address": "0x199501D7ed89D8f00EeD094F03AB9190FF81f189",
+      "address": "0x5Be8BC0F3219738ce70f9463B3853A5d3ffB45A8",
       "constructorCode": "6080604052610d8d806100136000396000f3fe",
       "bodyBytecodeHash": "0f8fb6b47c979955ad404b3ff637c63f4c9029079bcc6c43637991f21508934f",
       "localBytecodeHash": "963454e082dd4baf77bef0bbffd22f78aa50975561e759e72b6939b0dced5399",
@@ -177,17 +177,10 @@
   "proxies": {
     "decentravest/TraderPaired": [
       {
-        "address": "0x68873efB00efDF35F0a2d1B737FE42112645F6D7",
+        "address": "0xfC76ad12de66264AD286422Ad71cFb1d837E36d7",
         "version": "1.0.0",
-        "implementation": "0x199501D7ed89D8f00EeD094F03AB9190FF81f189",
-        "admin": "0xA3243a1890a1b4C5143106aBdb736C90e0Bd852B",
-        "kind": "Upgradeable"
-      },
-      {
-        "address": "0x63d2f975f8C3F328023517a2A63d3c1cA2CffBe4",
-        "version": "1.0.0",
-        "implementation": "0x199501D7ed89D8f00EeD094F03AB9190FF81f189",
-        "admin": "0xA3243a1890a1b4C5143106aBdb736C90e0Bd852B",
+        "implementation": "0x5Be8BC0F3219738ce70f9463B3853A5d3ffB45A8",
+        "admin": "0x6a30c12EFA42BF6f06dE2150CE19bB3b2228E2a2",
         "kind": "Upgradeable"
       }
     ]
@@ -196,11 +189,11 @@
   "version": "1.0.0",
   "dependencies": {
     "@openzeppelin/contracts-ethereum-package": {
-      "package": "0x2a9e7B63514438906A83a1e320dBBD814D417002",
+      "package": "0x778dddF23Ec1B5Cb18394c6C110480CaaDB3B0f6",
       "version": "2.5.0"
     }
   },
   "proxyAdmin": {
-    "address": "0xA3243a1890a1b4C5143106aBdb736C90e0Bd852B"
+    "address": "0x6a30c12EFA42BF6f06dE2150CE19bB3b2228E2a2"
   }
 }
