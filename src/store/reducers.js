@@ -28,6 +28,8 @@ function traderPaired (state = {}, action ) {
 			return { ...state, trader: action.trader }
 		case 'INVESTOR_LOADED':
 			return { ...state, investor: action.investor }
+		case 'POSITIONS_COUNT_LOADED':
+			return { ...state, positionsCount: action.count} 
 		case 'TRADER_POSITIONS_LOADED':
 			return { ...state, traderpositions: {...state.traderpositions, loaded: true}} 
 		case 'TRADER_POSITION_LOADED':

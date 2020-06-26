@@ -1,17 +1,18 @@
 {
   "manifestVersion": "2.2",
   "contracts": {
-    "TraderPaired": "TraderPaired"
+    "TraderPaired": "TraderPaired",
+    "PairedInvestments": "PairedInvestments"
   },
   "dependencies": {
-    "@openzeppelin/contracts-ethereum-package": "^2.5.0"
+    "@openzeppelin/contracts-ethereum-package": "2.5.0"
   },
-  "name": "test",
+  "name": "decentravest",
   "version": "1.0.0",
   "compiler": {
     "compilerSettings": {
       "optimizer": {
-        "enabled": false,
+        "enabled": true,
         "runs": "200"
       }
     },

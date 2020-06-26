@@ -1,5 +1,6 @@
 import Web3 from 'web3'
 import TraderPaired from '../abis/TraderPaired.json'
+import { ZERO_ADDRESS } from '../helpers'
 import { 
 	web3Loaded,
 	web3AccountLoaded,
@@ -25,18 +26,20 @@ export const loadAccount = async (web3, dispatch) => {
 export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 	try {
 		if (TraderPaired.networks[networkId] !== undefined) {
-			// console.log("TraderPaired address: ", TraderPaired.networks[networkId].address)
+			console.log("TraderPaired address: ", TraderPaired.networks[networkId].address)
 			const traderPaired = await new web3.eth.Contract(TraderPaired.abi, TraderPaired.networks[networkId].address, {handleRevert: true})
 
 			const trader = await traderPaired.methods.traders(account).call()
-			const investor = await traderPaired.methods.investors(account).call()
+			console.log('Trader', trader)
+			// const investor = await traderPaired.methods.investors(account).call()
+			// console.log('Investor', investor)
 
-			if (trader.id !== '0') {
+			if (trader && trader.user !== ZERO_ADDRESS) {
 				dispatch(traderLoaded(trader))
 			}
-			if (investor.id !== '0') {
-				dispatch(investorLoaded(investor))
-			}
+			// if (investor && investor.user !== ZERO_ADDRESS) {
+			// 	dispatch(investorLoaded(investor))
+			// }
 
 			dispatch(traderPairedLoaded(traderPaired))
 			return traderPaired
@@ -56,7 +59,7 @@ export const joinAsTrader = async (account, traderPaired, dispatch) => {
 
 			const trader = await traderPaired.methods.traders(account).call()
 
-			if (trader.id !== '0') {
+			if (trader.user !== ZERO_ADDRESS) {
 				dispatch(traderLoaded(trader))
 			}
 		})
@@ -78,8 +81,8 @@ export const joinAsInvestor = async (account, traderPaired, dispatch) => {
 		.on('receipt', async (receipt) => {
 
 			const investor = await traderPaired.methods.investors(account).call()
-			
-			if (investor.id !== '0') {
+
+			if (investor.user !== ZERO_ADDRESS) {
 				dispatch(investorLoaded(investor))
 			}
 		})

@@ -33,7 +33,7 @@ class Header extends Component {
                       <TraderButton props={this.props} /> :
                       <InvestorButton props={this.props} />
                      :
-                     
+
                     <JoinButton props={this.props} />
                   
                 }

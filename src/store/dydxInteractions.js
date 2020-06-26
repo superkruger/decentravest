@@ -1,17 +1,35 @@
 import axios from 'axios'
 import moment from 'moment'
 import BigNumber from 'bignumber.js'
-import { 
+import {
+	positionsCountLoaded,
 	traderPositionsLoaded,
 	traderPositionLoaded
 } from './dydxActions.js'
 import { etherToWei } from '../helpers'
 
+export const loadPositionsCount = async (account, dispatch) => {
+	try {
+		// TODO: real account
+		axios.get('https://api.dydx.exchange/v1/positions?status=CLOSED&owner=' + account)
+		  .then(function (response) {
+		    // handle success
+		    dispatch(positionsCountLoaded(response.data.positions.length))
+		  })
+		  .catch(function (error) {
+		    // handle error
+		    console.log(error)
+		  })
+	} catch (error) {
+		console.log('Could not get positions', error)
+		return null
+	}
+}
 
 export const loadTraderPositions = async (account, dispatch) => {
 	try {
 		// TODO: real account
-		axios.get('https://api.dydx.exchange/v1/positions?status=CLOSED&owner=0x6b98d58200439399218157B4A3246DA971039460')// + account)
+		axios.get('https://api.dydx.exchange/v1/positions?status=CLOSED&owner=' + account)
 		  .then(function (response) {
 		    // handle success
 		    console.log('Response', response)

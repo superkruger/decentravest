@@ -1041,7 +1041,7 @@
     "name": "solc",
     "version": "0.5.17+commit.d19bba13.Emscripten.clang",
     "optimizer": {
-      "enabled": false,
+      "enabled": true,
       "runs": 200
     },
     "evmVersion": "petersburg"

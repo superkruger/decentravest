@@ -1,3 +1,10 @@
+export function positionsCountLoaded(count) {
+	return {
+		type: 'POSITIONS_COUNT_LOADED',
+		count
+	}
+}
+
 export function traderPositionsLoaded() {
 	return {
 		type: 'TRADER_POSITIONS_LOADED'

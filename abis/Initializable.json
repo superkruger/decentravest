@@ -249,10 +249,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        2333,
-                        2334
+                        1726,
+                        1727
                       ],
-                      "referencedDeclaration": 2334,
+                      "referencedDeclaration": 1727,
                       "src": "1016:7:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
@@ -616,7 +616,7 @@
                         "name": "this",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 2344,
+                        "referencedDeclaration": 1737,
                         "src": "1820:4:7",
                         "typeDescriptions": {
                           "typeIdentifier": "t_contract$_Initializable_$787",
@@ -894,13 +894,13 @@
     ],
     "src": "0:2015:7"
   },
-  "bytecode": "0x6080604052348015600f57600080fd5b50603e80601d6000396000f3fe6080604052600080fdfea265627a7a723158203430ac43a839920c50ab9cb9a9b7b5653a0420c1787fe03fad70144c688cd81464736f6c63430005110032",
-  "deployedBytecode": "0x6080604052600080fdfea265627a7a723158203430ac43a839920c50ab9cb9a9b7b5653a0420c1787fe03fad70144c688cd81464736f6c63430005110032",
+  "bytecode": "0x6080604052348015600f57600080fd5b50603e80601d6000396000f3fe6080604052600080fdfea265627a7a723158205116a0cb31979e341417b3f1be5aebd3598519a5e9a75d67b38eb25eb897aa4f64736f6c63430005110032",
+  "deployedBytecode": "0x6080604052600080fdfea265627a7a723158205116a0cb31979e341417b3f1be5aebd3598519a5e9a75d67b38eb25eb897aa4f64736f6c63430005110032",
   "compiler": {
     "name": "solc",
     "version": "0.5.17+commit.d19bba13.Emscripten.clang",
     "optimizer": {
-      "enabled": false,
+      "enabled": true,
       "runs": 200
     },
     "evmVersion": "petersburg"

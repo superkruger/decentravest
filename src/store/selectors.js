@@ -23,6 +23,9 @@ export const traderSelector = createSelector(trader, e => e)
 const investor = state => get(state, 'traderPaired.investor')
 export const investorSelector = createSelector(investor, e => e)
 
+const positionsCount = state => get(state, 'traderPaired.positionsCount', 0)
+export const positionsCountSelector = createSelector(positionsCount, e => e)
+
 const traderPositionsLoaded = state => get(state, 'traderPaired.traderpositions.loaded', false)
 export const traderPositionsLoadedSelector = createSelector(traderPositionsLoaded, e => e)
 

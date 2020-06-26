@@ -18,8 +18,8 @@
     "@babel/preset-env": "^7.9.5",
     "@babel/register": "^7.9.0",
     "@babel/runtime": "^7.10.3",
-    "@openzeppelin/contracts-ethereum-package": "^2.5.0",
-    "@openzeppelin/upgrades": "^2.8.0",
+    "@openzeppelin/contracts-ethereum-package": "2.5.0",
+    "@openzeppelin/upgrades": "2.8.0",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
@@ -44,7 +44,8 @@
     "reselect": "4.0.0",
     "video-react": "^0.14.1",
     "web3": "1.2.7",
-    "@truffle/hdwallet-provider": "1.0.35"
+    "@truffle/hdwallet-provider": "1.0.35",
+    "@amcharts/amcharts4": "^4.9.27"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -71,9 +72,9 @@
   },
   "devDependencies": {
     "@babel/plugin-transform-runtime": "^7.10.3",
-    "@openzeppelin/cli": "^2.8.2",
-    "@openzeppelin/test-environment": "^0.1.4",
-    "@openzeppelin/test-helpers": "^0.5.6",
+    "@openzeppelin/cli": "2.8.2",
+    "@openzeppelin/test-environment": "0.1.4",
+    "@openzeppelin/test-helpers": "0.5.6",
     "chai": "^4.2.0",
     "ganache-cli": "^6.9.1",
     "gh-pages": "^2.2.0",

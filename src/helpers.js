@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js'
+export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 export const GREEN = 'success'
 export const RED = 'danger'
