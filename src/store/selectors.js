@@ -20,6 +20,9 @@ export const traderPairedSelector = createSelector(traderPaired, e => e)
 const trader = state => get(state, 'traderPaired.trader')
 export const traderSelector = createSelector(trader, e => e)
 
+const traderJoining = state => get(state, 'traderPaired.traderJoining', false)
+export const traderJoiningSelector = createSelector(traderJoining, e => e)
+
 const investor = state => get(state, 'traderPaired.investor')
 export const investorSelector = createSelector(investor, e => e)
 

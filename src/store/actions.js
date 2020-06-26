@@ -26,6 +26,12 @@ export function traderLoaded(trader) {
 	}
 }
 
+export function traderJoining() {
+	return {
+		type: 'TRADER_JOINING'
+	}
+}
+
 export function investorLoaded(investor) {
 	return {
 		type: 'INVESTOR_LOADED',

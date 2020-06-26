@@ -5,7 +5,8 @@ import Spinner from './Spinner'
 import { 
   accountSelector, 
   traderPairedSelector,
-  positionsCountSelector
+  positionsCountSelector,
+  traderJoiningSelector
 } from '../store/selectors'
 import { 
   joinAsTrader, 
@@ -94,7 +95,7 @@ class Join extends Component {
 }
 
 function TraderButton(props) {
-  const { positionsCount } = props.props
+  const { positionsCount, traderJoining } = props.props
 
   const handleClick = () => traderJoin(props.props)
 
@@ -102,12 +103,15 @@ function TraderButton(props) {
     <div>
       {
         positionsCount > 0 ? 
-          <Button
-            variant="primary"
-            onClick={handleClick}
-            >
-            Join as Trader
-          </Button>
+          traderJoining ?
+            <Spinner />
+            :
+            <Button
+              variant="primary"
+              onClick={handleClick}
+              >
+              Join as Trader
+            </Button>
         : 
           <Button
             variant="primary"
@@ -165,7 +169,8 @@ function mapStateToProps(state) {
     account: account,
     traderPaired: traderPaired,
     ready: account && traderPaired,
-    positionsCount: positionsCountSelector(state)
+    positionsCount: positionsCountSelector(state),
+    traderJoining: traderJoiningSelector(state)
   }
 }
 

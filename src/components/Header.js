@@ -1,13 +1,14 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Button } from 'react-bootstrap'
-
+import Spinner from './Spinner'
 import {
   accountSelector, 
   traderPairedSelector,
   traderPairedLoadedSelector,
   traderSelector,
-  investorSelector
+  investorSelector,
+  traderJoiningSelector
 } from '../store/selectors'
 import { 
   pageSelected
@@ -35,7 +36,6 @@ class Header extends Component {
                      :
 
                     <JoinButton props={this.props} />
-                  
                 }
       			</div>
           </div>
@@ -57,15 +57,23 @@ function Logo(props) {
 }
 
 function JoinButton(props) {
+  const { traderJoining } = props.props
   const handleClick = () => props.props.dispatch(pageSelected('join'));
 
   return (
-    <Button
-      variant="primary"
-      onClick={handleClick}
-    >
-      Join Now!
-    </Button>
+    <div>
+    {
+      traderJoining ?
+        <Spinner />
+        :
+        <Button
+          variant="primary"
+          onClick={handleClick}
+        >
+          Join Now!
+        </Button>
+    }
+    </div>
   );
 }
 
@@ -73,12 +81,14 @@ function TraderButton(props) {
   const handleClick = () => props.props.dispatch(pageSelected('trader'));
 
   return (
-    <Button
-      variant="primary"
-      onClick={handleClick}
-    >
-      Trader Dashboard
-    </Button>
+    <div>
+      <Button
+        variant="primary"
+        onClick={handleClick}
+      >
+        Trader Dashboard
+      </Button>
+    </div>
   );
 }
 
@@ -104,7 +114,8 @@ function mapStateToProps(state) {
     traderPairedLoaded: traderPairedLoadedSelector(state),
     joined: trader || investor,
     trader: trader,
-    investor: investor
+    investor: investor,
+    traderJoining: traderJoiningSelector(state)
   }
 }
 

@@ -6,7 +6,8 @@ import {
 	web3AccountLoaded,
 	traderPairedLoaded,
 	traderLoaded,
-	investorLoaded
+	investorLoaded,
+	traderJoining
 } from './actions.js'
 
 export const loadWeb3 = (dispatch) => {
@@ -54,6 +55,7 @@ export const joinAsTrader = async (account, traderPaired, dispatch) => {
 	try {
 		traderPaired.methods.joinAsTrader().send({from: account})
 		.on('transactionHash', (hash) => {
+			dispatch(traderJoining())
 		})
 		.on('receipt', async (receipt) => {
 

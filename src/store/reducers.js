@@ -24,8 +24,10 @@ function traderPaired (state = {}, action ) {
 	switch (action.type) {
 		case 'TRADERPAIRED_LOADED':
 			return { ...state, loaded: true, contract: action.contract }
+		case 'TRADER_JOINING':
+			return { ...state, traderJoining: true }
 		case 'TRADER_LOADED':
-			return { ...state, trader: action.trader }
+			return { ...state, traderJoining: false, trader: action.trader }
 		case 'INVESTOR_LOADED':
 			return { ...state, investor: action.investor }
 		case 'POSITIONS_COUNT_LOADED':
