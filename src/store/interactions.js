@@ -7,7 +7,8 @@ import {
 	traderPairedLoaded,
 	traderLoaded,
 	investorLoaded,
-	traderJoining
+	traderJoining,
+	pageSelected
 } from './actions.js'
 
 export const loadWeb3 = (dispatch) => {
@@ -42,6 +43,7 @@ export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 			// 	dispatch(investorLoaded(investor))
 			// }
 
+			loadPastPlatformEvents(traderPaired, dispatch)
 			dispatch(traderPairedLoaded(traderPaired))
 			return traderPaired
 		}
@@ -49,6 +51,18 @@ export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 		console.log('Contract not deployed to the current network', error)
 	}
 	return null
+}
+
+export const loadPastPlatformEvents = async (traderPaired, dispatch) => {
+	const traderStream = await traderPaired.getPastEvents(
+		'Trader', 
+		{
+			filter: {},
+			fromBlock: 0
+		}
+	)
+	const allTraders = traderStream.map((event) => event.returnValues)
+	console.log('Traders', allTraders.length)
 }
 
 export const joinAsTrader = async (account, traderPaired, dispatch) => {
@@ -63,6 +77,7 @@ export const joinAsTrader = async (account, traderPaired, dispatch) => {
 
 			if (trader.user !== ZERO_ADDRESS) {
 				dispatch(traderLoaded(trader))
+				dispatch(pageSelected('trader'))
 			}
 		})
 		.on('error', (error) => {

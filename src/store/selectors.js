@@ -32,7 +32,7 @@ export const positionsCountSelector = createSelector(positionsCount, e => e)
 const traderPositionsLoaded = state => get(state, 'traderPaired.traderpositions.loaded', false)
 export const traderPositionsLoadedSelector = createSelector(traderPositionsLoaded, e => e)
 
-const traderPositions = state => get(state, 'traderPaired.traderpositions.data')
+const traderPositions = state => get(state, 'traderPaired.traderpositions.data', [])
 export const traderPositionsSelector = createSelector(traderPositions, (positions) => {
 	console.log('Positions', positions)
 	if (positions !== undefined) {
