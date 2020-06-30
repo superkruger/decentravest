@@ -8,13 +8,15 @@ class Footer extends Component {
 
   render() {
     return (
-      <div>
-        <div className="footer">
+      <div className="sticky-footer bg-white">
+        <div className="container my-auto">
           <br/>
           <Container>
             <Row>
               <Col sm={6}>
-                © 2020 Decentravest - All Rights Reserved
+                <div className="copyright text-center my-auto">
+                  <span>Copyright &copy; 2020 Decentravest - All Rights Reserved</span>
+                </div>
               </Col>
               <Col sm={4}/>
               <Col sm={1}>

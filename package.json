@@ -45,7 +45,8 @@
     "video-react": "^0.14.1",
     "web3": "1.2.9",
     "@truffle/hdwallet-provider": "1.0.36",
-    "@amcharts/amcharts4": "^4.9.27"
+    "@amcharts/amcharts4": "^4.9.27",
+    "identicon.js": "^2.3.3"
   },
   "scripts": {
     "start": "react-scripts start",

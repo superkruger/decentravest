@@ -1,11 +1,9 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import Header from './Header'
-import Footer from './Footer'
-import Intro from './Intro'
-import Join from './Join'
-import Trader from './Trader'
-import Investor from './Investor'
+
+import Sidebar from './Sidebar'
+import Content from './Content'
+
 import './App.css'
 import { 
   loadWeb3, 
@@ -21,7 +19,6 @@ import {
   traderSelector,
   investorSelector
 } from '../store/selectors'
-import { web3AccountLoaded } from '../store/actions'
 
 class App extends Component {
   componentDidMount() {
@@ -52,17 +49,14 @@ class App extends Component {
 
   render() {
     return (
-      <div className="content">
-        <Header />
-        {
-          {
-            'home': <Intro />,
-            'join': <Join />,
-            'trader': <Trader />,
-            'investor': <Investor />
-          }[this.props.page]
-        }
-        <Footer />
+      <div id="page-top">
+        <div id="wrapper">
+          <Sidebar />
+          <Content />
+        </div>
+        <a className="scroll-to-top rounded" href="#page-top">
+          <i className="fas fa-angle-up"></i>
+        </a>
       </div>
     )
   }

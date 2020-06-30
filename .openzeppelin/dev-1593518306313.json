@@ -1,0 +1,200 @@
+{
+  "contracts": {
+    "TraderPaired": {
+      "address": "0x67B5656d60a809915323Bf2C40A8bEF15A152e3e",
+      "constructorCode": "6080604052610d8d806100136000396000f3fe",
+      "bodyBytecodeHash": "0f8fb6b47c979955ad404b3ff637c63f4c9029079bcc6c43637991f21508934f",
+      "localBytecodeHash": "963454e082dd4baf77bef0bbffd22f78aa50975561e759e72b6939b0dced5399",
+      "deployedBytecodeHash": "963454e082dd4baf77bef0bbffd22f78aa50975561e759e72b6939b0dced5399",
+      "types": {
+        "t_bool": {
+          "id": "t_bool",
+          "kind": "elementary",
+          "label": "bool"
+        },
+        "t_uint256": {
+          "id": "t_uint256",
+          "kind": "elementary",
+          "label": "uint256"
+        },
+        "t_array:50<t_uint256>": {
+          "id": "t_array:50<t_uint256>",
+          "valueType": "t_uint256",
+          "length": "50",
+          "kind": "array",
+          "label": "uint256[50]"
+        },
+        "t_address": {
+          "id": "t_address",
+          "kind": "elementary",
+          "label": "address"
+        },
+        "t_struct<Roles.Role>": {
+          "id": "t_struct<Roles.Role>",
+          "kind": "struct",
+          "label": "Roles.Role",
+          "members": [
+            {
+              "label": "bearer",
+              "astId": 35,
+              "type": "t_mapping<t_bool>",
+              "src": "150:32:1"
+            }
+          ]
+        },
+        "t_mapping<t_bool>": {
+          "id": "t_mapping<t_bool>",
+          "valueType": "t_bool",
+          "label": "mapping(key => bool)",
+          "kind": "mapping"
+        },
+        "t_struct<TraderPaired._Trader>": {
+          "id": "t_struct<TraderPaired._Trader>",
+          "kind": "struct",
+          "label": "TraderPaired._Trader",
+          "members": [
+            {
+              "label": "user",
+              "astId": 1626,
+              "type": "t_address",
+              "src": "2064:12:9"
+            },
+            {
+              "label": "investmentCount",
+              "astId": 1628,
+              "type": "t_uint256",
+              "src": "2086:23:9"
+            }
+          ]
+        },
+        "t_mapping<t_struct<TraderPaired._Trader>>": {
+          "id": "t_mapping<t_struct<TraderPaired._Trader>>",
+          "valueType": "t_struct<TraderPaired._Trader>",
+          "label": "mapping(key => TraderPaired._Trader)",
+          "kind": "mapping"
+        }
+      },
+      "storage": [
+        {
+          "contract": "Initializable",
+          "path": "@openzeppelin/upgrades/contracts/Initializable.sol",
+          "label": "initialized",
+          "astId": 722,
+          "type": "t_bool",
+          "src": "757:24:7"
+        },
+        {
+          "contract": "Initializable",
+          "path": "@openzeppelin/upgrades/contracts/Initializable.sol",
+          "label": "initializing",
+          "astId": 724,
+          "type": "t_bool",
+          "src": "876:25:7"
+        },
+        {
+          "contract": "Initializable",
+          "path": "@openzeppelin/upgrades/contracts/Initializable.sol",
+          "label": "______gap",
+          "astId": 786,
+          "type": "t_array:50<t_uint256>",
+          "src": "1982:29:7"
+        },
+        {
+          "contract": "Ownable",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol",
+          "label": "_owner",
+          "astId": 535,
+          "type": "t_address",
+          "src": "526:22:5"
+        },
+        {
+          "contract": "Ownable",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol",
+          "label": "______gap",
+          "astId": 648,
+          "type": "t_array:50<t_uint256>",
+          "src": "2471:29:5"
+        },
+        {
+          "contract": "PauserRole",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/access/roles/PauserRole.sol",
+          "label": "_pausers",
+          "astId": 132,
+          "type": "t_struct<Roles.Role>",
+          "src": "327:27:2"
+        },
+        {
+          "contract": "PauserRole",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/access/roles/PauserRole.sol",
+          "label": "______gap",
+          "astId": 232,
+          "type": "t_array:50<t_uint256>",
+          "src": "1193:29:2"
+        },
+        {
+          "contract": "Pausable",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/lifecycle/Pausable.sol",
+          "label": "_paused",
+          "astId": 254,
+          "type": "t_bool",
+          "src": "909:20:3"
+        },
+        {
+          "contract": "Pausable",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/lifecycle/Pausable.sol",
+          "label": "______gap",
+          "astId": 337,
+          "type": "t_array:50<t_uint256>",
+          "src": "2163:29:3"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "feeAccount",
+          "astId": 1614,
+          "type": "t_address",
+          "src": "698:25:9"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "traders",
+          "astId": 1618,
+          "type": "t_mapping<t_struct<TraderPaired._Trader>>",
+          "src": "764:42:9"
+        }
+      ],
+      "warnings": {
+        "hasConstructor": false,
+        "hasSelfDestruct": false,
+        "hasDelegateCall": false,
+        "hasInitialValuesInDeclarations": false,
+        "uninitializedBaseContracts": []
+      }
+    }
+  },
+  "solidityLibs": {},
+  "proxies": {
+    "decentravest/TraderPaired": [
+      {
+        "address": "0xA57B8a5584442B467b4689F1144D269d096A3daF",
+        "version": "1.0.0",
+        "implementation": "0x67B5656d60a809915323Bf2C40A8bEF15A152e3e",
+        "admin": "0x2612Af3A521c2df9EAF28422Ca335b04AdF3ac66",
+        "kind": "Upgradeable"
+      }
+    ]
+  },
+  "manifestVersion": "2.2",
+  "dependencies": {
+    "@openzeppelin/contracts-ethereum-package": {
+      "package": "0xe78A0F7E598Cc8b0Bb87894B0F60dD2a88d6a8Ab",
+      "version": "2.5.0",
+      "customDeploy": true
+    }
+  },
+  "version": "1.0.0",
+  "proxyAdmin": {
+    "address": "0x2612Af3A521c2df9EAF28422Ca335b04AdF3ac66"
+  }
+}
