@@ -1,4 +1,4 @@
-import { get } from 'lodash'
+import { get, groupBy } from 'lodash'
 import { createSelector } from 'reselect'
 import { NEUTRAL, RED, GREEN, formatBalance } from '../helpers'
 
@@ -32,6 +32,9 @@ export const investorSelector = createSelector(investor, e => e)
 const positionsCount = state => get(state, 'traderPaired.positionsCount', 0)
 export const positionsCountSelector = createSelector(positionsCount, e => e)
 
+const traderRatings = state => get(state, 'traderPaired.traderratings', [])
+export const traderRatingsSelector = createSelector(traderRatings, e => e)
+
 const traderPositionsLoaded = state => get(state, 'traderPaired.traderpositions.loaded', false)
 export const traderPositionsLoadedSelector = createSelector(traderPositionsLoaded, e => e)
 
@@ -39,8 +42,12 @@ const traderPositions = state => get(state, 'traderPaired.traderpositions.data',
 export const traderPositionsSelector = createSelector(traderPositions, (positions) => {
 	// console.log('Positions', positions)
 	if (positions !== undefined) {
+
 		positions = positions.sort((a, b) => b.createdAt - a.createdAt)
 		positions = decorateTraderPositions(positions)
+
+		// group by asset
+		positions = groupBy(positions, (p) => p.asset)
 	}
 	return positions
 })

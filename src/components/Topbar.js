@@ -31,7 +31,6 @@ class Topbar extends Component {
           <li className="nav-item dropdown no-arrow">
             { account
                   ? 
-            
                     <a className="nav-link" title={`${account}`} href={`https://etherscan.io/address/${account}`} target="_blank" rel="noopener">
                       <img
                         className="ml-2"
@@ -41,7 +40,6 @@ class Topbar extends Component {
                         alt={`${account}`}
                       />
                     </a>
-                    
                     
                   : <span></span>
                 }

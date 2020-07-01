@@ -68,7 +68,6 @@ const loadAllTraders = async (traderPaired, dispatch) => {
 	const allTraders = traderStream.map((event) => event.returnValues['trader'])
 	console.log('Traders', allTraders)
 	dispatch(allTradersLoaded(allTraders))
-	// loadAllTraderPositions(allTraders, dispatch)
 }
 
 export const joinAsTrader = async (account, traderPaired, dispatch) => {

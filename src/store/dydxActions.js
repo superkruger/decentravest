@@ -17,3 +17,10 @@ export function traderPositionLoaded(position) {
 		position
 	}
 }
+
+export function traderRatingsLoaded(ratings) {
+	return {
+		type: 'TRADER_RATINGS_LOADED',
+		ratings
+	}
+}

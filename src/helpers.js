@@ -27,7 +27,7 @@ export const weiToEther = (wei, decimals) => {
 // }
 
 export const formatBalance = (balance, asset) => {
-	const precision = 100
+	const precision = 10000
 	balance = weiToEther(balance, assetDecimals[asset])
 	// console.log('balance', balance.toString())
 	const formatted = Math.round(balance.times(precision).toNumber()) / precision

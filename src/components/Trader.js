@@ -1,62 +1,119 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import Spinner from './Spinner'
+import Rating from './Rating'
 import { 
   loadTraderPositions,
-  loadTraderRating
+  loadTraderRatings
 } from '../store/dydxInteractions'
 import { 
   accountSelector, 
   traderPairedSelector,
   allTradersSelector,
-  traderPositionsSelector
+  traderPositionsSelector,
+  traderRatingsSelector
 } from '../store/selectors'
 import { ZERO_ADDRESS } from '../helpers'
 
 class Trader extends Component {
-  async componentDidMount() {
+  componentDidMount() {
     const { account, allTraders, dispatch } = this.props
     if (account !== null && account != ZERO_ADDRESS) {
 
       // FIXME: use real account
-      loadTraderPositions('0x6b98d58200439399218157B4A3246DA971039460', dispatch)
+      loadTraderPositions(account, dispatch)
 
       if (allTraders.length > 0) {
-        let _allTraders = [/*'0x62382ffab4b9ad8c9806e72b270ac46ff0be7561','0xf039e5291859d1a0b1095a2840631e8ebc00ce14', '0xae7f08301a0b774b3f9a7f7f3b7e99f1570eb1dc', */'0x4c47e4f5866aeb4514700e3d710a6b00c68c553f']
-        let _account = '0x4c47e4f5866aeb4514700e3d710a6b00c68c553f'
-        await loadTraderRating(_account, _allTraders, dispatch)
+        loadTraderRatings(account, allTraders, dispatch)
       }
     }
   }
 
   render() {
+    const {traderPositions, traderRatings} = this.props
+
     return (
-      <div className="card bg-light text-dark">
-        <div className="card-header">
-          Trade positions
+
+      <div>
+        <div className="card shadow mb-4">
+          <a href="#WETH_Trades" className="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="WETH_Trades">
+            <h6 className="m-0 font-weight-bold text-primary">WETH Trades <Rating asset="WETH" rating={`${traderRatings["WETH"]}`}/></h6>
+          </a>
+          <div className="collapse show" id="WETH_Trades">
+            <div className="card-body">
+              <table className="table table-bordered table-light table-sm small" id="dataTable" width="100%">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Profit</th>
+                    <th>Fee</th>
+                    <th>Nett Profit</th>
+                  </tr>
+                </thead>
+                { showPositions(traderPositions["WETH"]) }
+              </table>
+            </div>
+          </div>
         </div>
-        <div className="card-body">
-          <table className="table table-bordered table-light table-sm small" id="dataTable" width="100%">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Type</th>
-                  <th>Market</th>
-                  <th>Asset</th>
-                  <th>Profit</th>
-                  <th>Fee</th>
-                  <th>Nett Profit</th>
-                </tr>
-              </thead>
-              { showPositions(this.props.traderPositions) }
-            </table>
+
+        <div className="card shadow mb-4">
+          <a href="#DAI_Trades" className="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="DAI_Trades">
+            <h6 className="m-0 font-weight-bold text-primary">DAI Trades <Rating asset="DAI" rating={`${traderRatings["DAI"]}`}/></h6>
+          </a>
+          <div className="collapse show" id="DAI_Trades">
+            <div className="card-body">
+              <table className="table table-bordered table-light table-sm small" id="dataTable" width="100%">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Profit</th>
+                    <th>Fee</th>
+                    <th>Nett Profit</th>
+                  </tr>
+                </thead>
+                { showPositions(traderPositions["DAI"]) }
+              </table>
+            </div>
+          </div>
         </div>
+
+        <div className="card shadow mb-4">
+          <a href="#USDC_Trades" className="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="USDC_Trades">
+            <h6 className="m-0 font-weight-bold text-primary">USDC Trades <Rating asset="USDC" rating={`${traderRatings["USDC"]}`}/></h6>
+          </a>
+          <div className="collapse show" id="USDC_Trades">
+            <div className="card-body">
+              <table className="table table-bordered table-light table-sm small" id="dataTable" width="100%">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Profit</th>
+                    <th>Fee</th>
+                    <th>Nett Profit</th>
+                  </tr>
+                </thead>
+                { showPositions(traderPositions["USDC"]) }
+              </table>
+            </div>
+          </div>
+        </div>
+
       </div>
+
     )
   }
 }
 
 function showPositions(positions) {
+  if (positions === undefined || positions.length === 0) {
+    return (
+      <tbody></tbody>
+    )
+  }
+
   return (
     <tbody>
     { positions.map((position) => {
@@ -65,8 +122,6 @@ function showPositions(positions) {
             <tr key={position.uuid}>
               <td className="text-muted">{position.formattedCreatedAt}</td>
               <td>{position.type}</td>
-              <td>{position.market}</td>
-              <td>{position.asset}</td>
               <td className={`text-${position.profit.profitClass}`}>{position.profit.formattedProfit}</td>
               <td>{position.profit.formattedFeeAmount}</td>
               <td className={`text-${position.profit.nettProfitClass}`}>{position.profit.formattedNettProfit}</td>
@@ -87,7 +142,8 @@ function mapStateToProps(state) {
     account: account,
     traderPaired: traderPaired,
     allTraders: allTradersSelector(state),
-    traderPositions: traderPositionsSelector(state)
+    traderPositions: traderPositionsSelector(state),
+    traderRatings: traderRatingsSelector(state)
   }
 }
 
