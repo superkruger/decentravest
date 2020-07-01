@@ -17,6 +17,9 @@ export const traderPairedLoadedSelector = createSelector(traderPairedLoaded, el 
 const traderPaired = state => get(state, 'traderPaired.contract')
 export const traderPairedSelector = createSelector(traderPaired, e => e)
 
+const allTraders = state => get(state, 'traderPaired.allTraders', [])
+export const allTradersSelector = createSelector(allTraders, e => e)
+
 const trader = state => get(state, 'traderPaired.trader')
 export const traderSelector = createSelector(trader, e => e)
 
@@ -34,7 +37,7 @@ export const traderPositionsLoadedSelector = createSelector(traderPositionsLoade
 
 const traderPositions = state => get(state, 'traderPaired.traderpositions.data', [])
 export const traderPositionsSelector = createSelector(traderPositions, (positions) => {
-	console.log('Positions', positions)
+	// console.log('Positions', positions)
 	if (positions !== undefined) {
 		positions = positions.sort((a, b) => b.createdAt - a.createdAt)
 		positions = decorateTraderPositions(positions)

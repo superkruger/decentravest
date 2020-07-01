@@ -26,6 +26,8 @@ function traderPaired (state = {}, action ) {
 			return { ...state, loaded: true, contract: action.contract }
 		case 'TRADER_JOINING':
 			return { ...state, traderJoining: true }
+		case 'ALL_TRADERS_LOADED':
+			return { ...state, allTraders: action.traders }
 		case 'TRADER_LOADED':
 			return { ...state, traderJoining: false, trader: action.trader }
 		case 'INVESTOR_LOADED':
@@ -37,6 +39,7 @@ function traderPaired (state = {}, action ) {
 		case 'TRADER_POSITION_LOADED':
 			// prevent duplicates
 			let index, data
+
 			if (state.traderpositions === undefined) {
 				state.traderpositions = {loaded: false, data: []}
 			}

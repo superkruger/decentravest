@@ -8,8 +8,12 @@ import {
 	traderLoaded,
 	investorLoaded,
 	traderJoining,
-	pageSelected
+	pageSelected,
+	allTradersLoaded
 } from './actions.js'
+import { 
+  loadAllTraderPositions
+} from './dydxInteractions'
 
 export const loadWeb3 = (dispatch) => {
 	let web3 = new Web3(window['ethereum'] || Web3.givenProvider || 'http://127.0.0.1:8545')
@@ -32,7 +36,7 @@ export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 			const traderPaired = await new web3.eth.Contract(TraderPaired.abi, TraderPaired.networks[networkId].address, {handleRevert: true})
 
 			const trader = await traderPaired.methods.traders(account).call()
-			console.log('Trader', trader)
+			// console.log('Trader', trader)
 			// const investor = await traderPaired.methods.investors(account).call()
 			// console.log('Investor', investor)
 
@@ -43,7 +47,7 @@ export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 			// 	dispatch(investorLoaded(investor))
 			// }
 
-			loadPastPlatformEvents(traderPaired, dispatch)
+			loadAllTraders(traderPaired, dispatch)
 			dispatch(traderPairedLoaded(traderPaired))
 			return traderPaired
 		}
@@ -53,16 +57,18 @@ export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 	return null
 }
 
-export const loadPastPlatformEvents = async (traderPaired, dispatch) => {
+const loadAllTraders = async (traderPaired, dispatch) => {
 	const traderStream = await traderPaired.getPastEvents(
-		'Trader', 
+		'Trader',
 		{
 			filter: {},
 			fromBlock: 0
 		}
 	)
-	const allTraders = traderStream.map((event) => event.returnValues)
-	console.log('Traders', allTraders.length)
+	const allTraders = traderStream.map((event) => event.returnValues['trader'])
+	console.log('Traders', allTraders)
+	dispatch(allTradersLoaded(allTraders))
+	// loadAllTraderPositions(allTraders, dispatch)
 }
 
 export const joinAsTrader = async (account, traderPaired, dispatch) => {

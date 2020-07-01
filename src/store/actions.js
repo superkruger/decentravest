@@ -19,6 +19,13 @@ export function traderPairedLoaded(contract) {
 	}
 }
 
+export function allTradersLoaded(traders) {
+	return {
+		type: 'ALL_TRADERS_LOADED',
+		traders
+	}
+}
+
 export function traderLoaded(trader) {
 	return {
 		type: 'TRADER_LOADED',

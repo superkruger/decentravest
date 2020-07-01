@@ -2,20 +2,31 @@ import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import Spinner from './Spinner'
 import { 
-  loadTraderPositions
+  loadTraderPositions,
+  loadTraderRating
 } from '../store/dydxInteractions'
 import { 
   accountSelector, 
   traderPairedSelector,
-  traderSelector,
-  traderPositionsSelector,
-  traderPositionsLoadedSelector
+  allTradersSelector,
+  traderPositionsSelector
 } from '../store/selectors'
+import { ZERO_ADDRESS } from '../helpers'
 
 class Trader extends Component {
-  componentDidMount() {
-    const { account, dispatch } = this.props
-    loadTraderPositions(account, dispatch)
+  async componentDidMount() {
+    const { account, allTraders, dispatch } = this.props
+    if (account !== null && account != ZERO_ADDRESS) {
+
+      // FIXME: use real account
+      loadTraderPositions('0x6b98d58200439399218157B4A3246DA971039460', dispatch)
+
+      if (allTraders.length > 0) {
+        let _allTraders = [/*'0x62382ffab4b9ad8c9806e72b270ac46ff0be7561','0xf039e5291859d1a0b1095a2840631e8ebc00ce14', '0xae7f08301a0b774b3f9a7f7f3b7e99f1570eb1dc', */'0x4c47e4f5866aeb4514700e3d710a6b00c68c553f']
+        let _account = '0x4c47e4f5866aeb4514700e3d710a6b00c68c553f'
+        await loadTraderRating(_account, _allTraders, dispatch)
+      }
+    }
   }
 
   render() {
@@ -37,7 +48,7 @@ class Trader extends Component {
                   <th>Nett Profit</th>
                 </tr>
               </thead>
-              { this.props.traderPositionsLoaded ? showPositions(this.props.traderPositions) : <Spinner type="table" /> }
+              { showPositions(this.props.traderPositions) }
             </table>
         </div>
       </div>
@@ -75,8 +86,7 @@ function mapStateToProps(state) {
   return {
     account: account,
     traderPaired: traderPaired,
-    trader: traderSelector(state),
-    traderPositionsLoaded: traderPositionsLoadedSelector(state),
+    allTraders: allTradersSelector(state),
     traderPositions: traderPositionsSelector(state)
   }
 }
