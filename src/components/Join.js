@@ -130,7 +130,6 @@ function InvestorButton(props) {
 
   return (
     <Button
-      disabled
       variant="primary"
       onClick={handleClick}
     >
@@ -169,7 +168,7 @@ function mapStateToProps(state) {
     account: account,
     traderPaired: traderPaired,
     ready: account && traderPaired,
-    positionsCount: positionsCountSelector(state),
+    positionsCount: 1,//positionsCountSelector(state),
     traderJoining: traderJoiningSelector(state)
   }
 }

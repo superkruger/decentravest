@@ -26,23 +26,7 @@ class App extends Component {
   }
 
   async loadBlockchainData(dispatch) {
-    const web3 = loadWeb3(dispatch)
-    if (window.ethereum !== undefined) {
-      await window.ethereum.enable();
-
-      window.ethereum.on('accountsChanged', async function (accounts) {
-        // await loadWebApp(web3, dispatch)
-        document.location.reload()
-      })
-
-      window.ethereum.on('chainChanged', () => {
-        document.location.reload()
-      })
-
-      window.ethereum.on('networkChanged', () => {
-        document.location.reload()
-      })
-    }
+    const web3 = await loadWeb3(dispatch)
     
     await loadWebApp(web3, dispatch)
   }
@@ -65,6 +49,7 @@ class App extends Component {
 const loadWebApp = async(web3, dispatch) => {
   await web3.eth.net.getNetworkType()
   const networkId = await web3.eth.net.getId()
+  console.log("NI", networkId)
   const account = await loadAccount(web3, dispatch)
   
   const traderPaired = await loadTraderPaired(account, web3, networkId, dispatch)

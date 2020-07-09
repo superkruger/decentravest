@@ -1,0 +1,21 @@
+{
+  "contracts": {},
+  "solidityLibs": {},
+  "proxies": {
+    "decentravest/MultiSigWalletFactory": [
+      {
+        "address": "0xe78A0F7E598Cc8b0Bb87894B0F60dD2a88d6a8Ab",
+        "kind": "NonProxy",
+        "bytecodeHash": "c7a9154dc0867f7efecba04bbcb8b122492c7ec0cf6705ebbee3714fa2c0d75e"
+      }
+    ],
+    "decentravest/MultiSigWallet": [
+      {
+        "address": "0xCfEB869F69431e42cdB54A4F4f105C19C080A601",
+        "kind": "NonProxy",
+        "bytecodeHash": "63a7996850d0b02d50a01c408a37cc5b320b47a4674bdedc3555452001e9eba3"
+      }
+    ]
+  },
+  "manifestVersion": "2.2"
+}

@@ -19,12 +19,12 @@ export const weiToEther = (wei, decimals) => {
 	}
 }
 
-// export const etherToWei = (e, decimals) => {
-// 	if (e) {
-// 		e = new BigNumber(e)
-// 		return e.times(new BigNumber(10).exponentiatedBy(decimals))
-// 	}
-// }
+export const etherToWei = (e, decimals) => {
+	if (e) {
+		e = new BigNumber(e)
+		return e.times(new BigNumber(10).exponentiatedBy(decimals))
+	}
+}
 
 export const formatBalance = (balance, asset) => {
 	const precision = 10000

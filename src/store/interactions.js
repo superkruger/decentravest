@@ -15,11 +15,44 @@ import {
   loadAllTraderPositions
 } from './dydxInteractions'
 
-export const loadWeb3 = (dispatch) => {
-	let web3 = new Web3(window['ethereum'] || Web3.givenProvider || 'http://127.0.0.1:8545')
-	web3.eth.handleRevert = true
-	dispatch(web3Loaded(web3))
+export const loadWeb3 = async (dispatch) => {
+
+	let web3
+	if (window.ethereum) {
+		web3 = new Web3(window.ethereum)
+		await window.ethereum.enable()
+
+		window.ethereum.on('accountsChanged', async function (accounts) {
+		    // await loadWebApp(web3, dispatch)
+		    document.location.reload()
+		  })
+
+		  window.ethereum.on('chainChanged', () => {
+		    document.location.reload()
+		  })
+
+		  window.ethereum.on('networkChanged', () => {
+		    document.location.reload()
+		  })
+	} else if (window.web3) {
+		web3 = new Web3(window.web3.currentProvider || 'http://127.0.0.1:8545')
+	}
+	else {
+		console.log('nothing')
+		// Do nothing....
+	}
+
+	if (web3) {
+		web3.eth.handleRevert = true
+		dispatch(web3Loaded(web3))
+	}
 	return web3
+
+	// console.log("W3V", Web3)
+	// let web3 = new Web3(window['ethereum'] || Web3.givenProvider || 'http://127.0.0.1:8545')
+	// web3.eth.handleRevert = true
+	// dispatch(web3Loaded(web3))
+	// return web3
 }
 
 export const loadAccount = async (web3, dispatch) => {
@@ -37,15 +70,15 @@ export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 
 			const trader = await traderPaired.methods.traders(account).call()
 			// console.log('Trader', trader)
-			// const investor = await traderPaired.methods.investors(account).call()
+			const investor = await traderPaired.methods.investors(account).call()
 			// console.log('Investor', investor)
 
 			if (trader && trader.user !== ZERO_ADDRESS) {
 				dispatch(traderLoaded(trader))
 			}
-			// if (investor && investor.user !== ZERO_ADDRESS) {
-			// 	dispatch(investorLoaded(investor))
-			// }
+			if (investor && investor.user !== ZERO_ADDRESS) {
+				dispatch(investorLoaded(investor))
+			}
 
 			loadAllTraders(traderPaired, dispatch)
 			dispatch(traderPairedLoaded(traderPaired))
@@ -106,6 +139,7 @@ export const joinAsInvestor = async (account, traderPaired, dispatch) => {
 
 			if (investor.user !== ZERO_ADDRESS) {
 				dispatch(investorLoaded(investor))
+				dispatch(pageSelected('investor'))
 			}
 		})
 		.on('error', (error) => {
@@ -113,6 +147,26 @@ export const joinAsInvestor = async (account, traderPaired, dispatch) => {
 		})
 	} catch (error) {
 		console.log('Could not joinAsInvestor', error)
+		return null
+	}
+}
+
+export const investEther = async (account, trader, amount, traderPaired, web3, dispatch) => {
+	try {
+
+		// traderPaired.methods.investEther().send({from: account, value: amount})
+		// .on('transactionHash', async (hash) => {
+			
+		// })
+		// .on('receipt', async (receipt) => {
+
+		// 		dispatch(investorLoaded(investor))
+		// })
+		// .on('error', (error) => {
+		// 	console.log('Could not investEther', error)
+		// })
+	} catch (error) {
+		console.log('Could not investEther', error)
 		return null
 	}
 }

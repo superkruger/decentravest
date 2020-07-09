@@ -3,6 +3,7 @@ export const ETHER = '0x0000000000000000000000000000000000000000'
 
 const BigNumber = require('bignumber.js')
 const web3 = require("web3");
+const web3Abi = require("web3-eth-abi")
 
 export const ether = (n) => {
 	return new web3.utils.BN(
@@ -18,13 +19,35 @@ export const fromEther = (n) => {
 
 export const fromTokens = (n) => fromEther(n)
 
-export const addEther = (a, b) => {
+export const add = (a, b) => {
 	let bnA = new BigNumber(a)
 	let bnB = new BigNumber(b)
 
 	return (bnA.plus(bnB)).toString()
 }
 
-export const addTokens = (a, b) => addEther(a, b)
+export const subtract = (a, b) => {
+	let bnA = new BigNumber(a)
+	let bnB = new BigNumber(b)
+
+	return (bnA.minus(bnB)).toString()
+}
 
 export const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
+
+export const encodeERC20TransferCall = (to, amount) => {
+	let encoded = web3Abi.encodeFunctionCall({
+	    name: 'transfer',
+	    type: 'function',
+	    inputs: [{
+	        type: 'address',
+	        name: 'to'
+	    },{
+	        type: 'uint256',
+	        name: 'amount'
+	    }]
+	}, [to, amount]);
+
+	console.log('Encoded', encoded)
+	return encoded
+}

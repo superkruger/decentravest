@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@amcharts/amcharts4": "^4.9.27",
     "@babel/core": "^7.9.0",
     "@babel/plugin-proposal-class-properties": "^7.8.3",
     "@babel/plugin-proposal-decorators": "^7.8.3",
@@ -23,13 +24,16 @@
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
+    "@truffle/hdwallet-provider": "1.0.36",
     "axios": "^0.19.2",
     "bignumber.js": "^9.0.0",
     "bootstrap": "^4.5.0",
     "chai-as-promised": "7.1.1",
     "chai-bignumber": "3.0.0",
+    "contract-proxy-kit": "^1.1.1",
     "flatted": "^2.0.2",
     "font-awesome": "^4.7.0",
+    "identicon.js": "^2.3.3",
     "lodash": "^4.17.15",
     "moment": "2.24.0",
     "react": "^16.13.1",
@@ -42,11 +46,8 @@
     "redux": "4.0.5",
     "redux-logger": "3.0.6",
     "reselect": "4.0.0",
-    "video-react": "^0.14.1",
-    "web3": "1.2.9",
-    "@truffle/hdwallet-provider": "1.0.36",
-    "@amcharts/amcharts4": "^4.9.27",
-    "identicon.js": "^2.3.3"
+    "web3": "^1.2.9",
+    "web3-eth-abi": "^1.2.9"
   },
   "scripts": {
     "start": "react-scripts start",

@@ -15,14 +15,10 @@ contract PairedInvestments is Initializable, Ownable {
 
 	uint8 constant IDX_UINT256_investmentId 		= 0;
 	uint8 constant IDX_UINT256_amount 				= 1;
-	uint8 constant IDX_UINT256_traderBalance 		= 2;
-	uint8 constant IDX_UINT256_investorBalance 		= 3;
-	uint8 constant IDX_UINT256_feeAccountBalance 	= 4;
 
 	uint256 public traderFeePercent; // trader fee percentage in unit of 100, i.e. 100 == 1% and 5 == 0.05% and 10000 == 100%
     uint256 public investorFeePercent; // investor fee percentage in unit of 100, i.e. 100 == 1% and 5 == 0.05% and 10000 == 100%
     uint256 public investorProfitPercent;
-    uint256 public secondsToForceExit; // number of seconds required before an exit can be forced
 
 	mapping(uint256 => _Investment) public investments;
     uint256 public investmentCount;
@@ -30,7 +26,6 @@ contract PairedInvestments is Initializable, Ownable {
     enum InvestmentState {
         Invested,
         ExitRequested,
-        ExitRejected,
         Divested
     }
 
@@ -38,10 +33,8 @@ contract PairedInvestments is Initializable, Ownable {
         uint256 id;
         address trader;
         address investor;
-        bool forced;
         address token;
         uint256 amount;
-        uint256 endDate;
         uint256 value;
         InvestmentState state;
     }
@@ -51,9 +44,6 @@ contract PairedInvestments is Initializable, Ownable {
     	address _investorAddress; 
     	uint256 _investmentId;
     	uint256 _amount;
-    	uint256 _traderBalance;
-    	uint256 _investorBalance;
-    	uint256 _feeAccountBalance;
     }
 
     modifier onlyManager() {
@@ -64,30 +54,36 @@ contract PairedInvestments is Initializable, Ownable {
     function initialize(
 	    	uint256 _traderFeePercent, 
 	        uint256 _investorFeePercent, 
-	        uint256 _investorProfitPercent,
-	        uint256 _secondsToForceExit) public initializer {
+	        uint256 _investorProfitPercent) 
+        public 
+        initializer 
+    {
     	Ownable.initialize(msg.sender);
     	traderFeePercent = _traderFeePercent;
         investorFeePercent = _investorFeePercent;
         investorProfitPercent = _investorProfitPercent;
-        secondsToForceExit = _secondsToForceExit;
     }
 
-    function setManager(address _manager) public onlyOwner {
+    function setManager(address _manager) 
+        public 
+        onlyOwner 
+    {
         manager = _manager;
     }
 
-    function invest(address _traderAddress, address _investorAddress, address _token, uint256 _amount) public onlyManager returns(uint256) {
+    function invest(address _traderAddress, address _investorAddress, address _token, uint256 _amount) 
+        public 
+        onlyManager 
+        returns(uint256) 
+    {
         
         investmentCount = investmentCount.add(1);
         investments[investmentCount] = _Investment({
                 id: investmentCount,
                 trader: _traderAddress,
                 investor: _investorAddress,
-                forced: false,
                 token: _token,
                 amount: _amount,
-                endDate: 0,
                 value: 0,
                 state: InvestmentState.Invested
             });
@@ -95,85 +91,27 @@ contract PairedInvestments is Initializable, Ownable {
         return investmentCount;
     }
 
-    function requestExit(address[2] memory _addresses, uint256[5] memory _uint256s) public onlyManager returns (uint256[4] memory) {
+    function requestExit(address[2] memory _addresses, uint256[2] memory _uint256s) 
+        public 
+        onlyManager 
+    {
 
         _Investment storage _investment = investments[_uint256s[IDX_UINT256_investmentId]];
 
         require(_investment.trader == _addresses[IDX_ADDRESS_traderAddress]);
         require(_investment.investor == _addresses[IDX_ADDRESS_investorAddress]);
 
-        if (_investment.endDate == 0) {
-            require(_investment.state == InvestmentState.Invested);
-        } else {
-            require(_investment.state == InvestmentState.ExitRequested);
-            require(!_investment.forced); // not yet forced
-            require((now - _investment.endDate) >= secondsToForceExit); // can force an exit
-            require(_investment.value == _uint256s[IDX_UINT256_amount]); // value is still the same
+        require(_investment.state == InvestmentState.Invested);
 
-            _investment.forced = true;
-        }
-
-        if (_uint256s[IDX_UINT256_amount] > _investment.amount) {
-            // profit
-
-            (
-            	,
-            	uint256 _investorFee,
-            	,
-            	
-            ) = _calculateProfitsAndFees(
-            	_uint256s[IDX_UINT256_amount], 
-            	_investment.amount, 
-            	traderFeePercent, 
-            	investorFeePercent, 
-            	investorProfitPercent
-            );
-
-            if (_investment.forced) {
-                // when forcing an exit with profit, the amount is immediately returned to the investor
-                _uint256s[IDX_UINT256_investorBalance] = _uint256s[IDX_UINT256_investorBalance].add(_investment.amount);
-
-                // immediately pay investor fee
-                _uint256s[IDX_UINT256_feeAccountBalance] = _uint256s[IDX_UINT256_feeAccountBalance].add(_investorFee);
-            }
-
-        } else {
-            // break even or loss
-            uint256 _traderFee = (_investment.amount.sub(_uint256s[IDX_UINT256_amount])).mul(traderFeePercent).div(10000);
-
-            if (_investment.forced) {
-                // take losses away from investor
-                _uint256s[IDX_UINT256_investorBalance] = _uint256s[IDX_UINT256_investorBalance].add(_uint256s[IDX_UINT256_amount]);
-
-                // when forcing an exit with loss, the losses are immedately returned to the trader
-                _uint256s[IDX_UINT256_traderBalance] = _uint256s[IDX_UINT256_traderBalance].add(
-                    _investment.amount.sub(_uint256s[IDX_UINT256_amount]).sub(_traderFee)
-                );
-            }
-        }
-
-        _investment.endDate = now;
         _investment.value = _uint256s[IDX_UINT256_amount];
         _investment.state = InvestmentState.ExitRequested;
-
-        uint256[4] memory _result = [
-        	_uint256s[IDX_UINT256_traderBalance], 
-        	_uint256s[IDX_UINT256_investorBalance], 
-        	_uint256s[IDX_UINT256_feeAccountBalance], 
-        	_investment.endDate];
-
-        return (_result);
     }
 
-    function rejectExit(address _traderAddress, uint256 _investmentId) public onlyManager {
-        _Investment storage _investment = investments[_investmentId];
-        require(_investment.trader == _traderAddress);
-        require(_investment.state == InvestmentState.ExitRequested);
-        
-        _investment.state = InvestmentState.ExitRejected;
-    }
-
-    function approveExit(address[2] memory _addresses, uint256[5] memory _uint256s) public onlyManager returns (uint256[4] memory) {
+    function approveExit(address[2] memory _addresses, uint256[2] memory _uint256s) 
+        public 
+        onlyManager 
+        returns (uint256[4] memory result) 
+    {
 
         _Investment storage _investment = investments[_uint256s[IDX_UINT256_investmentId]];
         require(_investment.trader == _addresses[IDX_ADDRESS_traderAddress]);
@@ -195,61 +133,34 @@ contract PairedInvestments is Initializable, Ownable {
             	investorProfitPercent
             );
 
-            require(_investorProfit.add(_traderFee) == _uint256s[IDX_UINT256_amount]);
+            require(_investorProfit.add(_traderFee).add(_investorFee) == _uint256s[IDX_UINT256_amount]);
 
-            if (_investment.forced) {
-                // investment profit (minus fee)
-                _uint256s[IDX_UINT256_investorBalance] = _uint256s[IDX_UINT256_investorBalance].add(_investorProfit);
+            // investment amount plus profit (minus fee)
+            result[1] = _investment.amount.add(_investorProfit);
 
-                // pay trader fee
-                _uint256s[IDX_UINT256_feeAccountBalance] = _uint256s[IDX_UINT256_feeAccountBalance].add(_traderFee);
-
-            } else {
-                // investment amount plus profit (minus fee)
-                _uint256s[IDX_UINT256_investorBalance] = _uint256s[IDX_UINT256_investorBalance].add(
-                    _investment.amount.add(_investorProfit)
-                );
-
-                // pay trader and investor fee
-                _uint256s[IDX_UINT256_feeAccountBalance] = _uint256s[IDX_UINT256_feeAccountBalance]
-                    .add(_traderFee)
-                    .add(_investorFee);
-            }
+            // pay trader and investor fee
+            result[2] = _traderFee.add(_investorFee);
+            
             
         } else {
 
         	uint256 _traderFee = (_investment.amount.sub(_investment.value)).mul(traderFeePercent).div(10000);
 
-        	require(
-                _traderFee == _uint256s[IDX_UINT256_amount]
-            );
+        	require(_traderFee == _uint256s[IDX_UINT256_amount]);
 
-            if (!_investment.forced) {
-            	
-                // take losses away from investor
-                _uint256s[IDX_UINT256_investorBalance] = _uint256s[IDX_UINT256_investorBalance].add(_investment.value);
-                
-                // add losses to trader balance
-                _uint256s[IDX_UINT256_traderBalance] = _uint256s[IDX_UINT256_traderBalance]
-                    .add(_investment.amount
-                        .sub(_investment.value)
-                        .sub(_traderFee)
-                    );
-            }
-
+            // take losses away from investor
+            result[1] = _investment.value;
+            
+            // add losses to trader balance
+            result[0] = _investment.amount.sub(_investment.value);
+            
             // trader fee
-           _uint256s[IDX_UINT256_feeAccountBalance] = _uint256s[IDX_UINT256_feeAccountBalance].add(_traderFee);
+            result[2] = _traderFee;
         }
 
         _investment.state = InvestmentState.Divested;
 
-        uint256[4] memory _result = [
-        	_uint256s[IDX_UINT256_traderBalance], 
-        	_uint256s[IDX_UINT256_investorBalance], 
-        	_uint256s[IDX_UINT256_feeAccountBalance], 
-        	_investment.amount];
-
-        return (_result);
+        result[3] = _investment.amount;
     }
 
     function _calculateProfitsAndFees(

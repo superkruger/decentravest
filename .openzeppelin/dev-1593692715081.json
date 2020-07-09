@@ -1,0 +1,542 @@
+{
+  "contracts": {
+    "PairedInvestments": {
+      "address": "0x2D8BE6BF0baA74e0A907016679CaE9190e80dD0A",
+      "constructorCode": "60806040526113d8806100136000396000f3fe",
+      "bodyBytecodeHash": "232be5070db9d32fa610003432836723eb2faadcb69083bac08c8fc1770847ed",
+      "localBytecodeHash": "59ae4377174c0e146a3ea2a0673d986f16dd7305477999139d4eeb954e40b866",
+      "deployedBytecodeHash": "59ae4377174c0e146a3ea2a0673d986f16dd7305477999139d4eeb954e40b866",
+      "types": {
+        "t_bool": {
+          "id": "t_bool",
+          "kind": "elementary",
+          "label": "bool"
+        },
+        "t_uint256": {
+          "id": "t_uint256",
+          "kind": "elementary",
+          "label": "uint256"
+        },
+        "t_array:50<t_uint256>": {
+          "id": "t_array:50<t_uint256>",
+          "valueType": "t_uint256",
+          "length": "50",
+          "kind": "array",
+          "label": "uint256[50]"
+        },
+        "t_address": {
+          "id": "t_address",
+          "kind": "elementary",
+          "label": "address"
+        },
+        "t_struct<PairedInvestments._Investment>": {
+          "id": "t_struct<PairedInvestments._Investment>",
+          "kind": "struct",
+          "label": "PairedInvestments._Investment",
+          "members": [
+            {
+              "label": "id",
+              "astId": 1947,
+              "type": "t_uint256",
+              "src": "1387:10:11"
+            },
+            {
+              "label": "trader",
+              "astId": 1949,
+              "type": "t_address",
+              "src": "1407:14:11"
+            },
+            {
+              "label": "investor",
+              "astId": 1951,
+              "type": "t_address",
+              "src": "1431:16:11"
+            },
+            {
+              "label": "forced",
+              "astId": 1953,
+              "type": "t_bool",
+              "src": "1457:11:11"
+            },
+            {
+              "label": "token",
+              "astId": 1955,
+              "type": "t_address",
+              "src": "1478:13:11"
+            },
+            {
+              "label": "amount",
+              "astId": 1957,
+              "type": "t_uint256",
+              "src": "1501:14:11"
+            },
+            {
+              "label": "endDate",
+              "astId": 1959,
+              "type": "t_uint256",
+              "src": "1525:15:11"
+            },
+            {
+              "label": "value",
+              "astId": 1961,
+              "type": "t_uint256",
+              "src": "1550:13:11"
+            },
+            {
+              "label": "state",
+              "astId": 1963,
+              "type": "t_enum<PairedInvestments.InvestmentState>",
+              "src": "1573:21:11"
+            }
+          ]
+        },
+        "t_enum<PairedInvestments.InvestmentState>": {
+          "id": "t_enum<PairedInvestments.InvestmentState>",
+          "kind": "enum",
+          "label": "PairedInvestments.InvestmentState",
+          "members": [
+            "Invested",
+            "ExitRequested",
+            "ExitRejected",
+            "Divested"
+          ]
+        },
+        "t_mapping<t_struct<PairedInvestments._Investment>>": {
+          "id": "t_mapping<t_struct<PairedInvestments._Investment>>",
+          "valueType": "t_struct<PairedInvestments._Investment>",
+          "label": "mapping(key => PairedInvestments._Investment)",
+          "kind": "mapping"
+        }
+      },
+      "storage": [
+        {
+          "contract": "Initializable",
+          "path": "@openzeppelin/upgrades/contracts/Initializable.sol",
+          "label": "initialized",
+          "astId": 722,
+          "type": "t_bool",
+          "src": "757:24:7"
+        },
+        {
+          "contract": "Initializable",
+          "path": "@openzeppelin/upgrades/contracts/Initializable.sol",
+          "label": "initializing",
+          "astId": 724,
+          "type": "t_bool",
+          "src": "876:25:7"
+        },
+        {
+          "contract": "Initializable",
+          "path": "@openzeppelin/upgrades/contracts/Initializable.sol",
+          "label": "______gap",
+          "astId": 786,
+          "type": "t_array:50<t_uint256>",
+          "src": "1982:29:7"
+        },
+        {
+          "contract": "Ownable",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol",
+          "label": "_owner",
+          "astId": 535,
+          "type": "t_address",
+          "src": "526:22:5"
+        },
+        {
+          "contract": "Ownable",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol",
+          "label": "______gap",
+          "astId": 648,
+          "type": "t_array:50<t_uint256>",
+          "src": "2471:29:5"
+        },
+        {
+          "contract": "PairedInvestments",
+          "path": "contracts/PairedInvestments.sol",
+          "label": "manager",
+          "astId": 1905,
+          "type": "t_address",
+          "src": "385:22:11"
+        },
+        {
+          "contract": "PairedInvestments",
+          "path": "contracts/PairedInvestments.sol",
+          "label": "traderFeePercent",
+          "astId": 1928,
+          "type": "t_uint256",
+          "src": "757:31:11"
+        },
+        {
+          "contract": "PairedInvestments",
+          "path": "contracts/PairedInvestments.sol",
+          "label": "investorFeePercent",
+          "astId": 1930,
+          "type": "t_uint256",
+          "src": "883:33:11"
+        },
+        {
+          "contract": "PairedInvestments",
+          "path": "contracts/PairedInvestments.sol",
+          "label": "investorProfitPercent",
+          "astId": 1932,
+          "type": "t_uint256",
+          "src": "1013:36:11"
+        },
+        {
+          "contract": "PairedInvestments",
+          "path": "contracts/PairedInvestments.sol",
+          "label": "secondsToForceExit",
+          "astId": 1934,
+          "type": "t_uint256",
+          "src": "1055:33:11"
+        },
+        {
+          "contract": "PairedInvestments",
+          "path": "contracts/PairedInvestments.sol",
+          "label": "investments",
+          "astId": 1938,
+          "type": "t_mapping<t_struct<PairedInvestments._Investment>>",
+          "src": "1151:50:11"
+        },
+        {
+          "contract": "PairedInvestments",
+          "path": "contracts/PairedInvestments.sol",
+          "label": "investmentCount",
+          "astId": 1940,
+          "type": "t_uint256",
+          "src": "1207:30:11"
+        }
+      ],
+      "warnings": {
+        "hasConstructor": false,
+        "hasSelfDestruct": false,
+        "hasDelegateCall": false,
+        "hasInitialValuesInDeclarations": false,
+        "uninitializedBaseContracts": []
+      }
+    },
+    "TraderPaired": {
+      "address": "0xaf5C4C6C7920B4883bC6252e9d9B8fE27187Cf68",
+      "constructorCode": "608060405261278b806100136000396000f3fe",
+      "bodyBytecodeHash": "f9e24769182c0279b96adb0e1f6bc0049e9ec3b21bce17f877b519945ca91916",
+      "localBytecodeHash": "4e6ba3a1107d93dab99fc7d3978358061a4c71df0189596846ae8cb1327a7149",
+      "deployedBytecodeHash": "4e6ba3a1107d93dab99fc7d3978358061a4c71df0189596846ae8cb1327a7149",
+      "types": {
+        "t_bool": {
+          "id": "t_bool",
+          "kind": "elementary",
+          "label": "bool"
+        },
+        "t_uint256": {
+          "id": "t_uint256",
+          "kind": "elementary",
+          "label": "uint256"
+        },
+        "t_array:50<t_uint256>": {
+          "id": "t_array:50<t_uint256>",
+          "valueType": "t_uint256",
+          "length": "50",
+          "kind": "array",
+          "label": "uint256[50]"
+        },
+        "t_address": {
+          "id": "t_address",
+          "kind": "elementary",
+          "label": "address"
+        },
+        "t_struct<Roles.Role>": {
+          "id": "t_struct<Roles.Role>",
+          "kind": "struct",
+          "label": "Roles.Role",
+          "members": [
+            {
+              "label": "bearer",
+              "astId": 35,
+              "type": "t_mapping<t_bool>",
+              "src": "150:32:1"
+            }
+          ]
+        },
+        "t_mapping<t_bool>": {
+          "id": "t_mapping<t_bool>",
+          "valueType": "t_bool",
+          "label": "mapping(key => bool)",
+          "kind": "mapping"
+        },
+        "t_struct<TraderPaired._Trader>": {
+          "id": "t_struct<TraderPaired._Trader>",
+          "kind": "struct",
+          "label": "TraderPaired._Trader",
+          "members": [
+            {
+              "label": "user",
+              "astId": 2830,
+              "type": "t_address",
+              "src": "2022:12:12"
+            },
+            {
+              "label": "investmentCount",
+              "astId": 2832,
+              "type": "t_uint256",
+              "src": "2044:23:12"
+            }
+          ]
+        },
+        "t_mapping<t_struct<TraderPaired._Trader>>": {
+          "id": "t_mapping<t_struct<TraderPaired._Trader>>",
+          "valueType": "t_struct<TraderPaired._Trader>",
+          "label": "mapping(key => TraderPaired._Trader)",
+          "kind": "mapping"
+        },
+        "t_struct<TraderPaired._Investor>": {
+          "id": "t_struct<TraderPaired._Investor>",
+          "kind": "struct",
+          "label": "TraderPaired._Investor",
+          "members": [
+            {
+              "label": "user",
+              "astId": 2840,
+              "type": "t_address",
+              "src": "2188:12:12"
+            },
+            {
+              "label": "investmentCount",
+              "astId": 2842,
+              "type": "t_uint256",
+              "src": "2210:23:12"
+            }
+          ]
+        },
+        "t_mapping<t_struct<TraderPaired._Investor>>": {
+          "id": "t_mapping<t_struct<TraderPaired._Investor>>",
+          "valueType": "t_struct<TraderPaired._Investor>",
+          "label": "mapping(key => TraderPaired._Investor)",
+          "kind": "mapping"
+        },
+        "t_mapping<t_uint256>": {
+          "id": "t_mapping<t_uint256>",
+          "valueType": "t_uint256",
+          "label": "mapping(key => uint256)",
+          "kind": "mapping"
+        },
+        "t_struct<TraderPaired._Allocation>": {
+          "id": "t_struct<TraderPaired._Allocation>",
+          "kind": "struct",
+          "label": "TraderPaired._Allocation",
+          "members": [
+            {
+              "label": "total",
+              "astId": 2835,
+              "type": "t_uint256",
+              "src": "2109:13:12"
+            },
+            {
+              "label": "invested",
+              "astId": 2837,
+              "type": "t_uint256",
+              "src": "2132:16:12"
+            }
+          ]
+        },
+        "t_mapping<t_struct<TraderPaired._Allocation>>": {
+          "id": "t_mapping<t_struct<TraderPaired._Allocation>>",
+          "valueType": "t_struct<TraderPaired._Allocation>",
+          "label": "mapping(key => TraderPaired._Allocation)",
+          "kind": "mapping"
+        }
+      },
+      "storage": [
+        {
+          "contract": "Initializable",
+          "path": "@openzeppelin/upgrades/contracts/Initializable.sol",
+          "label": "initialized",
+          "astId": 722,
+          "type": "t_bool",
+          "src": "757:24:7"
+        },
+        {
+          "contract": "Initializable",
+          "path": "@openzeppelin/upgrades/contracts/Initializable.sol",
+          "label": "initializing",
+          "astId": 724,
+          "type": "t_bool",
+          "src": "876:25:7"
+        },
+        {
+          "contract": "Initializable",
+          "path": "@openzeppelin/upgrades/contracts/Initializable.sol",
+          "label": "______gap",
+          "astId": 786,
+          "type": "t_array:50<t_uint256>",
+          "src": "1982:29:7"
+        },
+        {
+          "contract": "Ownable",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol",
+          "label": "_owner",
+          "astId": 535,
+          "type": "t_address",
+          "src": "526:22:5"
+        },
+        {
+          "contract": "Ownable",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol",
+          "label": "______gap",
+          "astId": 648,
+          "type": "t_array:50<t_uint256>",
+          "src": "2471:29:5"
+        },
+        {
+          "contract": "PauserRole",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/access/roles/PauserRole.sol",
+          "label": "_pausers",
+          "astId": 132,
+          "type": "t_struct<Roles.Role>",
+          "src": "327:27:2"
+        },
+        {
+          "contract": "PauserRole",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/access/roles/PauserRole.sol",
+          "label": "______gap",
+          "astId": 232,
+          "type": "t_array:50<t_uint256>",
+          "src": "1193:29:2"
+        },
+        {
+          "contract": "Pausable",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/lifecycle/Pausable.sol",
+          "label": "_paused",
+          "astId": 254,
+          "type": "t_bool",
+          "src": "909:20:3"
+        },
+        {
+          "contract": "Pausable",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/lifecycle/Pausable.sol",
+          "label": "______gap",
+          "astId": 337,
+          "type": "t_array:50<t_uint256>",
+          "src": "2163:29:3"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "feeAccount",
+          "astId": 2718,
+          "type": "t_address",
+          "src": "698:25:12"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "traders",
+          "astId": 2722,
+          "type": "t_mapping<t_struct<TraderPaired._Trader>>",
+          "src": "764:42:12"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "investors",
+          "astId": 2726,
+          "type": "t_mapping<t_struct<TraderPaired._Investor>>",
+          "src": "812:46:12"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "pairedInvestments",
+          "astId": 2728,
+          "type": "t_address",
+          "src": "865:32:12"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "tokens",
+          "astId": 2732,
+          "type": "t_mapping<t_bool>",
+          "src": "904:38:12"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "traderInvestments",
+          "astId": 2738,
+          "type": "t_mapping<t_uint256>",
+          "src": "949:72:12"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "investorInvestments",
+          "astId": 2744,
+          "type": "t_mapping<t_uint256>",
+          "src": "1027:74:12"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "allocations",
+          "astId": 2750,
+          "type": "t_mapping<t_struct<TraderPaired._Allocation>>",
+          "src": "1107:70:12"
+        },
+        {
+          "contract": "TraderPaired",
+          "path": "contracts/TraderPaired.sol",
+          "label": "balances",
+          "astId": 2756,
+          "type": "t_mapping<t_uint256>",
+          "src": "1184:63:12"
+        }
+      ],
+      "warnings": {
+        "hasConstructor": false,
+        "hasSelfDestruct": false,
+        "hasDelegateCall": false,
+        "hasInitialValuesInDeclarations": false,
+        "uninitializedBaseContracts": []
+      }
+    }
+  },
+  "solidityLibs": {},
+  "proxies": {
+    "@openzeppelin/contracts-ethereum-package/StandaloneERC20": [
+      {
+        "address": "0xb09bCc172050fBd4562da8b229Cf3E45Dc3045A6",
+        "kind": "NonProxy",
+        "bytecodeHash": "3c51effc0b3d25e6a30b6e16ce9a93a6705be6927185f8b0af083a6a3cc3e905"
+      }
+    ],
+    "decentravest/PairedInvestments": [
+      {
+        "address": "0x5b9b42d6e4B2e4Bf8d42Eba32D46918e10899B66",
+        "version": "1.0.0",
+        "implementation": "0x2D8BE6BF0baA74e0A907016679CaE9190e80dD0A",
+        "admin": "0x970e8f18ebfEa0B08810f33a5A40438b9530FBCF",
+        "kind": "Upgradeable"
+      }
+    ],
+    "decentravest/TraderPaired": [
+      {
+        "address": "0xEC5d4F247aF81A843612eb1371CBCfa88b762119",
+        "version": "1.0.0",
+        "implementation": "0xaf5C4C6C7920B4883bC6252e9d9B8fE27187Cf68",
+        "admin": "0x970e8f18ebfEa0B08810f33a5A40438b9530FBCF",
+        "kind": "Upgradeable"
+      }
+    ]
+  },
+  "manifestVersion": "2.2",
+  "dependencies": {
+    "@openzeppelin/contracts-ethereum-package": {
+      "package": "0xFC628dd79137395F3C9744e33b1c5DE554D94882",
+      "version": "2.5.0",
+      "customDeploy": true
+    }
+  },
+  "version": "1.0.0",
+  "proxyAdmin": {
+    "address": "0x970e8f18ebfEa0B08810f33a5A40438b9530FBCF"
+  }
+}
