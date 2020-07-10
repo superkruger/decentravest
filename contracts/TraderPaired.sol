@@ -34,7 +34,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
 
     event Trader(address indexed trader, uint256 date);
     event Investor(address indexed investor, uint256 date);
-    event Investment(address indexed wallet, address indexed trader, address indexed investor, uint256 date);
+    event Investment(address indexed wallet, address indexed investor, uint256 date);
     event Allocate(address indexed trader, address token, uint256 amount, uint256 date);
     event Withdraw(address indexed token, address indexed user, uint256 amount, uint256 balance, uint256 date);
     event Invest(uint256 id, address indexed investor, address indexed trader, address indexed token, uint256 amount, uint256 date);
@@ -156,15 +156,13 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         return false;
     }
 
-    function createInvestment(address _traderAddress) 
+    function createInvestment() 
         external
         whenNotPaused
         isInvestor(msg.sender)
-        isTrader(_traderAddress)
-        notInvested(_traderAddress, msg.sender)
     {
-        address wallet = MultiSigFundWalletFactory(multiSigFundWalletFactory).create(address(this), _traderAddress, msg.sender, feeAccount);
-        emit Investment(wallet, _traderAddress, msg.sender, now);
+        address wallet = MultiSigFundWalletFactory(multiSigFundWalletFactory).create(address(this), msg.sender, feeAccount);
+        emit Investment(wallet, msg.sender, now);
     }
 
     function invest(address _traderAddress, address _investorAddress, address _token, uint256 _amount) 
@@ -212,23 +210,45 @@ contract TraderPaired is Initializable, Ownable, Pausable {
     //
     //    Investor exits an investment
     //
-    function requestExit(address _traderAddress, address _investorAddress, uint256 _investmentId, uint256 _value) 
+    function requestExitInvestor(address _traderAddress, address _investorAddress, uint256 _investmentId, uint256 _value) 
         public 
         whenNotPaused 
         onlyWallet 
     {
         _Trader memory _trader = traders[_traderAddress];
         require(_trader.user == _traderAddress);
- 
-        address[2] memory _addressArgs = [
+
+        PairedInvestments(pairedInvestments).requestExitInvestor(
             _traderAddress, 
-            _investorAddress];
-
-        uint256[2] memory _uint256Args = [
+            _investorAddress, 
             _investmentId, 
-            _value];
+            _value);
 
-        PairedInvestments(pairedInvestments).requestExit(_addressArgs, _uint256Args);
+        emit RequestExit(
+            _traderAddress,
+            _investmentId, 
+            _value,
+            now
+        );
+    }
+
+    //
+    //    Trader exits an investment
+    //
+    function requestExitTrader(address _traderAddress, address _investorAddress, uint256 _investmentId, uint256 _value, uint256 _amount) 
+        public 
+        whenNotPaused 
+        onlyWallet 
+    {
+        _Trader memory _trader = traders[_traderAddress];
+        require(_trader.user == _traderAddress);
+
+        PairedInvestments(pairedInvestments).requestExitTrader(
+            _traderAddress, 
+            _investorAddress, 
+            _investmentId, 
+            _value,
+            _amount);
 
         emit RequestExit(
             _traderAddress,
@@ -249,15 +269,11 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         require(_trader.user == _traderAddress);
         require(_investor.user == _investorAddress);
 
-        address[2] memory _addressArgs = [
+        uint256[4] memory _result = PairedInvestments(pairedInvestments).approveExit(
             _traderAddress,
-            _investorAddress];
-
-        uint256[2] memory _uint256Args = [
+            _investorAddress, 
             _investmentId, 
-            _amount];
-
-        uint256[4] memory _result = PairedInvestments(pairedInvestments).approveExit(_addressArgs, _uint256Args);
+            _amount);
 
         allocations[_traderAddress][_token].invested = allocations[_traderAddress][_token].invested.sub(_result[3]);
         
@@ -272,26 +288,26 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         );
     }
 
-    //
-    //    Investor withdraws previously deposited ether funds, perhaps including profits (and losses)
-    //
-    function withdrawEther(uint256 _amount) external whenNotPaused {
-        uint256 balance = balances[msg.sender][ETHER];
-        balances[msg.sender][ETHER] = balance.sub(_amount);
-        msg.sender.transfer(_amount);
-        emit Withdraw(ETHER, msg.sender, _amount, balances[msg.sender][ETHER], now);
-    }
+    // //
+    // //    Investor withdraws previously deposited ether funds, perhaps including profits (and losses)
+    // //
+    // function withdrawEther(uint256 _amount) external whenNotPaused {
+    //     uint256 balance = balances[msg.sender][ETHER];
+    //     balances[msg.sender][ETHER] = balance.sub(_amount);
+    //     msg.sender.transfer(_amount);
+    //     emit Withdraw(ETHER, msg.sender, _amount, balances[msg.sender][ETHER], now);
+    // }
 
-    //
-    //    Investor withdraws previously deposited token funds, perhaps including profits (and losses)
-    //
-    function withdrawToken(address _token, uint256 _amount) external whenNotPaused {
-        require(_token != ETHER);
-        uint256 balance = balances[msg.sender][_token];
-        // require(IERC20(_token).transferFrom(address(this), msg.sender, _amount));
-        require(IERC20(_token).transfer(msg.sender, _amount));
-        balances[msg.sender][_token] = balance.sub(_amount);
-        emit Withdraw(_token, msg.sender, _amount, balances[msg.sender][_token], now);
-    }
+    // //
+    // //    Investor withdraws previously deposited token funds, perhaps including profits (and losses)
+    // //
+    // function withdrawToken(address _token, uint256 _amount) external whenNotPaused {
+    //     require(_token != ETHER);
+    //     uint256 balance = balances[msg.sender][_token];
+    //     // require(IERC20(_token).transferFrom(address(this), msg.sender, _amount));
+    //     require(IERC20(_token).transfer(msg.sender, _amount));
+    //     balances[msg.sender][_token] = balance.sub(_amount);
+    //     emit Withdraw(_token, msg.sender, _amount, balances[msg.sender][_token], now);
+    // }
 
 }

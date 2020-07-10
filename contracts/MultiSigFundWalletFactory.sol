@@ -6,11 +6,11 @@ import "./MultiSigFundWallet.sol";
 
 contract MultiSigFundWalletFactory is Factory {
 
-    function create(address _fund, address _trader, address _investor, address _admin)
+    function create(address _fund, address _investor, address _admin)
         public
         returns (address wallet)
     {
-        MultiSigFundWallet msfw = new MultiSigFundWallet(_fund, _trader, _investor, _admin);
+        MultiSigFundWallet msfw = new MultiSigFundWallet(_fund, _investor, _admin);
         wallet = address(msfw);
         register(wallet);
     }

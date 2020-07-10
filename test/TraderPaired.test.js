@@ -7,7 +7,7 @@ const TraderPaired = contract.fromArtifact('TraderPaired');
 const PairedInvestments = contract.fromArtifact('PairedInvestments');
 const Token = contract.fromArtifact('@openzeppelin/contracts-ethereum-package/StandaloneERC20');
 
-import { ether, tokens, addEther, addTokens, EVM_REVERT, ETHER } from './helpers'
+import { ether, tokens, add, addTokens, EVM_REVERT, ETHER } from './helpers'
 
 require('chai')
 	.use(require('chai-as-promised'))
@@ -241,6 +241,160 @@ describe('TraderPaired', function () {
 		})
 	})
 
+	describe('initiating', () => {
+
+		let result
+		let etherAmount
+		let tokenAmount
+		let etherAllocation
+		let tokenAllocation
+		let walletEtherBalance
+		let walletTokenBalance
+		let wallet
+
+		beforeEach(async () => {
+
+			await platform.joinAsTrader({from: trader1})
+			await platform.joinAsInvestor({from: investor1})
+			result = await platform.createInvestment({from: investor1})
+			console.log("createInvestment gas", result.receipt.gasUsed)
+			const log = result.logs[0]
+			log.event.should.eq('Investment')
+			const event = log.args
+			wallet = await MultiSigFundWallet.at(event.wallet)
+		})
+
+		describe('success', () => {
+
+			beforeEach(async () => {
+				
+				etherAmount = ether(0.6)
+				etherAllocation = ether(1)
+
+				tokenAmount = tokens(0.8)
+				tokenAllocation = tokens(2)
+
+				await platform.allocate(ETHER, etherAllocation, {from: trader1})
+				await platform.allocate(token.address, tokenAllocation, {from: trader1})
+				await token.approve(wallet.address, tokenAmount, {from: investor1})
+				result = await wallet.initiateFund(trader1, [token.address], [tokenAmount], {from: investor1, value: etherAmount})
+				console.log("initiateFund gas", result.receipt.gasUsed)
+			})
+
+			it('tracks initiation', async () => {
+				let investorObj, traderObj, investmentEtherObj, investmentTokenObj, allocationEtherObj, allocationTokenObj, traderInvestmentId, investorInvestmentId
+				investorObj = await platform.investors(investor1)
+				traderObj = await platform.traders(trader1)
+				investmentEtherObj = await investments.investments(1)
+				investmentTokenObj = await investments.investments(2)
+				allocationEtherObj = await platform.allocations(trader1, ETHER)
+				allocationTokenObj = await platform.allocations(trader1, token.address)
+				traderInvestmentId = await platform.traderInvestments(trader1, 1)
+				investorInvestmentId = await platform.investorInvestments(investor1, 1)
+
+				walletEtherBalance = await balance.current(wallet.address, 'wei')
+				walletEtherBalance.toString().should.eq(etherAmount.toString())
+
+				walletTokenBalance = await token.balanceOf(wallet.address)
+				walletTokenBalance.toString().should.eq(tokenAmount.toString())
+
+				traderObj.investmentCount.toString().should.eq('2')
+				investorObj.investmentCount.toString().should.eq('2')
+
+				investmentEtherObj.id.toString().should.eq('1')
+				investmentEtherObj.trader.should.eq(trader1)
+				investmentEtherObj.investor.should.eq(investor1)
+				investmentEtherObj.token.should.eq(ETHER)
+				investmentEtherObj.amount.toString().should.eq(etherAmount.toString())
+				investmentEtherObj.state.toString().should.eq('0')
+
+				investmentTokenObj.id.toString().should.eq('2')
+				investmentTokenObj.trader.should.eq(trader1)
+				investmentTokenObj.investor.should.eq(investor1)
+				investmentTokenObj.token.should.eq(token.address)
+				investmentTokenObj.amount.toString().should.eq(tokenAmount.toString())
+				investmentTokenObj.state.toString().should.eq('0')
+
+				allocationEtherObj.invested.toString().should.eq(etherAmount.toString())
+
+				allocationTokenObj.invested.toString().should.eq(tokenAmount.toString())
+
+				traderInvestmentId.toString().should.eq('1')
+				investorInvestmentId.toString().should.eq('1')
+			})
+
+			it('emits a SetTrader event', async () => {
+				let log = result.logs[0]
+				log.event.should.eq('SetTrader')
+				let event = log.args
+				event.trader.toString().should.eq(trader1, 'trader is correct')
+			})
+
+			it('emits Fund events', async () => {
+				let log = result.logs[1]
+				log.event.should.eq('Fund')
+				let event = log.args
+				event.trader.toString().should.eq(trader1, 'trader is correct')
+				event.investor.toString().should.eq(investor1, 'investor is correct')
+				event.investmentId.toString().should.eq('1', 'investmentId is correct')
+				event.token.should.eq(ETHER, 'token is correct')
+				event.amount.toString().should.eq(etherAmount.toString(), 'amount is correct')
+
+				log = result.logs[2]
+				log.event.should.eq('Fund')
+				event = log.args
+				event.trader.toString().should.eq(trader1, 'trader is correct')
+				event.investor.toString().should.eq(investor1, 'investor is correct')
+				event.investmentId.toString().should.eq('2', 'investmentId is correct')
+				event.token.should.eq(token.address, 'token is correct')
+				event.amount.toString().should.eq(tokenAmount.toString(), 'amount is correct')
+			})
+		})
+
+		describe('failure', () => {
+			beforeEach(async () => {
+				etherAmount = ether(0.6)
+				etherAllocation = ether(1)
+
+				tokenAmount = tokens(0.8)
+				tokenAllocation = tokens(2)
+				await platform.allocate(ETHER, etherAllocation, {from: trader1})
+				await platform.allocate(token.address, tokenAllocation, {from: trader1})
+				await token.approve(wallet.address, tokenAmount, {from: investor1})
+			})
+
+			it('not an investor', async () => {
+				await wallet.initiateFund(trader1, [token.address], [tokenAmount], {from: trader1, value: etherAmount}).should.be.rejectedWith(EVM_REVERT)
+			})
+
+			it('not a trader', async () => {
+				await wallet.initiateFund(feeAccount, [token.address], [tokenAmount], {from: investor1, value: etherAmount}).should.be.rejectedWith(EVM_REVERT)
+			})
+
+			it('investor not found', async () => {
+				await wallet.initiateFund(trader1, [token.address], [tokenAmount], {from: investor2, value: etherAmount}).should.be.rejectedWith(EVM_REVERT)
+			})
+
+			it('ether more than allocation', async () => {
+				etherAmount = ether(2)
+				await wallet.initiateFund(trader1, [token.address], [tokenAmount], {from: investor1, value: etherAmount}).should.be.rejectedWith(EVM_REVERT)
+			})
+
+			it('token more than allocation', async () => {
+				tokenAmount = ether(3)
+				await wallet.initiateFund(trader1, [token.address], [tokenAmount], {from: investor1, value: etherAmount}).should.be.rejectedWith(EVM_REVERT)
+			})
+
+			it('missing token amount', async () => {
+				await wallet.initiateFund(trader1, [token.address], [], {from: investor1, value: etherAmount}).should.be.rejectedWith(EVM_REVERT)
+			})
+
+			it('missing token', async () => {
+				await wallet.initiateFund(trader1, [], [tokenAmount], {from: investor1, value: etherAmount}).should.be.rejectedWith(EVM_REVERT)
+			})
+		})
+	})
+
 	describe('investing', () => {
 
 		let result
@@ -259,12 +413,13 @@ describe('TraderPaired', function () {
 
 			await platform.joinAsTrader({from: trader1})
 			await platform.joinAsInvestor({from: investor1})
-			result = await platform.createInvestment(trader1, {from: investor1})
+			result = await platform.createInvestment({from: investor1})
 			console.log("createInvestment gas", result.receipt.gasUsed)
 			const log = result.logs[0]
 			log.event.should.eq('Investment')
 			const event = log.args
 			wallet = await MultiSigFundWallet.at(event.wallet)
+			await wallet.setTrader(trader1, {from: investor1})
 		})
 
 		describe('ether success', () => {
@@ -338,7 +493,6 @@ describe('TraderPaired', function () {
 				amount = ether(2)
 				await wallet.fundEther({from: investor1, value: amount}).should.be.rejectedWith(EVM_REVERT)
 			})
-
 		})
 
 		describe('token success', () => {
@@ -415,7 +569,7 @@ describe('TraderPaired', function () {
 		})
 	})
 
-	describe('request exit', () => {
+	describe('request exit investor', () => {
 
 		let result
 		let amount
@@ -437,11 +591,12 @@ describe('TraderPaired', function () {
 			await platform.joinAsTrader({from: trader1})
 			await platform.joinAsInvestor({from: investor1})
 			await platform.allocate(ETHER, ether(1), {from: trader1})
-			result = await platform.createInvestment(trader1, {from: investor1})
+			result = await platform.createInvestment({from: investor1})
 			const log = result.logs[0]
 			log.event.should.eq('Investment')
 			const event = log.args
 			wallet = await MultiSigFundWallet.at(event.wallet)
+			await wallet.setTrader(trader1, {from: investor1})
 			result = await wallet.fundEther({from: investor1, value: amount})
 		})
 
@@ -488,12 +643,12 @@ describe('TraderPaired', function () {
 				await platform.joinAsInvestor({from: investor2})
 				await platform.allocate(ETHER, ether(1), {from: trader2})
 
-				result = await platform.createInvestment(trader2, {from: investor2})
+				result = await platform.createInvestment({from: investor2})
 				const log = result.logs[0]
 				log.event.should.eq('Investment')
 				const event = log.args
 				wallet2 = await MultiSigFundWallet.at(event.wallet)
-
+				await wallet2.setTrader(trader2, {from: investor2})
 				result = await wallet2.fundEther({from: investor2, value: amount})
 			})
 
@@ -512,7 +667,221 @@ describe('TraderPaired', function () {
 		})
 	})
 
-	describe('approve exit', () => {
+	describe('request exit trader ether', () => {
+
+		let result
+		let amount
+		let value
+		let investorId
+		let traderId
+		let investmentId
+		let investorProfitPercent
+		let wallet
+		let walletBalance
+		let settlementAmount
+
+		beforeEach(async () => {
+			amount = ether(0.6)
+			value = ether(0.7)
+			investorId = 1
+			traderId = 1
+			investmentId = 1
+			investorProfitPercent = 8000
+
+			await platform.joinAsTrader({from: trader1})
+			await platform.joinAsInvestor({from: investor1})
+			await platform.allocate(ETHER, ether(1), {from: trader1})
+			result = await platform.createInvestment({from: investor1})
+			const log = result.logs[0]
+			log.event.should.eq('Investment')
+			const event = log.args
+			wallet = await MultiSigFundWallet.at(event.wallet)
+			await wallet.setTrader(trader1, {from: investor1})
+			result = await wallet.fundEther({from: investor1, value: amount})
+		})
+
+		describe('success', () => {
+
+			beforeEach(async () => {
+				settlementAmount = ether(0.081) // 0.08 + 0.001
+
+				result = await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount})
+			})
+
+			it('tracks request', async () => {
+				let investmentObj
+				investmentObj = await investments.investments(1)
+
+				investmentObj.trader.should.eq(trader1)
+				investmentObj.investor.should.eq(investor1)
+				investmentObj.value.toString().should.eq(value.toString())
+				investmentObj.state.toString().should.eq('2')
+
+				walletBalance = await balance.current(wallet.address, 'wei')
+				walletBalance.toString().should.eq(add(amount, settlementAmount), 'walletBalance is correct')
+			})
+
+			it('emits an DisbursementCreated event', async () => {
+				const log = result.logs[0]
+				log.event.should.eq('DisbursementCreated')
+				const event = log.args
+				event.initiator.toString().should.eq(trader1, 'initiator is correct')
+				event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
+				event.disbursementId.toString().should.eq('0', 'disbursementId is correct')
+			})
+		})
+
+		describe('failure', () => {
+
+			let wallet2
+
+			beforeEach(async () => {
+				settlementAmount = ether(0.081) // 0.08 + 0.001
+
+				await platform.joinAsTrader({from: trader2})
+				await platform.joinAsInvestor({from: investor2})
+				await platform.allocate(ETHER, ether(1), {from: trader2})
+
+				result = await platform.createInvestment({from: investor2})
+				const log = result.logs[0]
+				log.event.should.eq('Investment')
+				const event = log.args
+				wallet2 = await MultiSigFundWallet.at(event.wallet)
+				await wallet2.setTrader(trader2, {from: investor2})
+				result = await wallet2.fundEther({from: investor2, value: amount})
+			})
+
+			it('not an investor or trader', async () => {
+				await wallet.disburseEther(investmentId, value, {from: trader2, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+			})
+
+			it('not in correct state', async () => {
+				await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount})
+				await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+			})
+
+			it('incorrect settlementAmount', async () => {
+				settlementAmount = ether(0.08)
+				await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+			})
+
+			it('not a payment', async () => {
+				await wallet.disburseEther(investmentId, value, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+			})
+		})
+	})
+
+	describe('request exit trader token', () => {
+
+		let result
+		let amount
+		let value
+		let investorId
+		let traderId
+		let investmentId
+		let investorProfitPercent
+		let wallet
+		let walletBalance
+		let settlementAmount
+
+		beforeEach(async () => {
+			amount = tokens(0.6)
+			value = tokens(0.7)
+			investorId = 1
+			traderId = 1
+			investmentId = 1
+			investorProfitPercent = 8000
+
+			await platform.joinAsTrader({from: trader1})
+			await platform.joinAsInvestor({from: investor1})
+			await platform.allocate(token.address, tokens(1), {from: trader1})
+			result = await platform.createInvestment({from: investor1})
+			const log = result.logs[0]
+			log.event.should.eq('Investment')
+			const event = log.args
+			wallet = await MultiSigFundWallet.at(event.wallet)
+			await wallet.setTrader(trader1, {from: investor1})
+			await token.approve(wallet.address, amount, {from: investor1})
+			result = await wallet.fundToken(token.address, amount, {from: investor1})
+		})
+
+		describe('success', () => {
+
+			beforeEach(async () => {
+				settlementAmount = tokens(0.081) // 0.08 + 0.001
+
+				await token.approve(wallet.address, settlementAmount, {from: trader1})
+				result = await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1})
+			})
+
+			it('tracks request', async () => {
+				let investmentObj
+				investmentObj = await investments.investments(1)
+
+				investmentObj.trader.should.eq(trader1)
+				investmentObj.investor.should.eq(investor1)
+				investmentObj.value.toString().should.eq(value.toString())
+				investmentObj.state.toString().should.eq('2')
+
+				walletBalance = await token.balanceOf(wallet.address)
+				walletBalance.toString().should.eq(add(amount, settlementAmount), 'walletBalance is correct')
+			})
+
+			it('emits an DisbursementCreated event', async () => {
+				const log = result.logs[0]
+				log.event.should.eq('DisbursementCreated')
+				const event = log.args
+				event.initiator.toString().should.eq(trader1, 'initiator is correct')
+				event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
+				event.disbursementId.toString().should.eq('0', 'disbursementId is correct')
+			})
+		})
+
+		describe('failure', () => {
+
+			let wallet2
+
+			beforeEach(async () => {
+				settlementAmount = tokens(0.081) // 0.08 + 0.001
+
+				await platform.joinAsTrader({from: trader2})
+				await platform.joinAsInvestor({from: investor2})
+				await platform.allocate(token.address, tokens(1), {from: trader2})
+
+				result = await platform.createInvestment({from: investor2})
+				const log = result.logs[0]
+				log.event.should.eq('Investment')
+				const event = log.args
+				wallet2 = await MultiSigFundWallet.at(event.wallet)
+				await wallet2.setTrader(trader2, {from: investor2})
+				await token.approve(wallet2.address, amount, {from: investor2})
+				result = await wallet2.fundToken(token.address, amount, {from: investor2})
+			})
+
+			it('not an investor or trader', async () => {
+				await token.approve(wallet.address, settlementAmount, {from: trader1})
+				await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader2}).should.be.rejectedWith(EVM_REVERT)
+			})
+
+			it('not in correct state', async () => {
+				await token.approve(wallet.address, settlementAmount, {from: trader1})
+				await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1})
+				await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+			})
+
+			it('incorrect settlementAmount', async () => {
+				settlementAmount = tokens(0.08)
+				await token.approve(wallet.address, settlementAmount, {from: trader1})
+				await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+			})
+
+			it('not an approved payment', async () => {
+				await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+			})
+		})
+	})
+
+	describe('approve exit trader', () => {
 
 		let result
 		let amount
@@ -543,11 +912,12 @@ describe('TraderPaired', function () {
 				allocation = ether(1)
 
 				await platform.allocate(ETHER, allocation, {from: trader1})
-				result = await platform.createInvestment(trader1, {from: investor1})
+				result = await platform.createInvestment({from: investor1})
 				const log = result.logs[0]
 				log.event.should.eq('Investment')
 				const event = log.args
 				wallet = await MultiSigFundWallet.at(event.wallet)
+				await wallet.setTrader(trader1, {from: investor1})
 				result = await wallet.fundEther({from: investor1, value: amount})
 			})
 
@@ -579,7 +949,7 @@ describe('TraderPaired', function () {
 
 					investmentObj.trader.should.eq(trader1)
 					investmentObj.investor.should.eq(investor1)
-					investmentObj.state.toString().should.eq('2', 'investment state correct')
+					investmentObj.state.toString().should.eq('3', 'investment state correct')
 
 					console.log("traderBalance", traderBalance.toString())
 					console.log("investorBalance", investorBalance.toString())
@@ -641,7 +1011,7 @@ describe('TraderPaired', function () {
 
 					investmentObj.trader.should.eq(trader1)
 					investmentObj.investor.should.eq(investor1)
-					investmentObj.state.toString().should.eq('2', 'investment state correct')
+					investmentObj.state.toString().should.eq('3', 'investment state correct')
 				})
 
 				it('emits a Payout event', async () => {
@@ -688,7 +1058,7 @@ describe('TraderPaired', function () {
 
 					investmentObj.trader.should.eq(trader1)
 					investmentObj.investor.should.eq(investor1)
-					investmentObj.state.toString().should.eq('2', 'investment state correct')
+					investmentObj.state.toString().should.eq('3', 'investment state correct')
 				})
 
 				it('emits Payout events', async () => {
@@ -737,11 +1107,12 @@ describe('TraderPaired', function () {
 					await platform.joinAsInvestor({from: investor2})
 					await platform.allocate(ETHER, ether(1), {from: trader2})
 					await platform.allocate(ETHER, allocation, {from: trader1})
-					result = await platform.createInvestment(trader2, {from: investor2})
+					result = await platform.createInvestment({from: investor2})
 					const log = result.logs[0]
 					log.event.should.eq('Investment')
 					const event = log.args
 					wallet2 = await MultiSigFundWallet.at(event.wallet)
+					await wallet2.setTrader(trader2, {from: investor2})
 					await wallet2.fundEther({from: investor2, value: amount})
 				})
 
@@ -780,11 +1151,12 @@ describe('TraderPaired', function () {
 					await platform.joinAsInvestor({from: investor2})
 					await platform.allocate(ETHER, ether(1), {from: trader2})
 					await platform.allocate(ETHER, allocation, {from: trader1})
-					result = await platform.createInvestment(trader2, {from: investor2})
+					result = await platform.createInvestment({from: investor2})
 					const log = result.logs[0]
 					log.event.should.eq('Investment')
 					const event = log.args
 					wallet2 = await MultiSigFundWallet.at(event.wallet)
+					await wallet2.setTrader(trader2, {from: investor2})
 					await wallet2.fundEther({from: investor2, value: amount})
 				})
 
@@ -823,11 +1195,12 @@ describe('TraderPaired', function () {
 					await platform.joinAsInvestor({from: investor2})
 					await platform.allocate(ETHER, ether(1), {from: trader2})
 					await platform.allocate(ETHER, allocation, {from: trader1})
-					result = await platform.createInvestment(trader2, {from: investor2})
+					result = await platform.createInvestment({from: investor2})
 					const log = result.logs[0]
 					log.event.should.eq('Investment')
 					const event = log.args
 					wallet2 = await MultiSigFundWallet.at(event.wallet)
+					await wallet2.setTrader(trader2, {from: investor2})
 					await wallet2.fundEther({from: investor2, value: amount})
 				})
 
@@ -865,11 +1238,12 @@ describe('TraderPaired', function () {
 				allocation = tokens(1)
 
 				await platform.allocate(token.address, allocation, {from: trader1})
-				result = await platform.createInvestment(trader1, {from: investor1})
+				result = await platform.createInvestment({from: investor1})
 				const log = result.logs[0]
 				log.event.should.eq('Investment')
 				const event = log.args
 				wallet = await MultiSigFundWallet.at(event.wallet)
+				await wallet.setTrader(trader1, {from: investor1})
 				await token.approve(wallet.address, amount, {from: investor1})
 				result = await wallet.fundToken(token.address, amount, {from: investor1})
 			})
@@ -880,7 +1254,7 @@ describe('TraderPaired', function () {
 					value = tokens(0.7)
 					settlementAmount = tokens(0.081) // 0.08 + 0.001
 
-					await wallet.disburseToken(investmentId, token.address, value, {from: investor1})
+					await wallet.disburseToken(investmentId, token.address, value, 0, {from: investor1})
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
 					result = await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: trader1})
 				})
@@ -899,7 +1273,7 @@ describe('TraderPaired', function () {
 
 					investmentObj.trader.should.eq(trader1)
 					investmentObj.investor.should.eq(investor1)
-					investmentObj.state.toString().should.eq('2', 'investment state correct')
+					investmentObj.state.toString().should.eq('3', 'investment state correct')
 					
 				})
 
@@ -938,7 +1312,7 @@ describe('TraderPaired', function () {
 					value = tokens(0.6)
 					settlementAmount = tokens(0)
 
-					await wallet.disburseToken(investmentId, token.address, value, {from: investor1})
+					await wallet.disburseToken(investmentId, token.address, value, 0, {from: investor1})
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
 					result = await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: trader1})
 				})
@@ -957,7 +1331,7 @@ describe('TraderPaired', function () {
 
 					investmentObj.trader.should.eq(trader1)
 					investmentObj.investor.should.eq(investor1)
-					investmentObj.state.toString().should.eq('2', 'investment state correct')
+					investmentObj.state.toString().should.eq('3', 'investment state correct')
 				})
 
 				it('emits a Payout event', async () => {
@@ -986,7 +1360,7 @@ describe('TraderPaired', function () {
 					value = tokens(0.5)
 					settlementAmount = tokens(0.001) // traderfee on loss
 
-					await wallet.disburseToken(investmentId, token.address, value, {from: investor1})
+					await wallet.disburseToken(investmentId, token.address, value, 0, {from: investor1})
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
 					result = await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: trader1})
 				})
@@ -1005,7 +1379,7 @@ describe('TraderPaired', function () {
 
 					investmentObj.trader.should.eq(trader1)
 					investmentObj.investor.should.eq(investor1)
-					investmentObj.state.toString().should.eq('2', 'investment state correct')
+					investmentObj.state.toString().should.eq('3', 'investment state correct')
 				})
 
 				it('emits Payout events', async () => {
@@ -1048,17 +1422,18 @@ describe('TraderPaired', function () {
 					value = tokens(0.7)
 					settlementAmount = tokens(0.081) // 0.08 + 0.001
 
-					await wallet.disburseToken(investmentId, token.address, value, {from: investor1})
+					await wallet.disburseToken(investmentId, token.address, value, 0, {from: investor1})
 					
 					await platform.joinAsTrader({from: trader2})
 					await platform.joinAsInvestor({from: investor2})
 					await platform.allocate(token.address, tokens(1), {from: trader2})
 					await platform.allocate(token.address, allocation, {from: trader1})
-					result = await platform.createInvestment(trader2, {from: investor2})
+					result = await platform.createInvestment({from: investor2})
 					const log = result.logs[0]
 					log.event.should.eq('Investment')
 					const event = log.args
 					wallet2 = await MultiSigFundWallet.at(event.wallet)
+					await wallet2.setTrader(trader2, {from: investor2})
 					await token.approve(wallet2.address, amount, {from: investor2})
 					await wallet2.fundToken(token.address, amount, {from: investor2})
 				})
@@ -1098,17 +1473,18 @@ describe('TraderPaired', function () {
 					value = tokens(0.6)
 					settlementAmount = tokens(0)
 
-					await wallet.disburseToken(investmentId, token.address, value, {from: investor1})
+					await wallet.disburseToken(investmentId, token.address, value, 0, {from: investor1})
 					
 					await platform.joinAsTrader({from: trader2})
 					await platform.joinAsInvestor({from: investor2})
 					await platform.allocate(token.address, tokens(1), {from: trader2})
 					await platform.allocate(token.address, allocation, {from: trader1})
-					result = await platform.createInvestment(trader2, {from: investor2})
+					result = await platform.createInvestment({from: investor2})
 					const log = result.logs[0]
 					log.event.should.eq('Investment')
 					const event = log.args
 					wallet2 = await MultiSigFundWallet.at(event.wallet)
+					await wallet2.setTrader(trader2, {from: investor2})
 					await token.approve(wallet2.address, amount, {from: investor2})
 					await wallet2.fundToken(token.address, amount, {from: investor2})
 				})
@@ -1148,17 +1524,18 @@ describe('TraderPaired', function () {
 					value = tokens(0.5)
 					settlementAmount = tokens(0.001)
 
-					await wallet.disburseToken(investmentId, token.address, value, {from: investor1})
+					await wallet.disburseToken(investmentId, token.address, value, 0, {from: investor1})
 					
 					await platform.joinAsTrader({from: trader2})
 					await platform.joinAsInvestor({from: investor2})
 					await platform.allocate(token.address, tokens(1), {from: trader2})
 					await platform.allocate(token.address, allocation, {from: trader1})
-					result = await platform.createInvestment(trader2, {from: investor2})
+					result = await platform.createInvestment({from: investor2})
 					const log = result.logs[0]
 					log.event.should.eq('Investment')
 					const event = log.args
 					wallet2 = await MultiSigFundWallet.at(event.wallet)
+					await wallet2.setTrader(trader2, {from: investor2})
 					await token.approve(wallet2.address, amount, {from: investor2})
 					await wallet2.fundToken(token.address, amount, {from: investor2})
 				})
@@ -1189,6 +1566,663 @@ describe('TraderPaired', function () {
 					await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: trader1})
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
 					await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				})
+			})
+		})
+	})
+
+	describe('approve exit investor', () => {
+
+		let result
+		let amount
+		let allocation
+		let value
+		let investmentId
+		let investorProfitPercent
+		let settlementAmount
+		let walletBalance
+		let wallet
+		let wallet2
+
+		beforeEach(async () => {
+			
+			investmentId = 1
+			investorProfitPercent = 8000
+
+			await platform.joinAsTrader({from: trader1})
+			await platform.joinAsInvestor({from: investor1})
+
+		})
+
+		describe('ether', () => {
+
+			beforeEach(async () => {
+			
+				amount = ether(0.6)
+				allocation = ether(1)
+
+				await platform.allocate(ETHER, allocation, {from: trader1})
+				result = await platform.createInvestment({from: investor1})
+				const log = result.logs[0]
+				log.event.should.eq('Investment')
+				const event = log.args
+				wallet = await MultiSigFundWallet.at(event.wallet)
+				await wallet.setTrader(trader1, {from: investor1})
+				result = await wallet.fundEther({from: investor1, value: amount})
+			})
+
+			describe('ether profit success', () => {
+
+				beforeEach(async () => {
+					value = ether(0.7)
+					settlementAmount = ether(0.081) // 0.08 + 0.001
+
+					await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount})
+					result = await wallet.approveDisbursementEther(0, {from: investor1})
+				})
+
+				it('tracks approve', async () => {
+					let investorObj, traderObj, investmentObj, allocation, traderBalance, investorBalance, feeAccountBalance
+					investorObj = await platform.investors(investor1)
+					traderObj = await platform.traders(trader1)
+					investmentObj = await investments.investments(1)
+					allocation = await platform.allocations(trader1, ETHER)
+					
+					traderBalance = await balance.current(trader1, 'wei')
+					investorBalance = await balance.current(investor1, 'wei')
+					feeAccountBalance = await balance.current(feeAccount, 'wei')
+
+					walletBalance = await balance.current(wallet.address, 'wei')
+					walletBalance.toString().should.eq("0")
+
+					allocation.invested.toString().should.eq(ether(0).toString())
+
+					investmentObj.trader.should.eq(trader1)
+					investmentObj.investor.should.eq(investor1)
+					investmentObj.state.toString().should.eq('3', 'investment state correct')
+
+					console.log("traderBalance", traderBalance.toString())
+					console.log("investorBalance", investorBalance.toString())
+					console.log("feeAccountBalance", feeAccountBalance.toString())
+					console.log("walletBalance A", walletBalance.toString())
+					
+				})
+
+				it('emits Payout events', async () => {
+					// console.log("Logs", result.logs)
+					let log = result.logs[0]
+					log.event.should.eq('Payout')
+					let event = log.args
+					event.token.should.eq(ETHER, 'token is correct')
+					event.amount.toString().should.eq(ether(0.679).toString(), 'amount is correct') // amount plus profit
+					event.to.toString().should.eq(investor1.toString(), 'to is correct')
+
+					log = result.logs[1]
+					log.event.should.eq('Payout')
+					event = log.args
+					event.token.should.eq(ETHER, 'token is correct')
+					event.amount.toString().should.eq(ether(0.002).toString(), 'amount is correct') // amount plus profit
+					event.to.toString().should.eq(feeAccount.toString(), 'to is correct')
+				})
+
+				it('emits an DisbursementCompleted event', async () => {
+					// console.log("Logs", result.logs)
+					const log = result.logs[2]
+					log.event.should.eq('DisbursementCompleted')
+					const event = log.args
+					event.initiator.toString().should.eq(trader1, 'initiator is correct')
+					event.signedBy.toString().should.eq(investor1, 'signedBy is correct')
+					event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
+					event.disbursementId.toString().should.eq('0', 'disbursementId is correct')
+				})
+			})
+
+			describe('ether breakeven success', () => {
+
+				beforeEach(async () => {
+					value = ether(0.6)
+					settlementAmount = ether(0)
+
+					await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount})
+					result = await wallet.approveDisbursementEther(0, {from: investor1})
+				})
+
+				it('tracks approve', async () => {
+					let investorObj, traderObj, investmentObj, allocation, traderBalance, investorBalance, feeAccountBalance
+					investorObj = await platform.investors(investor1)
+					traderObj = await platform.traders(trader1)
+					investmentObj = await investments.investments(1)
+					allocation = await platform.allocations(trader1, ETHER)
+
+					walletBalance = await balance.current(wallet.address, 'wei')
+					walletBalance.toString().should.eq("0")
+
+					allocation.invested.toString().should.eq(ether(0).toString())
+
+					investmentObj.trader.should.eq(trader1)
+					investmentObj.investor.should.eq(investor1)
+					investmentObj.state.toString().should.eq('3', 'investment state correct')
+				})
+
+				it('emits a Payout event', async () => {
+					let log = result.logs[0]
+					log.event.should.eq('Payout')
+					let event = log.args
+					event.token.should.eq(ETHER, 'token is correct')
+					event.amount.toString().should.eq(ether(0.6).toString(), 'amount is correct') // amount plus profit
+					event.to.toString().should.eq(investor1.toString(), 'to is correct')
+				})
+
+				it('emits an DisbursementCompleted event', async () => {
+					const log = result.logs[1]
+					log.event.should.eq('DisbursementCompleted')
+					const event = log.args
+					event.initiator.toString().should.eq(trader1, 'initiator is correct')
+					event.signedBy.toString().should.eq(investor1, 'signedBy is correct')
+					event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
+					event.disbursementId.toString().should.eq('0', 'disbursementId is correct')
+				})
+			})
+
+			describe('ether loss success', () => {
+
+				beforeEach(async () => {
+					value = ether(0.5)
+					settlementAmount = ether(0.001) // traderfee on loss
+
+					await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount})
+					result = await wallet.approveDisbursementEther(0, {from: investor1})
+				})
+
+				it('tracks approve', async () => {
+					let investorObj, traderObj, investmentObj, allocation, traderBalance, investorBalance, feeAccountBalance
+					investorObj = await platform.investors(investor1)
+					traderObj = await platform.traders(trader1)
+					investmentObj = await investments.investments(1)
+					allocation = await platform.allocations(trader1, ETHER)
+
+					walletBalance = await balance.current(wallet.address, 'wei')
+					walletBalance.toString().should.eq("0")
+
+					allocation.invested.toString().should.eq(ether(0).toString())
+
+					investmentObj.trader.should.eq(trader1)
+					investmentObj.investor.should.eq(investor1)
+					investmentObj.state.toString().should.eq('3', 'investment state correct')
+				})
+
+				it('emits Payout events', async () => {
+					let log = result.logs[0]
+					log.event.should.eq('Payout')
+					let event = log.args
+					event.token.should.eq(ETHER, 'token is correct')
+					event.amount.toString().should.eq(ether(0.1).toString(), 'amount is correct') // loss
+					event.to.toString().should.eq(trader1.toString(), 'to is correct')
+
+					log = result.logs[1]
+					log.event.should.eq('Payout')
+					event = log.args
+					event.token.should.eq(ETHER, 'token is correct')
+					event.amount.toString().should.eq(ether(0.5).toString(), 'amount is correct') // amount minus loss
+					event.to.toString().should.eq(investor1.toString(), 'to is correct')
+
+					log = result.logs[2]
+					log.event.should.eq('Payout')
+					event = log.args
+					event.token.should.eq(ETHER, 'token is correct')
+					event.amount.toString().should.eq(ether(0.001).toString(), 'amount is correct') // trader fee
+					event.to.toString().should.eq(feeAccount.toString(), 'to is correct')
+				})
+
+				it('emits an DisbursementCompleted event', async () => {
+					const log = result.logs[3]
+					log.event.should.eq('DisbursementCompleted')
+					const event = log.args
+					event.initiator.toString().should.eq(trader1, 'initiator is correct')
+					event.signedBy.toString().should.eq(investor1, 'signedBy is correct')
+					event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
+					event.disbursementId.toString().should.eq('0', 'disbursementId is correct')
+				})
+			})
+
+			describe('ether profit failure', () => {
+
+				beforeEach(async () => {
+					value = ether(0.7)
+					settlementAmount = ether(0.081) // 0.08 + 0.001
+
+					await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount})
+					
+					await platform.joinAsTrader({from: trader2})
+					await platform.joinAsInvestor({from: investor2})
+					await platform.allocate(ETHER, ether(1), {from: trader2})
+					await platform.allocate(ETHER, allocation, {from: trader1})
+					result = await platform.createInvestment({from: investor2})
+					const log = result.logs[0]
+					log.event.should.eq('Investment')
+					const event = log.args
+					wallet2 = await MultiSigFundWallet.at(event.wallet)
+					await wallet2.setTrader(trader2, {from: investor2})
+					await wallet2.fundEther({from: investor2, value: amount})
+				})
+
+				it('can\'t approve own disbursement', async () => {
+					await wallet.approveDisbursementEther(0, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('wrong disbursement', async () => {
+					await wallet.approveDisbursementEther(1, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('trader not found', async () => {
+					await wallet.approveDisbursementEther(0, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('already disbursed', async () => {
+					await wallet.approveDisbursementEther(0, {from: investor1})
+					await wallet.approveDisbursementEther(0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				})
+			})
+
+			describe('ether breakeven failure', () => {
+
+				beforeEach(async () => {
+					value = ether(0.6)
+					settlementAmount = ether(0)
+
+					await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount})
+					
+					await platform.joinAsTrader({from: trader2})
+					await platform.joinAsInvestor({from: investor2})
+					await platform.allocate(ETHER, ether(1), {from: trader2})
+					await platform.allocate(ETHER, allocation, {from: trader1})
+					result = await platform.createInvestment({from: investor2})
+					const log = result.logs[0]
+					log.event.should.eq('Investment')
+					const event = log.args
+					wallet2 = await MultiSigFundWallet.at(event.wallet)
+					await wallet2.setTrader(trader2, {from: investor2})
+					await wallet2.fundEther({from: investor2, value: amount})
+				})
+
+				it('can\'t approve own disbursement', async () => {
+					await wallet.approveDisbursementEther(0, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('wrong disbursement', async () => {
+					await wallet.approveDisbursementEther(1, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('trader not found', async () => {
+					await wallet.approveDisbursementEther(0, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('already disbursed', async () => {
+					await wallet.approveDisbursementEther(0, {from: investor1})
+					await wallet.approveDisbursementEther(0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				})
+			})
+
+			describe('ether loss failure', () => {
+
+				beforeEach(async () => {
+					value = ether(0.5)
+					settlementAmount = ether(0.001)
+
+					await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount})
+					
+					await platform.joinAsTrader({from: trader2})
+					await platform.joinAsInvestor({from: investor2})
+					await platform.allocate(ETHER, ether(1), {from: trader2})
+					await platform.allocate(ETHER, allocation, {from: trader1})
+					result = await platform.createInvestment({from: investor2})
+					const log = result.logs[0]
+					log.event.should.eq('Investment')
+					const event = log.args
+					wallet2 = await MultiSigFundWallet.at(event.wallet)
+					await wallet2.setTrader(trader2, {from: investor2})
+					await wallet2.fundEther({from: investor2, value: amount})
+				})
+
+				it('can\'t approve own disbursement', async () => {
+					await wallet.approveDisbursementEther(0, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('wrong disbursement', async () => {
+					await wallet.approveDisbursementEther(1, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('trader not found', async () => {
+					await wallet.approveDisbursementEther(0, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('already disbursed', async () => {
+					await wallet.approveDisbursementEther(0, {from: investor1})
+					await wallet.approveDisbursementEther(0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				})
+			})
+		})
+
+		// ////////
+
+		describe('token', () => {
+
+			beforeEach(async () => {
+			
+				amount = tokens(0.6)
+				allocation = tokens(1)
+
+				await platform.allocate(token.address, allocation, {from: trader1})
+				result = await platform.createInvestment({from: investor1})
+				const log = result.logs[0]
+				log.event.should.eq('Investment')
+				const event = log.args
+				wallet = await MultiSigFundWallet.at(event.wallet)
+				await wallet.setTrader(trader1, {from: investor1})
+				await token.approve(wallet.address, amount, {from: investor1})
+				result = await wallet.fundToken(token.address, amount, {from: investor1})
+			})
+
+			describe('token profit success', () => {
+
+				beforeEach(async () => {
+					value = tokens(0.7)
+					settlementAmount = tokens(0.081) // 0.08 + 0.001
+
+					await token.approve(wallet.address, settlementAmount, {from: trader1})
+					await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1})
+					result = await wallet.approveDisbursementToken(0, token.address, 0, {from: investor1})
+				})
+
+				it('tracks approve', async () => {
+					let investorObj, traderObj, investmentObj, allocation, traderBalance, investorBalance, feeAccountBalance
+					investorObj = await platform.investors(investor1)
+					traderObj = await platform.traders(trader1)
+					investmentObj = await investments.investments(1)
+					allocation = await platform.allocations(trader1, token.address)
+					
+					walletBalance = await token.balanceOf(wallet.address)
+					walletBalance.toString().should.eq("0")
+
+					allocation.invested.toString().should.eq(tokens(0).toString())
+
+					investmentObj.trader.should.eq(trader1)
+					investmentObj.investor.should.eq(investor1)
+					investmentObj.state.toString().should.eq('3', 'investment state correct')
+					
+				})
+
+				it('emits Payout events', async () => {
+					// console.log("Logs", result.logs)
+					let log = result.logs[0]
+					log.event.should.eq('Payout')
+					let event = log.args
+					event.token.should.eq(token.address, 'token is correct')
+					event.amount.toString().should.eq(tokens(0.679).toString(), 'amount is correct') // amount plus profit
+					event.to.toString().should.eq(investor1.toString(), 'to is correct')
+
+					log = result.logs[1]
+					log.event.should.eq('Payout')
+					event = log.args
+					event.token.should.eq(token.address, 'token is correct')
+					event.amount.toString().should.eq(tokens(0.002).toString(), 'amount is correct') // amount plus profit
+					event.to.toString().should.eq(feeAccount.toString(), 'to is correct')
+				})
+
+				it('emits an DisbursementCompleted event', async () => {
+					// console.log("Logs", result.logs)
+					const log = result.logs[2]
+					log.event.should.eq('DisbursementCompleted')
+					const event = log.args
+					event.initiator.toString().should.eq(trader1, 'initiator is correct')
+					event.signedBy.toString().should.eq(investor1, 'signedBy is correct')
+					event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
+					event.disbursementId.toString().should.eq('0', 'disbursementId is correct')
+				})
+			})
+
+			describe('token breakeven success', () => {
+
+				beforeEach(async () => {
+					value = tokens(0.6)
+					settlementAmount = tokens(0)
+
+					await token.approve(wallet.address, settlementAmount, {from: trader1})
+					await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1})
+					result = await wallet.approveDisbursementToken(0, token.address, 0, {from: investor1})
+				})
+
+				it('tracks approve', async () => {
+					let investorObj, traderObj, investmentObj, allocation, traderBalance, investorBalance, feeAccountBalance
+					investorObj = await platform.investors(investor1)
+					traderObj = await platform.traders(trader1)
+					investmentObj = await investments.investments(1)
+					allocation = await platform.allocations(trader1, token.address)
+
+					walletBalance = await token.balanceOf(wallet.address)
+					walletBalance.toString().should.eq("0")
+
+					allocation.invested.toString().should.eq(tokens(0).toString())
+
+					investmentObj.trader.should.eq(trader1)
+					investmentObj.investor.should.eq(investor1)
+					investmentObj.state.toString().should.eq('3', 'investment state correct')
+				})
+
+				it('emits a Payout event', async () => {
+					let log = result.logs[0]
+					log.event.should.eq('Payout')
+					let event = log.args
+					event.token.should.eq(token.address, 'token is correct')
+					event.amount.toString().should.eq(tokens(0.6).toString(), 'amount is correct') // amount plus profit
+					event.to.toString().should.eq(investor1.toString(), 'to is correct')
+				})
+
+				it('emits an DisbursementCompleted event', async () => {
+					const log = result.logs[1]
+					log.event.should.eq('DisbursementCompleted')
+					const event = log.args
+					event.initiator.toString().should.eq(trader1, 'initiator is correct')
+					event.signedBy.toString().should.eq(investor1, 'signedBy is correct')
+					event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
+					event.disbursementId.toString().should.eq('0', 'disbursementId is correct')
+				})
+			})
+
+			describe('token loss success', () => {
+
+				beforeEach(async () => {
+					value = tokens(0.5)
+					settlementAmount = tokens(0.001) // traderfee on loss
+
+					await token.approve(wallet.address, settlementAmount, {from: trader1})
+					await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1})
+					result = await wallet.approveDisbursementToken(0, token.address, 0, {from: investor1})
+				})
+
+				it('tracks approve', async () => {
+					let investorObj, traderObj, investmentObj, allocation, traderBalance, investorBalance, feeAccountBalance
+					investorObj = await platform.investors(investor1)
+					traderObj = await platform.traders(trader1)
+					investmentObj = await investments.investments(1)
+					allocation = await platform.allocations(trader1, token.address)
+
+					walletBalance = await token.balanceOf(wallet.address)
+					walletBalance.toString().should.eq("0")
+
+					allocation.invested.toString().should.eq(tokens(0).toString())
+
+					investmentObj.trader.should.eq(trader1)
+					investmentObj.investor.should.eq(investor1)
+					investmentObj.state.toString().should.eq('3', 'investment state correct')
+				})
+
+				it('emits Payout events', async () => {
+					let log = result.logs[0]
+					log.event.should.eq('Payout')
+					let event = log.args
+					event.token.should.eq(token.address, 'token is correct')
+					event.amount.toString().should.eq(tokens(0.1).toString(), 'amount is correct') // loss
+					event.to.toString().should.eq(trader1.toString(), 'to is correct')
+
+					log = result.logs[1]
+					log.event.should.eq('Payout')
+					event = log.args
+					event.token.should.eq(token.address, 'token is correct')
+					event.amount.toString().should.eq(tokens(0.5).toString(), 'amount is correct') // amount minus loss
+					event.to.toString().should.eq(investor1.toString(), 'to is correct')
+
+					log = result.logs[2]
+					log.event.should.eq('Payout')
+					event = log.args
+					event.token.should.eq(token.address, 'token is correct')
+					event.amount.toString().should.eq(tokens(0.001).toString(), 'amount is correct') // trader fee
+					event.to.toString().should.eq(feeAccount.toString(), 'to is correct')
+				})
+
+				it('emits an DisbursementCompleted event', async () => {
+					const log = result.logs[3]
+					log.event.should.eq('DisbursementCompleted')
+					const event = log.args
+					event.initiator.toString().should.eq(trader1, 'initiator is correct')
+					event.signedBy.toString().should.eq(investor1, 'signedBy is correct')
+					event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
+					event.disbursementId.toString().should.eq('0', 'disbursementId is correct')
+				})
+			})
+
+			describe('token profit failure', () => {
+
+				beforeEach(async () => {
+					value = tokens(0.7)
+					settlementAmount = tokens(0.081) // 0.08 + 0.001
+					
+					await token.approve(wallet.address, settlementAmount, {from: trader1})
+					await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1})
+					
+					await platform.joinAsTrader({from: trader2})
+					await platform.joinAsInvestor({from: investor2})
+					await platform.allocate(token.address, tokens(1), {from: trader2})
+					await platform.allocate(token.address, allocation, {from: trader1})
+					result = await platform.createInvestment({from: investor2})
+					const log = result.logs[0]
+					log.event.should.eq('Investment')
+					const event = log.args
+					wallet2 = await MultiSigFundWallet.at(event.wallet)
+					await wallet2.setTrader(trader2, {from: investor2})
+					await token.approve(wallet2.address, amount, {from: investor2})
+					await wallet2.fundToken(token.address, amount, {from: investor2})
+				})
+
+				it('can\'t approve own disbursement', async () => {
+					await wallet.approveDisbursementToken(0, token.address, 0, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('wrong disbursement', async () => {
+					await wallet.approveDisbursementToken(1, token.address, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('wrong settlementAmount', async () => {
+					await wallet.approveDisbursementToken(0, token.address, tokens(0.07), {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('investor not found', async () => {
+					await wallet.approveDisbursementToken(0, token.address, 0, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('already disbursed', async () => {
+					await wallet.approveDisbursementToken(0, token.address, 0, {from: investor1})
+					await wallet.approveDisbursementToken(0, token.address, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				})
+			})
+
+			describe('token breakeven failure', () => {
+
+				beforeEach(async () => {
+					value = tokens(0.6)
+					settlementAmount = tokens(0)
+
+					await token.approve(wallet.address, settlementAmount, {from: trader1})
+					await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1})
+					
+					await platform.joinAsTrader({from: trader2})
+					await platform.joinAsInvestor({from: investor2})
+					await platform.allocate(token.address, tokens(1), {from: trader2})
+					await platform.allocate(token.address, allocation, {from: trader1})
+					result = await platform.createInvestment({from: investor2})
+					const log = result.logs[0]
+					log.event.should.eq('Investment')
+					const event = log.args
+					wallet2 = await MultiSigFundWallet.at(event.wallet)
+					await wallet2.setTrader(trader2, {from: investor2})
+					await token.approve(wallet2.address, amount, {from: investor2})
+					await wallet2.fundToken(token.address, amount, {from: investor2})
+				})
+
+				it('can\'t approve own disbursement', async () => {
+					await wallet.approveDisbursementToken(0, token.address, 0, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('wrong disbursement', async () => {
+					await wallet.approveDisbursementToken(1, token.address, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('wrong settlementAmount', async () => {
+					await wallet.approveDisbursementToken(0, token.address, tokens(0.01), {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('investor not found', async () => {
+					await wallet.approveDisbursementToken(0, token.address, 0, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('already disbursed', async () => {
+					await wallet.approveDisbursementToken(0, token.address, 0, {from: investor1})
+					await wallet.approveDisbursementToken(0, token.address, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				})
+			})
+
+			describe('token loss failure', () => {
+
+				beforeEach(async () => {
+					value = tokens(0.5)
+					settlementAmount = tokens(0.001)
+
+					await token.approve(wallet.address, settlementAmount, {from: trader1})
+					await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1})
+					
+					await platform.joinAsTrader({from: trader2})
+					await platform.joinAsInvestor({from: investor2})
+					await platform.allocate(token.address, tokens(1), {from: trader2})
+					await platform.allocate(token.address, allocation, {from: trader1})
+					result = await platform.createInvestment({from: investor2})
+					const log = result.logs[0]
+					log.event.should.eq('Investment')
+					const event = log.args
+					wallet2 = await MultiSigFundWallet.at(event.wallet)
+					await wallet2.setTrader(trader2, {from: investor2})
+					await token.approve(wallet2.address, amount, {from: investor2})
+					await wallet2.fundToken(token.address, amount, {from: investor2})
+				})
+
+				it('can\'t approve own disbursement', async () => {
+					await wallet.approveDisbursementToken(0, token.address, 0, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('wrong disbursement', async () => {
+					await wallet.approveDisbursementToken(1, token.address, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('wrong settlementAmount', async () => {
+					await wallet.approveDisbursementToken(0, token.address, tokens(0.0001), {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('investor not found', async () => {
+					await wallet.approveDisbursementToken(0, token.address, 0, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+				})
+
+				it('already disbursed', async () => {
+					await wallet.approveDisbursementToken(0, token.address, 0, {from: investor1})
+					await wallet.approveDisbursementToken(0, token.address, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 			})
 		})

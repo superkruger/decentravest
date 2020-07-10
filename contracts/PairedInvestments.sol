@@ -14,7 +14,8 @@ contract PairedInvestments is Initializable, Ownable {
 	uint8 constant IDX_ADDRESS_investorAddress 		= 1;
 
 	uint8 constant IDX_UINT256_investmentId 		= 0;
-	uint8 constant IDX_UINT256_amount 				= 1;
+	uint8 constant IDX_UINT256_value 				= 1;
+    uint8 constant IDX_UINT256_amount               = 2;
 
 	uint256 public traderFeePercent; // trader fee percentage in unit of 100, i.e. 100 == 1% and 5 == 0.05% and 10000 == 100%
     uint256 public investorFeePercent; // investor fee percentage in unit of 100, i.e. 100 == 1% and 5 == 0.05% and 10000 == 100%
@@ -25,7 +26,8 @@ contract PairedInvestments is Initializable, Ownable {
 
     enum InvestmentState {
         Invested,
-        ExitRequested,
+        ExitRequestedInvestor,
+        ExitRequestedTrader,
         Divested
     }
 
@@ -91,32 +93,69 @@ contract PairedInvestments is Initializable, Ownable {
         return investmentCount;
     }
 
-    function requestExit(address[2] memory _addresses, uint256[2] memory _uint256s) 
-        public 
-        onlyManager 
+    function requestExitInvestor(address _traderAddress, address _investorAddress, uint256 _investmentId, uint256 _value) 
+        public  
     {
-
-        _Investment storage _investment = investments[_uint256s[IDX_UINT256_investmentId]];
-
-        require(_investment.trader == _addresses[IDX_ADDRESS_traderAddress]);
-        require(_investment.investor == _addresses[IDX_ADDRESS_investorAddress]);
-
-        require(_investment.state == InvestmentState.Invested);
-
-        _investment.value = _uint256s[IDX_UINT256_amount];
-        _investment.state = InvestmentState.ExitRequested;
+        _requestExit(_traderAddress, _investorAddress, _investmentId, _value, InvestmentState.ExitRequestedInvestor);
     }
 
-    function approveExit(address[2] memory _addresses, uint256[2] memory _uint256s) 
+    function requestExitTrader(address _traderAddress, address _investorAddress, uint256 _investmentId, uint256 _value, uint256 _amount) 
+        public 
+    {
+        _Investment memory _investment = investments[_investmentId];
+
+        if (_value > _investment.amount) {
+
+            (
+                uint256 _traderFee,
+                uint256 _investorFee,
+                ,
+                uint256 _investorProfit
+            ) = _calculateProfitsAndFees(
+                _value, 
+                _investment.amount, 
+                traderFeePercent, 
+                investorFeePercent, 
+                investorProfitPercent
+            );
+
+            require(_investorProfit.add(_traderFee).add(_investorFee) == _amount);
+            
+        } else {
+
+            uint256 _traderFee = (_investment.amount.sub(_value)).mul(traderFeePercent).div(10000);
+
+            require(_traderFee == _amount);
+        }
+
+        _requestExit(_traderAddress, _investorAddress, _investmentId, _value, InvestmentState.ExitRequestedTrader);
+    }
+
+    function _requestExit(address _traderAddress, address _investorAddress, uint256 _investmentId, uint256 _value, InvestmentState _state) 
+        internal 
+        onlyManager 
+    {
+        _Investment storage _investment = investments[_investmentId];
+
+        require(_investment.trader == _traderAddress);
+        require(_investment.investor == _investorAddress);
+        require(_investment.state == InvestmentState.Invested);
+
+        _investment.value = _value;
+        _investment.state = _state;
+    }
+
+    function approveExit(address _traderAddress, address _investorAddress, uint256 _investmentId, uint256 _amount) 
         public 
         onlyManager 
         returns (uint256[4] memory result) 
     {
 
-        _Investment storage _investment = investments[_uint256s[IDX_UINT256_investmentId]];
-        require(_investment.trader == _addresses[IDX_ADDRESS_traderAddress]);
-        require(_investment.investor == _addresses[IDX_ADDRESS_investorAddress]);
-        require(_investment.state == InvestmentState.ExitRequested);
+        _Investment storage _investment = investments[_investmentId];
+        require(_investment.trader == _traderAddress);
+        require(_investment.investor == _investorAddress);
+        require(_investment.state == InvestmentState.ExitRequestedInvestor || 
+                _investment.state == InvestmentState.ExitRequestedTrader);
 
         if (_investment.value > _investment.amount) {
 
@@ -133,7 +172,13 @@ contract PairedInvestments is Initializable, Ownable {
             	investorProfitPercent
             );
 
-            require(_investorProfit.add(_traderFee).add(_investorFee) == _uint256s[IDX_UINT256_amount]);
+            // if the investor requested the exit, the trader will have to pay the amount
+            // if the trader requested the exit, they've already paid the amount
+            if (_investment.state == InvestmentState.ExitRequestedInvestor) {
+                require(_investorProfit.add(_traderFee).add(_investorFee) == _amount);
+            } else {
+                require(0 == _amount);
+            }
 
             // investment amount plus profit (minus fee)
             result[1] = _investment.amount.add(_investorProfit);
@@ -146,7 +191,13 @@ contract PairedInvestments is Initializable, Ownable {
 
         	uint256 _traderFee = (_investment.amount.sub(_investment.value)).mul(traderFeePercent).div(10000);
 
-        	require(_traderFee == _uint256s[IDX_UINT256_amount]);
+            // if the investor requested the exit, the trader will have to pay the amount
+            // if the trader requested the exit, they've already paid the amount
+            if (_investment.state == InvestmentState.ExitRequestedInvestor) {
+        	   require(_traderFee == _amount);
+            } else {
+                require(0 == _amount);
+            }
 
             // take losses away from investor
             result[1] = _investment.value;

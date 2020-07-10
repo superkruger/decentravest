@@ -9,6 +9,8 @@ contract MultiSigFundWallet {
 
     address constant ETHER = address(0); // allows storage of ether in blank address in token mapping
 
+    uint8 constant MAX_TOKENS = 20;
+
     address public fund;
 
     address public trader;
@@ -20,6 +22,7 @@ contract MultiSigFundWallet {
     mapping (uint32 => Disbursement) private disbursements;
     uint32[] private pendingDisbursements;
 
+    event SetTrader(address trader);
     event Fund(address trader, address investor, uint256 investmentId, address token, uint256 amount, uint256 date);
     event DisbursementCreated(address initiator, uint256 investmentId, uint32 disbursementId, uint256 date);
     event DisbursementCompleted(address initiator, address signedBy, uint256 investmentId, uint32 disbursementId, uint256 date);
@@ -40,6 +43,21 @@ contract MultiSigFundWallet {
         _;
     }
 
+    modifier hasTrader() {
+        require(trader != address(0));
+        _;
+    }
+
+    modifier hasNoTrader() {
+        require(trader == address(0));
+        _;
+    }
+
+    modifier traderOrInvestor() {
+        require(msg.sender == investor || msg.sender == trader);
+        _;
+    }
+
     modifier validOwner() {
         require(msg.sender == trader || msg.sender == investor || msg.sender == admin);
         _;
@@ -55,39 +73,94 @@ contract MultiSigFundWallet {
         revert();
     }
 
-    constructor (address _fund, address _trader, address _investor, address _admin)
+    constructor (address _fund, address _investor, address _admin)
         public
     {
-        require (_fund != address(0));
-
         // all are unique and non-zero
-        require (_trader != _investor && _trader != _admin && _investor != _admin && _admin != address(0));
+        require (_fund != _investor && _fund != _admin && _investor != _admin && _admin != address(0));
 
         fund = _fund;
-        trader = _trader;
         investor = _investor;
         admin = _admin;
+    }
+
+    function setTrader(address _trader) 
+        public
+        isInvestor
+        hasNoTrader
+    {
+        require (_trader != investor && _trader != admin && _trader != fund);
+
+        trader = _trader;
+        emit SetTrader(_trader);
     }
 
     function replaceAdmin(address _admin) 
         external
         isAdmin
     {
+        require (_admin != address(0) && _admin != investor && _admin != trader);
         admin = _admin;
     }
 
-    function fundEther() 
-        payable 
+    function initiateFund(address _trader, address[] calldata _tokens, uint256[] calldata _amounts) 
         external
-        isInvestor
+        payable 
     {
-        uint256 investmentId = TraderPaired(fund).invest(trader, investor, ETHER, msg.value);
-        emit Fund(trader, msg.sender, investmentId, ETHER, msg.value, now);
+        setTrader(_trader);
+        _batchFund(msg.value, _tokens, _amounts);
+    }
+
+    function batchFund(address[] calldata _tokens, uint256[] calldata _amounts) 
+        external
+        payable 
+    {
+        _batchFund(msg.value, _tokens, _amounts);
+    }
+
+    function _batchFund(uint256 _etherAmount, address[] memory _tokens, uint256[] memory _amounts) 
+        internal
+        isInvestor
+        hasTrader
+    {
+        require (_tokens.length == _amounts.length && _tokens.length <= MAX_TOKENS);
+
+        if (_etherAmount > 0) {
+            _fundEther(_etherAmount);
+        }
+
+        for (uint8 i=0; i<_tokens.length; i++) {
+            require (_tokens[i] != ETHER);
+            _fundToken(_tokens[i], _amounts[i]);
+        }
+    }
+
+    function fundEther() 
+        external 
+        payable
+    {
+        _fundEther(msg.value);
     }
 
     function fundToken(address _token, uint256 _amount)
         external 
+    {
+        _fundToken(_token, _amount);
+    }
+
+    function _fundEther(uint256 _amount) 
+        internal
         isInvestor
+        hasTrader
+    {
+        uint256 investmentId = TraderPaired(fund).invest(trader, investor, ETHER, _amount);
+        emit Fund(trader, msg.sender, investmentId, ETHER, _amount, now);
+    }
+
+    function _fundToken(address _token, uint256 _amount)
+        internal 
+        isInvestor
+        hasTrader
     {
         require(_token != ETHER);
         require(IERC20(_token).transferFrom(msg.sender, address(this), _amount));
@@ -96,22 +169,31 @@ contract MultiSigFundWallet {
     }
 
     function disburseEther(uint256 _investmentId, uint256 _value)
-        external 
+        external
+        payable
     {
-        _disburse(msg.sender, _investmentId, ETHER, _value);
+        _disburse(msg.sender, _investmentId, ETHER, _value, msg.value);
     }
 
-    function disburseToken(uint256 _investmentId, address _token, uint256 _value)
+    function disburseToken(uint256 _investmentId, address _token, uint256 _value, uint256 _amount)
         external 
     {
-        _disburse(msg.sender, _investmentId, _token, _value);
+        if (msg.sender == trader && _amount > 0) {
+            require(IERC20(_token).transferFrom(msg.sender, address(this), _amount));
+        }
+        _disburse(msg.sender, _investmentId, _token, _value, _amount);
     }
 
-    function _disburse(address _initiator, uint256 _investmentId, address _token, uint256 _value)
+    function _disburse(address _initiator, uint256 _investmentId, address _token, uint256 _value, uint256 _amount)
         internal 
-        validOwner
+        traderOrInvestor
+        hasTrader
     {
-        TraderPaired(fund).requestExit(trader, investor, _investmentId, _value);
+        if (_initiator == investor) {
+            TraderPaired(fund).requestExitInvestor(trader, investor, _investmentId, _value);
+        } else {
+            TraderPaired(fund).requestExitTrader(trader, investor, _investmentId, _value, _amount);
+        }
 
         uint32 _disbursementId = disbursementIdx++;
 
@@ -144,7 +226,9 @@ contract MultiSigFundWallet {
     function approveDisbursementToken(uint32 _disbursementId, address _token, uint256 _amount)
       external
     {
-        require(IERC20(_token).transferFrom(msg.sender, address(this), _amount));
+        if (_amount > 0) {
+            require(IERC20(_token).transferFrom(msg.sender, address(this), _amount));
+        }
 
         _approveDisbursement(_disbursementId, _token, _amount);
     }
@@ -152,12 +236,13 @@ contract MultiSigFundWallet {
     function _approveDisbursement(uint32 _disbursementId, address _token, uint256 _amount)
       internal
       validOwner
+      hasTrader
       validSignature(_disbursementId)
     {
         Disbursement memory _disbursement = disbursements[_disbursementId];
         _executeDisbursement(_disbursementId, _token, _amount);
         emit DisbursementCompleted(_disbursement.initiator, msg.sender, _disbursement.investmentId, _disbursementId, now);
-        _deleteDisbursement(_disbursementId);
+        deleteDisbursement(_disbursementId);
     }
 
     function _executeDisbursement(uint32 _disbursementId, address _token, uint256 _amount) 
@@ -197,7 +282,7 @@ contract MultiSigFundWallet {
         }
     }
 
-    function _deleteDisbursement(uint32 _disbursementId)
+    function deleteDisbursement(uint32 _disbursementId)
       public 
       validOwner
     {
