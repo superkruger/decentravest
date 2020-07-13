@@ -1,11 +1,13 @@
 // "SPDX-License-Identifier: UNLICENSED"
 pragma solidity >=0.4.21 <0.7.0;
 
+import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
 
 import "./TraderPaired.sol";
 
 contract MultiSigFundWallet {
+    using SafeMath for uint256;
 
     address constant ETHER = address(0); // allows storage of ether in blank address in token mapping
 
@@ -13,22 +15,25 @@ contract MultiSigFundWallet {
 
     address public fund;
 
-    address public trader;
+    mapping (address => bool) public traders;
     address public investor;
     address public admin;
+
+    mapping (address => mapping (address => uint256)) balances;
 
     uint32 private disbursementIdx;
 
     mapping (uint32 => Disbursement) private disbursements;
     uint32[] private pendingDisbursements;
 
-    event SetTrader(address trader);
+    event SetTrader(address trader, bool active);
     event Fund(address trader, address investor, uint256 investmentId, address token, uint256 amount, uint256 date);
-    event DisbursementCreated(address initiator, uint256 investmentId, uint32 disbursementId, uint256 date);
+    event DisbursementCreated(address trader, address initiator, uint256 investmentId, uint32 disbursementId, uint256 date);
     event DisbursementCompleted(address initiator, address signedBy, uint256 investmentId, uint32 disbursementId, uint256 date);
     event Payout(address token, uint256 amount, address to);
 
     struct Disbursement {
+        address trader;
         address initiator;
         uint256 investmentId;
     }
@@ -43,28 +48,28 @@ contract MultiSigFundWallet {
         _;
     }
 
-    modifier hasTrader() {
-        require(trader != address(0));
+    modifier isTrader(address _trader) {
+        require(traders[_trader]);
         _;
     }
 
-    modifier hasNoTrader() {
-        require(trader == address(0));
+    modifier isNotTrader(address _trader) {
+        require(!traders[_trader]);
         _;
     }
 
     modifier traderOrInvestor() {
-        require(msg.sender == investor || msg.sender == trader);
+        require(msg.sender == investor || traders[msg.sender]);
         _;
     }
 
     modifier validOwner() {
-        require(msg.sender == trader || msg.sender == investor || msg.sender == admin);
+        require(msg.sender == investor || msg.sender == admin || traders[msg.sender]);
         _;
     }
 
-    modifier validSignature(uint32 disbursementId) {
-        require(_validateSignature(disbursementId));
+    modifier validSignature(address trader, uint32 disbursementId) {
+        require(_validateSignature(trader, disbursementId));
         _;
     }
 
@@ -84,127 +89,103 @@ contract MultiSigFundWallet {
         admin = _admin;
     }
 
-    function setTrader(address _trader) 
-        public
+    function setTrader(address _trader, bool _active) 
+        external
         isInvestor
-        hasNoTrader
     {
+        // TODO: only deactivate on zero balances
         require (_trader != investor && _trader != admin && _trader != fund);
 
-        trader = _trader;
-        emit SetTrader(_trader);
+        traders[_trader] = _active;
+        emit SetTrader(_trader, _active);
     }
 
     function replaceAdmin(address _admin) 
         external
         isAdmin
     {
-        require (_admin != address(0) && _admin != investor && _admin != trader);
+        require (_admin != address(0) && _admin != investor && !traders[_admin]);
         admin = _admin;
     }
 
-    function initiateFund(address _trader, address[] calldata _tokens, uint256[] calldata _amounts) 
-        external
-        payable 
-    {
-        setTrader(_trader);
-        _batchFund(msg.value, _tokens, _amounts);
-    }
-
-    function batchFund(address[] calldata _tokens, uint256[] calldata _amounts) 
-        external
-        payable 
-    {
-        _batchFund(msg.value, _tokens, _amounts);
-    }
-
-    function _batchFund(uint256 _etherAmount, address[] memory _tokens, uint256[] memory _amounts) 
-        internal
-        isInvestor
-        hasTrader
-    {
-        require (_tokens.length == _amounts.length && _tokens.length <= MAX_TOKENS);
-
-        if (_etherAmount > 0) {
-            _fundEther(_etherAmount);
-        }
-
-        for (uint8 i=0; i<_tokens.length; i++) {
-            require (_tokens[i] != ETHER);
-            _fundToken(_tokens[i], _amounts[i]);
-        }
-    }
-
-    function fundEther() 
+    function fundEther(address _trader) 
         external 
         payable
     {
-        _fundEther(msg.value);
+        _fundEther(_trader, msg.value);
     }
 
-    function fundToken(address _token, uint256 _amount)
+    function fundToken(address _trader, address _token, uint256 _amount)
         external 
     {
-        _fundToken(_token, _amount);
+        _fundToken(_trader, _token, _amount);
     }
 
-    function _fundEther(uint256 _amount) 
+    function _fundEther(address _trader, uint256 _amount) 
         internal
         isInvestor
-        hasTrader
+        isTrader(_trader)
     {
-        uint256 investmentId = TraderPaired(fund).invest(trader, investor, ETHER, _amount);
-        emit Fund(trader, msg.sender, investmentId, ETHER, _amount, now);
+        uint256 investmentId = TraderPaired(fund).invest(_trader, investor, ETHER, _amount);
+        balances[_trader][ETHER] = balances[_trader][ETHER].add(_amount);
+        emit Fund(_trader, msg.sender, investmentId, ETHER, _amount, now);
     }
 
-    function _fundToken(address _token, uint256 _amount)
+    function _fundToken(address _trader, address _token, uint256 _amount)
         internal 
         isInvestor
-        hasTrader
+        isTrader(_trader)
     {
         require(_token != ETHER);
         require(IERC20(_token).transferFrom(msg.sender, address(this), _amount));
-        uint256 investmentId = TraderPaired(fund).invest(trader, investor, _token, _amount);
-        emit Fund(trader, msg.sender, investmentId, _token, _amount, now);
+        uint256 investmentId = TraderPaired(fund).invest(_trader, investor, _token, _amount);
+        balances[_trader][_token] = balances[_trader][_token].add(_amount);
+        emit Fund(_trader, msg.sender, investmentId, _token, _amount, now);
     }
 
-    function disburseEther(uint256 _investmentId, uint256 _value)
+    function disburseEther(address _trader, uint256 _investmentId, uint256 _value)
         external
         payable
     {
-        _disburse(msg.sender, _investmentId, ETHER, _value, msg.value);
+        _disburse(_trader, msg.sender, _investmentId, ETHER, _value, msg.value);
     }
 
-    function disburseToken(uint256 _investmentId, address _token, uint256 _value, uint256 _amount)
+    function disburseToken(address _trader, uint256 _investmentId, address _token, uint256 _value, uint256 _amount)
         external 
     {
-        if (msg.sender == trader && _amount > 0) {
+        if (_amount > 0) {
             require(IERC20(_token).transferFrom(msg.sender, address(this), _amount));
         }
-        _disburse(msg.sender, _investmentId, _token, _value, _amount);
+        _disburse(_trader, msg.sender, _investmentId, _token, _value, _amount);
     }
 
-    function _disburse(address _initiator, uint256 _investmentId, address _token, uint256 _value, uint256 _amount)
+    function _disburse(address _trader, address _initiator, uint256 _investmentId, address _token, uint256 _value, uint256 _amount)
         internal 
         traderOrInvestor
-        hasTrader
+        isTrader(_trader)
     {
         if (_initiator == investor) {
-            TraderPaired(fund).requestExitInvestor(trader, investor, _investmentId, _value);
+            TraderPaired(fund).requestExitInvestor(_trader, investor, _investmentId, _value);
         } else {
-            TraderPaired(fund).requestExitTrader(trader, investor, _investmentId, _value, _amount);
+            require(msg.sender == _trader);
+            TraderPaired(fund).requestExitTrader(_trader, investor, _investmentId, _value, _amount);
+        }
+
+        if (_amount > 0) {
+            balances[_trader][_token] = balances[_trader][_token].add(_amount);
         }
 
         uint32 _disbursementId = disbursementIdx++;
 
         Disbursement memory _disbursement;
+        _disbursement.trader = _trader;
         _disbursement.initiator = _initiator;
         _disbursement.investmentId = _investmentId;
 
         disbursements[_disbursementId] = _disbursement;
         pendingDisbursements.push(_disbursementId);
 
-        emit DisbursementCreated(_initiator, _investmentId, _disbursementId, now);
+        emit DisbursementCreated(_trader, _initiator, _investmentId, _disbursementId, now);
     }
 
     function getPendingDisbursements()
@@ -216,67 +197,73 @@ contract MultiSigFundWallet {
         return pendingDisbursements;
     }
 
-    function approveDisbursementEther(uint32 _disbursementId)
+    function approveDisbursementEther(address _trader, uint32 _disbursementId)
       external
       payable 
     {
-        _approveDisbursement(_disbursementId, ETHER, msg.value);
+        _approveDisbursement(_trader, _disbursementId, ETHER, msg.value);
     }
 
-    function approveDisbursementToken(uint32 _disbursementId, address _token, uint256 _amount)
+    function approveDisbursementToken(address _trader, uint32 _disbursementId, address _token, uint256 _amount)
       external
     {
         if (_amount > 0) {
             require(IERC20(_token).transferFrom(msg.sender, address(this), _amount));
         }
 
-        _approveDisbursement(_disbursementId, _token, _amount);
+        _approveDisbursement(_trader, _disbursementId, _token, _amount);
     }
 
-    function _approveDisbursement(uint32 _disbursementId, address _token, uint256 _amount)
+    function _approveDisbursement(address _trader, uint32 _disbursementId, address _token, uint256 _amount)
       internal
       validOwner
-      hasTrader
-      validSignature(_disbursementId)
+      isTrader(_trader)
+      validSignature(_trader, _disbursementId)
     {
         Disbursement memory _disbursement = disbursements[_disbursementId];
-        _executeDisbursement(_disbursementId, _token, _amount);
+        _executeDisbursement(_trader, _disbursementId, _token, _amount);
         emit DisbursementCompleted(_disbursement.initiator, msg.sender, _disbursement.investmentId, _disbursementId, now);
         deleteDisbursement(_disbursementId);
     }
 
-    function _executeDisbursement(uint32 _disbursementId, address _token, uint256 _amount) 
+    function _executeDisbursement(address _trader, uint32 _disbursementId, address _token, uint256 _amount) 
         internal 
     {
         Disbursement storage _disbursement = disbursements[_disbursementId];
-        uint256[3] memory _payouts = TraderPaired(fund).approveExit(trader, investor, _disbursement.investmentId, _token, _amount);
+        uint256[3] memory _payouts = TraderPaired(fund).approveExit(_trader, investor, _disbursement.investmentId, _token, _amount);
+
+        if (_amount > 0) {
+            balances[_trader][_token] = balances[_trader][_token].add(_amount);
+        }
 
         if (_token == ETHER) {
-            _payoutEther(_payouts[0], trader);
-            _payoutEther(_payouts[1], investor);
-            _payoutEther(_payouts[2], admin);
+            _payoutEther(_trader, _payouts[0], _trader);
+            _payoutEther(_trader, _payouts[1], investor);
+            _payoutEther(_trader, _payouts[2], admin);
             
         } else {
-            _payoutToken(_token, _payouts[0], trader);
-            _payoutToken(_token, _payouts[1], investor);
-            _payoutToken(_token, _payouts[2], admin);
+            _payoutToken(_trader, _token, _payouts[0], _trader);
+            _payoutToken(_trader, _token, _payouts[1], investor);
+            _payoutToken(_trader, _token, _payouts[2], admin);
         }
     }
 
-    function _payoutEther(uint256 _amount, address _to) 
+    function _payoutEther(address _trader, uint256 _amount, address _to) 
         internal
     {
         if (_amount > 0) {
             address payable _toAddress = address(uint160(_to));
+            balances[_trader][ETHER] = balances[_trader][ETHER].sub(_amount);
             _toAddress.transfer(_amount);
             emit Payout(ETHER, _amount, _toAddress);
         }
     }
 
-    function _payoutToken(address _token, uint256 _amount, address _to) 
+    function _payoutToken(address _trader, address _token, uint256 _amount, address _to) 
         internal
     {
         if (_amount > 0) {
+            balances[_trader][_token] = balances[_trader][_token].sub(_amount);
             require(IERC20(_token).transfer(_to, _amount));
             emit Payout(_token, _amount, _to);
         }
@@ -299,11 +286,13 @@ contract MultiSigFundWallet {
         delete disbursements[_disbursementId];
     }
 
-    function _validateSignature(uint32 _disbursementId)
+    function _validateSignature(address _trader, uint32 _disbursementId)
         internal
         returns (bool)
     {
         Disbursement storage _disbursement = disbursements[_disbursementId];
+
+        require (_disbursement.trader == _trader);
 
         // disbursement must exist
         if(address(0) == _disbursement.initiator) {
@@ -312,6 +301,10 @@ contract MultiSigFundWallet {
         // Initiator cannot sign the disbursement
         if(msg.sender == _disbursement.initiator) {
             return false;
+        }
+        // if a trader is signing, it must match the trader for this disbursement
+        if(traders[msg.sender]) {
+            require (_disbursement.trader == msg.sender);
         }
 
         return true;

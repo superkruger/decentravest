@@ -68,15 +68,20 @@ describe('TraderPaired', function () {
 			result.should.equal(factory.address)
 		})
 
-		// it('tracks the trader fee percent', async () => {
-		// 	const result = await platform.traderFeePercent()
-		// 	result.toString().should.equal(traderFeePercent.toString())
-		// })
+		it('tracks the trader fee percent', async () => {
+			const result = await investments.traderFeePercent()
+			result.toString().should.equal(traderFeePercent.toString())
+		})
 
-		// it('tracks the investor fee percent', async () => {
-		// 	const result = await platform.investorFeePercent()
-		// 	result.toString().should.equal(investorFeePercent.toString())
-		// })
+		it('tracks the investor fee percent', async () => {
+			const result = await investments.investorFeePercent()
+			result.toString().should.equal(investorFeePercent.toString())
+		})
+
+		it('tracks the investor profit percent', async () => {
+			const result = await investments.investorProfitPercent()
+			result.toString().should.equal(investorProfitPercent.toString())
+		})
 	})
 
 	describe('fallback revert', () => {
@@ -241,15 +246,9 @@ describe('TraderPaired', function () {
 		})
 	})
 
-	describe('initiating', () => {
+	describe('wallet admin', () => {
 
 		let result
-		let etherAmount
-		let tokenAmount
-		let etherAllocation
-		let tokenAllocation
-		let walletEtherBalance
-		let walletTokenBalance
 		let wallet
 
 		beforeEach(async () => {
@@ -267,130 +266,26 @@ describe('TraderPaired', function () {
 		describe('success', () => {
 
 			beforeEach(async () => {
-				
-				etherAmount = ether(0.6)
-				etherAllocation = ether(1)
-
-				tokenAmount = tokens(0.8)
-				tokenAllocation = tokens(2)
-
-				await platform.allocate(ETHER, etherAllocation, {from: trader1})
-				await platform.allocate(token.address, tokenAllocation, {from: trader1})
-				await token.approve(wallet.address, tokenAmount, {from: investor1})
-				result = await wallet.initiateFund(trader1, [token.address], [tokenAmount], {from: investor1, value: etherAmount})
-				console.log("initiateFund gas", result.receipt.gasUsed)
+				result = await wallet.replaceAdmin(dummy, {from: feeAccount})
+				console.log("replaceAdmin gas", result.receipt.gasUsed)
 			})
 
-			it('tracks initiation', async () => {
-				let investorObj, traderObj, investmentEtherObj, investmentTokenObj, allocationEtherObj, allocationTokenObj, traderInvestmentId, investorInvestmentId
-				investorObj = await platform.investors(investor1)
-				traderObj = await platform.traders(trader1)
-				investmentEtherObj = await investments.investments(1)
-				investmentTokenObj = await investments.investments(2)
-				allocationEtherObj = await platform.allocations(trader1, ETHER)
-				allocationTokenObj = await platform.allocations(trader1, token.address)
-				traderInvestmentId = await platform.traderInvestments(trader1, 1)
-				investorInvestmentId = await platform.investorInvestments(investor1, 1)
-
-				walletEtherBalance = await balance.current(wallet.address, 'wei')
-				walletEtherBalance.toString().should.eq(etherAmount.toString())
-
-				walletTokenBalance = await token.balanceOf(wallet.address)
-				walletTokenBalance.toString().should.eq(tokenAmount.toString())
-
-				traderObj.investmentCount.toString().should.eq('2')
-				investorObj.investmentCount.toString().should.eq('2')
-
-				investmentEtherObj.id.toString().should.eq('1')
-				investmentEtherObj.trader.should.eq(trader1)
-				investmentEtherObj.investor.should.eq(investor1)
-				investmentEtherObj.token.should.eq(ETHER)
-				investmentEtherObj.amount.toString().should.eq(etherAmount.toString())
-				investmentEtherObj.state.toString().should.eq('0')
-
-				investmentTokenObj.id.toString().should.eq('2')
-				investmentTokenObj.trader.should.eq(trader1)
-				investmentTokenObj.investor.should.eq(investor1)
-				investmentTokenObj.token.should.eq(token.address)
-				investmentTokenObj.amount.toString().should.eq(tokenAmount.toString())
-				investmentTokenObj.state.toString().should.eq('0')
-
-				allocationEtherObj.invested.toString().should.eq(etherAmount.toString())
-
-				allocationTokenObj.invested.toString().should.eq(tokenAmount.toString())
-
-				traderInvestmentId.toString().should.eq('1')
-				investorInvestmentId.toString().should.eq('1')
-			})
-
-			it('emits a SetTrader event', async () => {
-				let log = result.logs[0]
-				log.event.should.eq('SetTrader')
-				let event = log.args
-				event.trader.toString().should.eq(trader1, 'trader is correct')
-			})
-
-			it('emits Fund events', async () => {
-				let log = result.logs[1]
-				log.event.should.eq('Fund')
-				let event = log.args
-				event.trader.toString().should.eq(trader1, 'trader is correct')
-				event.investor.toString().should.eq(investor1, 'investor is correct')
-				event.investmentId.toString().should.eq('1', 'investmentId is correct')
-				event.token.should.eq(ETHER, 'token is correct')
-				event.amount.toString().should.eq(etherAmount.toString(), 'amount is correct')
-
-				log = result.logs[2]
-				log.event.should.eq('Fund')
-				event = log.args
-				event.trader.toString().should.eq(trader1, 'trader is correct')
-				event.investor.toString().should.eq(investor1, 'investor is correct')
-				event.investmentId.toString().should.eq('2', 'investmentId is correct')
-				event.token.should.eq(token.address, 'token is correct')
-				event.amount.toString().should.eq(tokenAmount.toString(), 'amount is correct')
+			it('tracks replaceAdmin', async () => {
+				let admin = await wallet.admin()
+				admin.should.eq(dummy, 'admin is correct')	
 			})
 		})
 
 		describe('failure', () => {
 			beforeEach(async () => {
-				etherAmount = ether(0.6)
-				etherAllocation = ether(1)
-
-				tokenAmount = tokens(0.8)
-				tokenAllocation = tokens(2)
-				await platform.allocate(ETHER, etherAllocation, {from: trader1})
-				await platform.allocate(token.address, tokenAllocation, {from: trader1})
-				await token.approve(wallet.address, tokenAmount, {from: investor1})
 			})
 
-			it('not an investor', async () => {
-				await wallet.initiateFund(trader1, [token.address], [tokenAmount], {from: trader1, value: etherAmount}).should.be.rejectedWith(EVM_REVERT)
+			it('not an address', async () => {
+				await wallet.replaceAdmin(ETHER, {from: feeAccount}).should.be.rejectedWith(EVM_REVERT)
 			})
 
-			it('not a trader', async () => {
-				await wallet.initiateFund(feeAccount, [token.address], [tokenAmount], {from: investor1, value: etherAmount}).should.be.rejectedWith(EVM_REVERT)
-			})
-
-			it('investor not found', async () => {
-				await wallet.initiateFund(trader1, [token.address], [tokenAmount], {from: investor2, value: etherAmount}).should.be.rejectedWith(EVM_REVERT)
-			})
-
-			it('ether more than allocation', async () => {
-				etherAmount = ether(2)
-				await wallet.initiateFund(trader1, [token.address], [tokenAmount], {from: investor1, value: etherAmount}).should.be.rejectedWith(EVM_REVERT)
-			})
-
-			it('token more than allocation', async () => {
-				tokenAmount = ether(3)
-				await wallet.initiateFund(trader1, [token.address], [tokenAmount], {from: investor1, value: etherAmount}).should.be.rejectedWith(EVM_REVERT)
-			})
-
-			it('missing token amount', async () => {
-				await wallet.initiateFund(trader1, [token.address], [], {from: investor1, value: etherAmount}).should.be.rejectedWith(EVM_REVERT)
-			})
-
-			it('missing token', async () => {
-				await wallet.initiateFund(trader1, [], [tokenAmount], {from: investor1, value: etherAmount}).should.be.rejectedWith(EVM_REVERT)
+			it('not from current admin', async () => {
+				await wallet.replaceAdmin(dummy, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 		})
 	})
@@ -419,7 +314,7 @@ describe('TraderPaired', function () {
 			log.event.should.eq('Investment')
 			const event = log.args
 			wallet = await MultiSigFundWallet.at(event.wallet)
-			await wallet.setTrader(trader1, {from: investor1})
+			await wallet.setTrader(trader1, true, {from: investor1})
 		})
 
 		describe('ether success', () => {
@@ -430,7 +325,7 @@ describe('TraderPaired', function () {
 				allocation = ether(1)
 
 				await platform.allocate(ETHER, allocation, {from: trader1})
-				result = await wallet.fundEther({from: investor1, value: amount})
+				result = await wallet.fundEther(trader1, {from: investor1, value: amount})
 				console.log("fundEther gas", result.receipt.gasUsed)
 			})
 
@@ -482,16 +377,16 @@ describe('TraderPaired', function () {
 			})
 
 			it('not an investor', async () => {
-				await wallet.fundEther({from: trader1, value: amount}).should.be.rejectedWith(EVM_REVERT)
+				await wallet.fundEther(trader1, {from: trader1, value: amount}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('investor not found', async () => {
-				await wallet.fundEther({from: investor2, value: amount}).should.be.rejectedWith(EVM_REVERT)
+				await wallet.fundEther(trader1, {from: investor2, value: amount}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('more than allocation', async () => {
 				amount = ether(2)
-				await wallet.fundEther({from: investor1, value: amount}).should.be.rejectedWith(EVM_REVERT)
+				await wallet.fundEther(trader1, {from: investor1, value: amount}).should.be.rejectedWith(EVM_REVERT)
 			})
 		})
 
@@ -504,7 +399,7 @@ describe('TraderPaired', function () {
 				await token.approve(wallet.address, amount, { from: investor1 })
 				await platform.allocate(token.address, allocation, {from: trader1})
 
-				result = await wallet.fundToken(token.address, amount, {from: investor1})
+				result = await wallet.fundToken(trader1, token.address, amount, {from: investor1})
 			})
 
 			it('tracks investment', async () => {
@@ -555,16 +450,16 @@ describe('TraderPaired', function () {
 			})
 
 			it('not an investor', async () => {
-				await wallet.fundToken(token.address, amount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				await wallet.fundToken(trader1, token.address, amount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('investor not found', async () => {
-				await wallet.fundToken(token.address, amount, {from: investor2}).should.be.rejectedWith(EVM_REVERT)
+				await wallet.fundToken(trader1, token.address, amount, {from: investor2}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('more than allocation', async () => {
 				amount = ether(2)
-				await wallet.fundToken(token.address, amount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				await wallet.fundToken(trader1, token.address, amount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 			})
 		})
 	})
@@ -574,19 +469,13 @@ describe('TraderPaired', function () {
 		let result
 		let amount
 		let value
-		let investorId
-		let traderId
 		let investmentId
-		let investorProfitPercent
 		let wallet
 
 		beforeEach(async () => {
 			amount = ether(0.6)
 			value = ether(0.7)
-			investorId = 1
-			traderId = 1
 			investmentId = 1
-			investorProfitPercent = 8000
 
 			await platform.joinAsTrader({from: trader1})
 			await platform.joinAsInvestor({from: investor1})
@@ -596,22 +485,15 @@ describe('TraderPaired', function () {
 			log.event.should.eq('Investment')
 			const event = log.args
 			wallet = await MultiSigFundWallet.at(event.wallet)
-			await wallet.setTrader(trader1, {from: investor1})
-			result = await wallet.fundEther({from: investor1, value: amount})
+			await wallet.setTrader(trader1, true, {from: investor1})
+			result = await wallet.fundEther(trader1, {from: investor1, value: amount})
 		})
 
 		describe('success', () => {
 
-			let traderProfit, investorProfit, platformFee, traderFee, investorFee
-
 			beforeEach(async () => {
-				investorProfit = ether(0.1) * 79 / 100
-				traderProfit = ether(0.1) * 19 / 100
-				platformFee = ether(0.1) - (ether(0.1) * 19 / 100) - investorProfit
-				investorFee = platformFee / 2
-				traderFee = platformFee - investorFee
 
-				result = await wallet.disburseEther(investmentId, value, {from: investor1})
+				result = await wallet.disburseEther(trader1, investmentId, value, {from: investor1})
 			})
 
 			it('tracks request', async () => {
@@ -628,6 +510,7 @@ describe('TraderPaired', function () {
 				const log = result.logs[0]
 				log.event.should.eq('DisbursementCreated')
 				const event = log.args
+				event.trader.toString().should.eq(trader1, 'trader is correct')
 				event.initiator.toString().should.eq(investor1, 'initiator is correct')
 				event.investmentId.toString().should.eq(investmentId.toString(), 'investmentId is correct')
 				event.disbursementId.toString().should.eq('0', 'disbursementId is correct')
@@ -648,21 +531,21 @@ describe('TraderPaired', function () {
 				log.event.should.eq('Investment')
 				const event = log.args
 				wallet2 = await MultiSigFundWallet.at(event.wallet)
-				await wallet2.setTrader(trader2, {from: investor2})
-				result = await wallet2.fundEther({from: investor2, value: amount})
+				await wallet2.setTrader(trader2, true, {from: investor2})
+				result = await wallet2.fundEther(trader2, {from: investor2, value: amount})
 			})
 
 			it('not an investor', async () => {
-				await wallet.disburseEther(investmentId, value, {from: trader2}).should.be.rejectedWith(EVM_REVERT)
+				await wallet.disburseEther(trader1, investmentId, value, {from: trader2}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('investment not with investor', async () => {
-				await wallet.disburseEther(investmentId, value, {from: investor2}).should.be.rejectedWith(EVM_REVERT)
+				await wallet.disburseEther(trader1, investmentId, value, {from: investor2}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('not in correct state', async () => {
-				await wallet.disburseEther(investmentId, value, {from: investor1})
-				await wallet.disburseEther(investmentId, value, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+				await wallet.disburseEther(trader1, investmentId, value, {from: investor1})
+				await wallet.disburseEther(trader1, investmentId, value, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 			})
 		})
 	})
@@ -672,10 +555,7 @@ describe('TraderPaired', function () {
 		let result
 		let amount
 		let value
-		let investorId
-		let traderId
 		let investmentId
-		let investorProfitPercent
 		let wallet
 		let walletBalance
 		let settlementAmount
@@ -683,10 +563,7 @@ describe('TraderPaired', function () {
 		beforeEach(async () => {
 			amount = ether(0.6)
 			value = ether(0.7)
-			investorId = 1
-			traderId = 1
 			investmentId = 1
-			investorProfitPercent = 8000
 
 			await platform.joinAsTrader({from: trader1})
 			await platform.joinAsInvestor({from: investor1})
@@ -696,8 +573,8 @@ describe('TraderPaired', function () {
 			log.event.should.eq('Investment')
 			const event = log.args
 			wallet = await MultiSigFundWallet.at(event.wallet)
-			await wallet.setTrader(trader1, {from: investor1})
-			result = await wallet.fundEther({from: investor1, value: amount})
+			await wallet.setTrader(trader1, true, {from: investor1})
+			result = await wallet.fundEther(trader1, {from: investor1, value: amount})
 		})
 
 		describe('success', () => {
@@ -705,7 +582,7 @@ describe('TraderPaired', function () {
 			beforeEach(async () => {
 				settlementAmount = ether(0.081) // 0.08 + 0.001
 
-				result = await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount})
+				result = await wallet.disburseEther(trader1, investmentId, value, {from: trader1, value: settlementAmount})
 			})
 
 			it('tracks request', async () => {
@@ -747,26 +624,26 @@ describe('TraderPaired', function () {
 				log.event.should.eq('Investment')
 				const event = log.args
 				wallet2 = await MultiSigFundWallet.at(event.wallet)
-				await wallet2.setTrader(trader2, {from: investor2})
-				result = await wallet2.fundEther({from: investor2, value: amount})
+				await wallet2.setTrader(trader2, true, {from: investor2})
+				result = await wallet2.fundEther(trader2, {from: investor2, value: amount})
 			})
 
 			it('not an investor or trader', async () => {
-				await wallet.disburseEther(investmentId, value, {from: trader2, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+				await wallet.disburseEther(trader1, investmentId, value, {from: trader2, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('not in correct state', async () => {
-				await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount})
-				await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+				await wallet.disburseEther(trader1, investmentId, value, {from: trader1, value: settlementAmount})
+				await wallet.disburseEther(trader1, investmentId, value, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('incorrect settlementAmount', async () => {
 				settlementAmount = ether(0.08)
-				await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+				await wallet.disburseEther(trader1, investmentId, value, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('not a payment', async () => {
-				await wallet.disburseEther(investmentId, value, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				await wallet.disburseEther(trader1, investmentId, value, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 		})
 	})
@@ -776,10 +653,7 @@ describe('TraderPaired', function () {
 		let result
 		let amount
 		let value
-		let investorId
-		let traderId
 		let investmentId
-		let investorProfitPercent
 		let wallet
 		let walletBalance
 		let settlementAmount
@@ -787,10 +661,7 @@ describe('TraderPaired', function () {
 		beforeEach(async () => {
 			amount = tokens(0.6)
 			value = tokens(0.7)
-			investorId = 1
-			traderId = 1
 			investmentId = 1
-			investorProfitPercent = 8000
 
 			await platform.joinAsTrader({from: trader1})
 			await platform.joinAsInvestor({from: investor1})
@@ -800,9 +671,9 @@ describe('TraderPaired', function () {
 			log.event.should.eq('Investment')
 			const event = log.args
 			wallet = await MultiSigFundWallet.at(event.wallet)
-			await wallet.setTrader(trader1, {from: investor1})
+			await wallet.setTrader(trader1, true, {from: investor1})
 			await token.approve(wallet.address, amount, {from: investor1})
-			result = await wallet.fundToken(token.address, amount, {from: investor1})
+			result = await wallet.fundToken(trader1, token.address, amount, {from: investor1})
 		})
 
 		describe('success', () => {
@@ -811,7 +682,7 @@ describe('TraderPaired', function () {
 				settlementAmount = tokens(0.081) // 0.08 + 0.001
 
 				await token.approve(wallet.address, settlementAmount, {from: trader1})
-				result = await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1})
+				result = await wallet.disburseToken(trader1, investmentId, token.address, value, settlementAmount, {from: trader1})
 			})
 
 			it('tracks request', async () => {
@@ -853,30 +724,30 @@ describe('TraderPaired', function () {
 				log.event.should.eq('Investment')
 				const event = log.args
 				wallet2 = await MultiSigFundWallet.at(event.wallet)
-				await wallet2.setTrader(trader2, {from: investor2})
+				await wallet2.setTrader(trader2, true, {from: investor2})
 				await token.approve(wallet2.address, amount, {from: investor2})
-				result = await wallet2.fundToken(token.address, amount, {from: investor2})
+				result = await wallet2.fundToken(trader2, token.address, amount, {from: investor2})
 			})
 
 			it('not an investor or trader', async () => {
 				await token.approve(wallet.address, settlementAmount, {from: trader1})
-				await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader2}).should.be.rejectedWith(EVM_REVERT)
+				await wallet.disburseToken(trader1, investmentId, token.address, value, settlementAmount, {from: trader2}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('not in correct state', async () => {
 				await token.approve(wallet.address, settlementAmount, {from: trader1})
-				await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1})
-				await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				await wallet.disburseToken(trader1, investmentId, token.address, value, settlementAmount, {from: trader1})
+				await wallet.disburseToken(trader1, investmentId, token.address, value, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('incorrect settlementAmount', async () => {
 				settlementAmount = tokens(0.08)
 				await token.approve(wallet.address, settlementAmount, {from: trader1})
-				await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				await wallet.disburseToken(trader1, investmentId, token.address, value, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 
 			it('not an approved payment', async () => {
-				await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+				await wallet.disburseToken(trader1, investmentId, token.address, value, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 			})
 		})
 	})
@@ -888,7 +759,6 @@ describe('TraderPaired', function () {
 		let allocation
 		let value
 		let investmentId
-		let investorProfitPercent
 		let settlementAmount
 		let walletBalance
 		let wallet
@@ -897,7 +767,6 @@ describe('TraderPaired', function () {
 		beforeEach(async () => {
 			
 			investmentId = 1
-			investorProfitPercent = 8000
 
 			await platform.joinAsTrader({from: trader1})
 			await platform.joinAsInvestor({from: investor1})
@@ -917,8 +786,8 @@ describe('TraderPaired', function () {
 				log.event.should.eq('Investment')
 				const event = log.args
 				wallet = await MultiSigFundWallet.at(event.wallet)
-				await wallet.setTrader(trader1, {from: investor1})
-				result = await wallet.fundEther({from: investor1, value: amount})
+				await wallet.setTrader(trader1, true, {from: investor1})
+				result = await wallet.fundEther(trader1, {from: investor1, value: amount})
 			})
 
 			describe('ether profit success', () => {
@@ -927,8 +796,8 @@ describe('TraderPaired', function () {
 					value = ether(0.7)
 					settlementAmount = ether(0.081) // 0.08 + 0.001
 
-					await wallet.disburseEther(investmentId, value, {from: investor1})
-					result = await wallet.approveDisbursementEther(0, {from: trader1, value: settlementAmount})
+					await wallet.disburseEther(trader1, investmentId, value, {from: investor1})
+					result = await wallet.approveDisbursementEther(trader1, 0, {from: trader1, value: settlementAmount})
 				})
 
 				it('tracks approve', async () => {
@@ -993,8 +862,8 @@ describe('TraderPaired', function () {
 					value = ether(0.6)
 					settlementAmount = ether(0)
 
-					await wallet.disburseEther(investmentId, value, {from: investor1})
-					result = await wallet.approveDisbursementEther(0, {from: trader1, value: settlementAmount})
+					await wallet.disburseEther(trader1, investmentId, value, {from: investor1})
+					result = await wallet.approveDisbursementEther(trader1, 0, {from: trader1, value: settlementAmount})
 				})
 
 				it('tracks approve', async () => {
@@ -1040,8 +909,8 @@ describe('TraderPaired', function () {
 					value = ether(0.5)
 					settlementAmount = ether(0.001) // traderfee on loss
 
-					await wallet.disburseEther(investmentId, value, {from: investor1})
-					result = await wallet.approveDisbursementEther(0, {from: trader1, value: settlementAmount})
+					await wallet.disburseEther(trader1, investmentId, value, {from: investor1})
+					result = await wallet.approveDisbursementEther(trader1, 0, {from: trader1, value: settlementAmount})
 				})
 
 				it('tracks approve', async () => {
@@ -1101,7 +970,7 @@ describe('TraderPaired', function () {
 					value = ether(0.7)
 					settlementAmount = ether(0.081) // 0.08 + 0.001
 
-					await wallet.disburseEther(investmentId, value, {from: investor1})
+					await wallet.disburseEther(trader1, investmentId, value, {from: investor1})
 					
 					await platform.joinAsTrader({from: trader2})
 					await platform.joinAsInvestor({from: investor2})
@@ -1112,30 +981,30 @@ describe('TraderPaired', function () {
 					log.event.should.eq('Investment')
 					const event = log.args
 					wallet2 = await MultiSigFundWallet.at(event.wallet)
-					await wallet2.setTrader(trader2, {from: investor2})
-					await wallet2.fundEther({from: investor2, value: amount})
+					await wallet2.setTrader(trader2, true, {from: investor2})
+					await wallet2.fundEther(trader2, {from: investor2, value: amount})
 				})
 
 				it('can\'t approve own disbursement', async () => {
-					await wallet.approveDisbursementEther(0, {from: investor1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: investor1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong disbursement', async () => {
-					await wallet.approveDisbursementEther(1, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 1, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong settlementAmount', async () => {
 					settlementAmount = ether(0.07)
-					await wallet.approveDisbursementEther(0, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('trader not found', async () => {
-					await wallet.approveDisbursementEther(0, {from: dummy, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: dummy, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('already disbursed', async () => {
-					await wallet.approveDisbursementEther(0, {from: trader1, value: settlementAmount})
-					await wallet.approveDisbursementEther(0, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: trader1, value: settlementAmount})
+					await wallet.approveDisbursementEther(trader1, 0, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 				})
 			})
 
@@ -1145,7 +1014,7 @@ describe('TraderPaired', function () {
 					value = ether(0.6)
 					settlementAmount = ether(0)
 
-					await wallet.disburseEther(investmentId, value, {from: investor1})
+					await wallet.disburseEther(trader1, investmentId, value, {from: investor1})
 					
 					await platform.joinAsTrader({from: trader2})
 					await platform.joinAsInvestor({from: investor2})
@@ -1156,30 +1025,30 @@ describe('TraderPaired', function () {
 					log.event.should.eq('Investment')
 					const event = log.args
 					wallet2 = await MultiSigFundWallet.at(event.wallet)
-					await wallet2.setTrader(trader2, {from: investor2})
-					await wallet2.fundEther({from: investor2, value: amount})
+					await wallet2.setTrader(trader2, true, {from: investor2})
+					await wallet2.fundEther(trader2, {from: investor2, value: amount})
 				})
 
 				it('can\'t approve own disbursement', async () => {
-					await wallet.approveDisbursementEther(0, {from: investor1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: investor1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong disbursement', async () => {
-					await wallet.approveDisbursementEther(1, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 1, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong settlementAmount', async () => {
 					settlementAmount = ether(0.01)
-					await wallet.approveDisbursementEther(0, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('trader not found', async () => {
-					await wallet.approveDisbursementEther(0, {from: dummy, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: dummy, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('already disbursed', async () => {
-					await wallet.approveDisbursementEther(0, {from: trader1, value: settlementAmount})
-					await wallet.approveDisbursementEther(0, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: trader1, value: settlementAmount})
+					await wallet.approveDisbursementEther(trader1, 0, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 				})
 			})
 
@@ -1189,7 +1058,7 @@ describe('TraderPaired', function () {
 					value = ether(0.5)
 					settlementAmount = ether(0.001)
 
-					await wallet.disburseEther(investmentId, value, {from: investor1})
+					await wallet.disburseEther(trader1, investmentId, value, {from: investor1})
 					
 					await platform.joinAsTrader({from: trader2})
 					await platform.joinAsInvestor({from: investor2})
@@ -1200,30 +1069,30 @@ describe('TraderPaired', function () {
 					log.event.should.eq('Investment')
 					const event = log.args
 					wallet2 = await MultiSigFundWallet.at(event.wallet)
-					await wallet2.setTrader(trader2, {from: investor2})
-					await wallet2.fundEther({from: investor2, value: amount})
+					await wallet2.setTrader(trader2, true, {from: investor2})
+					await wallet2.fundEther(trader2, {from: investor2, value: amount})
 				})
 
 				it('can\'t approve own disbursement', async () => {
-					await wallet.approveDisbursementEther(0, {from: investor1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: investor1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong disbursement', async () => {
-					await wallet.approveDisbursementEther(1, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 1, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong settlementAmount', async () => {
 					settlementAmount = ether(0.0001)
-					await wallet.approveDisbursementEther(0, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('trader not found', async () => {
-					await wallet.approveDisbursementEther(0, {from: dummy, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: dummy, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('already disbursed', async () => {
-					await wallet.approveDisbursementEther(0, {from: trader1, value: settlementAmount})
-					await wallet.approveDisbursementEther(0, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: trader1, value: settlementAmount})
+					await wallet.approveDisbursementEther(trader1, 0, {from: trader1, value: settlementAmount}).should.be.rejectedWith(EVM_REVERT)
 				})
 			})
 		})
@@ -1243,9 +1112,9 @@ describe('TraderPaired', function () {
 				log.event.should.eq('Investment')
 				const event = log.args
 				wallet = await MultiSigFundWallet.at(event.wallet)
-				await wallet.setTrader(trader1, {from: investor1})
+				await wallet.setTrader(trader1, true, {from: investor1})
 				await token.approve(wallet.address, amount, {from: investor1})
-				result = await wallet.fundToken(token.address, amount, {from: investor1})
+				result = await wallet.fundToken(trader1, token.address, amount, {from: investor1})
 			})
 
 			describe('token profit success', () => {
@@ -1254,9 +1123,9 @@ describe('TraderPaired', function () {
 					value = tokens(0.7)
 					settlementAmount = tokens(0.081) // 0.08 + 0.001
 
-					await wallet.disburseToken(investmentId, token.address, value, 0, {from: investor1})
+					await wallet.disburseToken(trader1, investmentId, token.address, value, 0, {from: investor1})
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					result = await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: trader1})
+					result = await wallet.approveDisbursementToken(trader1, 0, token.address, settlementAmount, {from: trader1})
 				})
 
 				it('tracks approve', async () => {
@@ -1312,9 +1181,9 @@ describe('TraderPaired', function () {
 					value = tokens(0.6)
 					settlementAmount = tokens(0)
 
-					await wallet.disburseToken(investmentId, token.address, value, 0, {from: investor1})
+					await wallet.disburseToken(trader1, investmentId, token.address, value, 0, {from: investor1})
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					result = await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: trader1})
+					result = await wallet.approveDisbursementToken(trader1, 0, token.address, settlementAmount, {from: trader1})
 				})
 
 				it('tracks approve', async () => {
@@ -1360,9 +1229,9 @@ describe('TraderPaired', function () {
 					value = tokens(0.5)
 					settlementAmount = tokens(0.001) // traderfee on loss
 
-					await wallet.disburseToken(investmentId, token.address, value, 0, {from: investor1})
+					await wallet.disburseToken(trader1, investmentId, token.address, value, 0, {from: investor1})
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					result = await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: trader1})
+					result = await wallet.approveDisbursementToken(trader1, 0, token.address, settlementAmount, {from: trader1})
 				})
 
 				it('tracks approve', async () => {
@@ -1422,7 +1291,7 @@ describe('TraderPaired', function () {
 					value = tokens(0.7)
 					settlementAmount = tokens(0.081) // 0.08 + 0.001
 
-					await wallet.disburseToken(investmentId, token.address, value, 0, {from: investor1})
+					await wallet.disburseToken(trader1, investmentId, token.address, value, 0, {from: investor1})
 					
 					await platform.joinAsTrader({from: trader2})
 					await platform.joinAsInvestor({from: investor2})
@@ -1433,37 +1302,37 @@ describe('TraderPaired', function () {
 					log.event.should.eq('Investment')
 					const event = log.args
 					wallet2 = await MultiSigFundWallet.at(event.wallet)
-					await wallet2.setTrader(trader2, {from: investor2})
+					await wallet2.setTrader(trader2, true, {from: investor2})
 					await token.approve(wallet2.address, amount, {from: investor2})
-					await wallet2.fundToken(token.address, amount, {from: investor2})
+					await wallet2.fundToken(trader2, token.address, amount, {from: investor2})
 				})
 
 				it('can\'t approve own disbursement', async () => {
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, settlementAmount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong disbursement', async () => {
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.approveDisbursementToken(1, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 1, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong settlementAmount', async () => {
 					settlementAmount = tokens(0.07)
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('trader not found', async () => {
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, settlementAmount, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('already disbursed', async () => {
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: trader1})
+					await wallet.approveDisbursementToken(trader1, 0, token.address, settlementAmount, {from: trader1})
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 				})
 			})
 
@@ -1473,7 +1342,7 @@ describe('TraderPaired', function () {
 					value = tokens(0.6)
 					settlementAmount = tokens(0)
 
-					await wallet.disburseToken(investmentId, token.address, value, 0, {from: investor1})
+					await wallet.disburseToken(trader1, investmentId, token.address, value, 0, {from: investor1})
 					
 					await platform.joinAsTrader({from: trader2})
 					await platform.joinAsInvestor({from: investor2})
@@ -1484,37 +1353,37 @@ describe('TraderPaired', function () {
 					log.event.should.eq('Investment')
 					const event = log.args
 					wallet2 = await MultiSigFundWallet.at(event.wallet)
-					await wallet2.setTrader(trader2, {from: investor2})
+					await wallet2.setTrader(trader2, true, {from: investor2})
 					await token.approve(wallet2.address, amount, {from: investor2})
-					await wallet2.fundToken(token.address, amount, {from: investor2})
+					await wallet2.fundToken(trader2, token.address, amount, {from: investor2})
 				})
 
 				it('can\'t approve own disbursement', async () => {
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, settlementAmount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong disbursement', async () => {
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.approveDisbursementToken(1, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 1, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong settlementAmount', async () => {
 					settlementAmount = tokens(0.01)
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('trader not found', async () => {
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, settlementAmount, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('already disbursed', async () => {
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: trader1})
+					await wallet.approveDisbursementToken(trader1, 0, token.address, settlementAmount, {from: trader1})
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 				})
 			})
 
@@ -1524,7 +1393,7 @@ describe('TraderPaired', function () {
 					value = tokens(0.5)
 					settlementAmount = tokens(0.001)
 
-					await wallet.disburseToken(investmentId, token.address, value, 0, {from: investor1})
+					await wallet.disburseToken(trader1, investmentId, token.address, value, 0, {from: investor1})
 					
 					await platform.joinAsTrader({from: trader2})
 					await platform.joinAsInvestor({from: investor2})
@@ -1535,37 +1404,37 @@ describe('TraderPaired', function () {
 					log.event.should.eq('Investment')
 					const event = log.args
 					wallet2 = await MultiSigFundWallet.at(event.wallet)
-					await wallet2.setTrader(trader2, {from: investor2})
+					await wallet2.setTrader(trader2, true, {from: investor2})
 					await token.approve(wallet2.address, amount, {from: investor2})
-					await wallet2.fundToken(token.address, amount, {from: investor2})
+					await wallet2.fundToken(trader2, token.address, amount, {from: investor2})
 				})
 
 				it('can\'t approve own disbursement', async () => {
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, settlementAmount, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong disbursement', async () => {
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.approveDisbursementToken(1, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 1, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong settlementAmount', async () => {
 					settlementAmount = tokens(0.0001)
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('trader not found', async () => {
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, settlementAmount, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('already disbursed', async () => {
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: trader1})
+					await wallet.approveDisbursementToken(trader1, 0, token.address, settlementAmount, {from: trader1})
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.approveDisbursementToken(0, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, settlementAmount, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 				})
 			})
 		})
@@ -1607,8 +1476,8 @@ describe('TraderPaired', function () {
 				log.event.should.eq('Investment')
 				const event = log.args
 				wallet = await MultiSigFundWallet.at(event.wallet)
-				await wallet.setTrader(trader1, {from: investor1})
-				result = await wallet.fundEther({from: investor1, value: amount})
+				await wallet.setTrader(trader1, true, {from: investor1})
+				result = await wallet.fundEther(trader1, {from: investor1, value: amount})
 			})
 
 			describe('ether profit success', () => {
@@ -1617,8 +1486,8 @@ describe('TraderPaired', function () {
 					value = ether(0.7)
 					settlementAmount = ether(0.081) // 0.08 + 0.001
 
-					await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount})
-					result = await wallet.approveDisbursementEther(0, {from: investor1})
+					await wallet.disburseEther(trader1, investmentId, value, {from: trader1, value: settlementAmount})
+					result = await wallet.approveDisbursementEther(trader1, 0, {from: investor1})
 				})
 
 				it('tracks approve', async () => {
@@ -1683,8 +1552,8 @@ describe('TraderPaired', function () {
 					value = ether(0.6)
 					settlementAmount = ether(0)
 
-					await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount})
-					result = await wallet.approveDisbursementEther(0, {from: investor1})
+					await wallet.disburseEther(trader1, investmentId, value, {from: trader1, value: settlementAmount})
+					result = await wallet.approveDisbursementEther(trader1, 0, {from: investor1})
 				})
 
 				it('tracks approve', async () => {
@@ -1730,8 +1599,8 @@ describe('TraderPaired', function () {
 					value = ether(0.5)
 					settlementAmount = ether(0.001) // traderfee on loss
 
-					await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount})
-					result = await wallet.approveDisbursementEther(0, {from: investor1})
+					await wallet.disburseEther(trader1, investmentId, value, {from: trader1, value: settlementAmount})
+					result = await wallet.approveDisbursementEther(trader1, 0, {from: investor1})
 				})
 
 				it('tracks approve', async () => {
@@ -1791,7 +1660,7 @@ describe('TraderPaired', function () {
 					value = ether(0.7)
 					settlementAmount = ether(0.081) // 0.08 + 0.001
 
-					await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount})
+					await wallet.disburseEther(trader1, investmentId, value, {from: trader1, value: settlementAmount})
 					
 					await platform.joinAsTrader({from: trader2})
 					await platform.joinAsInvestor({from: investor2})
@@ -1802,25 +1671,25 @@ describe('TraderPaired', function () {
 					log.event.should.eq('Investment')
 					const event = log.args
 					wallet2 = await MultiSigFundWallet.at(event.wallet)
-					await wallet2.setTrader(trader2, {from: investor2})
-					await wallet2.fundEther({from: investor2, value: amount})
+					await wallet2.setTrader(trader2, true, {from: investor2})
+					await wallet2.fundEther(trader2, {from: investor2, value: amount})
 				})
 
 				it('can\'t approve own disbursement', async () => {
-					await wallet.approveDisbursementEther(0, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong disbursement', async () => {
-					await wallet.approveDisbursementEther(1, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 1, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('trader not found', async () => {
-					await wallet.approveDisbursementEther(0, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('already disbursed', async () => {
-					await wallet.approveDisbursementEther(0, {from: investor1})
-					await wallet.approveDisbursementEther(0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: investor1})
+					await wallet.approveDisbursementEther(trader1, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 			})
 
@@ -1830,7 +1699,7 @@ describe('TraderPaired', function () {
 					value = ether(0.6)
 					settlementAmount = ether(0)
 
-					await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount})
+					await wallet.disburseEther(trader1, investmentId, value, {from: trader1, value: settlementAmount})
 					
 					await platform.joinAsTrader({from: trader2})
 					await platform.joinAsInvestor({from: investor2})
@@ -1841,25 +1710,25 @@ describe('TraderPaired', function () {
 					log.event.should.eq('Investment')
 					const event = log.args
 					wallet2 = await MultiSigFundWallet.at(event.wallet)
-					await wallet2.setTrader(trader2, {from: investor2})
-					await wallet2.fundEther({from: investor2, value: amount})
+					await wallet2.setTrader(trader2, true, {from: investor2})
+					await wallet2.fundEther(trader2, {from: investor2, value: amount})
 				})
 
 				it('can\'t approve own disbursement', async () => {
-					await wallet.approveDisbursementEther(0, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong disbursement', async () => {
-					await wallet.approveDisbursementEther(1, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 1, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('trader not found', async () => {
-					await wallet.approveDisbursementEther(0, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('already disbursed', async () => {
-					await wallet.approveDisbursementEther(0, {from: investor1})
-					await wallet.approveDisbursementEther(0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: investor1})
+					await wallet.approveDisbursementEther(trader1, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 			})
 
@@ -1869,7 +1738,7 @@ describe('TraderPaired', function () {
 					value = ether(0.5)
 					settlementAmount = ether(0.001)
 
-					await wallet.disburseEther(investmentId, value, {from: trader1, value: settlementAmount})
+					await wallet.disburseEther(trader1, investmentId, value, {from: trader1, value: settlementAmount})
 					
 					await platform.joinAsTrader({from: trader2})
 					await platform.joinAsInvestor({from: investor2})
@@ -1880,25 +1749,25 @@ describe('TraderPaired', function () {
 					log.event.should.eq('Investment')
 					const event = log.args
 					wallet2 = await MultiSigFundWallet.at(event.wallet)
-					await wallet2.setTrader(trader2, {from: investor2})
-					await wallet2.fundEther({from: investor2, value: amount})
+					await wallet2.setTrader(trader2, true, {from: investor2})
+					await wallet2.fundEther(trader2, {from: investor2, value: amount})
 				})
 
 				it('can\'t approve own disbursement', async () => {
-					await wallet.approveDisbursementEther(0, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong disbursement', async () => {
-					await wallet.approveDisbursementEther(1, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 1, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('trader not found', async () => {
-					await wallet.approveDisbursementEther(0, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('already disbursed', async () => {
-					await wallet.approveDisbursementEther(0, {from: investor1})
-					await wallet.approveDisbursementEther(0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementEther(trader1, 0, {from: investor1})
+					await wallet.approveDisbursementEther(trader1, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 			})
 		})
@@ -1918,9 +1787,9 @@ describe('TraderPaired', function () {
 				log.event.should.eq('Investment')
 				const event = log.args
 				wallet = await MultiSigFundWallet.at(event.wallet)
-				await wallet.setTrader(trader1, {from: investor1})
+				await wallet.setTrader(trader1, true, {from: investor1})
 				await token.approve(wallet.address, amount, {from: investor1})
-				result = await wallet.fundToken(token.address, amount, {from: investor1})
+				result = await wallet.fundToken(trader1, token.address, amount, {from: investor1})
 			})
 
 			describe('token profit success', () => {
@@ -1930,8 +1799,8 @@ describe('TraderPaired', function () {
 					settlementAmount = tokens(0.081) // 0.08 + 0.001
 
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1})
-					result = await wallet.approveDisbursementToken(0, token.address, 0, {from: investor1})
+					await wallet.disburseToken(trader1, investmentId, token.address, value, settlementAmount, {from: trader1})
+					result = await wallet.approveDisbursementToken(trader1, 0, token.address, 0, {from: investor1})
 				})
 
 				it('tracks approve', async () => {
@@ -1988,8 +1857,8 @@ describe('TraderPaired', function () {
 					settlementAmount = tokens(0)
 
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1})
-					result = await wallet.approveDisbursementToken(0, token.address, 0, {from: investor1})
+					await wallet.disburseToken(trader1, investmentId, token.address, value, settlementAmount, {from: trader1})
+					result = await wallet.approveDisbursementToken(trader1, 0, token.address, 0, {from: investor1})
 				})
 
 				it('tracks approve', async () => {
@@ -2036,8 +1905,8 @@ describe('TraderPaired', function () {
 					settlementAmount = tokens(0.001) // traderfee on loss
 
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1})
-					result = await wallet.approveDisbursementToken(0, token.address, 0, {from: investor1})
+					await wallet.disburseToken(trader1, investmentId, token.address, value, settlementAmount, {from: trader1})
+					result = await wallet.approveDisbursementToken(trader1, 0, token.address, 0, {from: investor1})
 				})
 
 				it('tracks approve', async () => {
@@ -2098,7 +1967,7 @@ describe('TraderPaired', function () {
 					settlementAmount = tokens(0.081) // 0.08 + 0.001
 					
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1})
+					await wallet.disburseToken(trader1, investmentId, token.address, value, settlementAmount, {from: trader1})
 					
 					await platform.joinAsTrader({from: trader2})
 					await platform.joinAsInvestor({from: investor2})
@@ -2109,30 +1978,30 @@ describe('TraderPaired', function () {
 					log.event.should.eq('Investment')
 					const event = log.args
 					wallet2 = await MultiSigFundWallet.at(event.wallet)
-					await wallet2.setTrader(trader2, {from: investor2})
+					await wallet2.setTrader(trader2, true, {from: investor2})
 					await token.approve(wallet2.address, amount, {from: investor2})
-					await wallet2.fundToken(token.address, amount, {from: investor2})
+					await wallet2.fundToken(trader2, token.address, amount, {from: investor2})
 				})
 
 				it('can\'t approve own disbursement', async () => {
-					await wallet.approveDisbursementToken(0, token.address, 0, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, 0, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong disbursement', async () => {
-					await wallet.approveDisbursementToken(1, token.address, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 1, token.address, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong settlementAmount', async () => {
-					await wallet.approveDisbursementToken(0, token.address, tokens(0.07), {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, tokens(0.07), {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('investor not found', async () => {
-					await wallet.approveDisbursementToken(0, token.address, 0, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, 0, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('already disbursed', async () => {
-					await wallet.approveDisbursementToken(0, token.address, 0, {from: investor1})
-					await wallet.approveDisbursementToken(0, token.address, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, 0, {from: investor1})
+					await wallet.approveDisbursementToken(trader1, 0, token.address, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 			})
 
@@ -2143,7 +2012,7 @@ describe('TraderPaired', function () {
 					settlementAmount = tokens(0)
 
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1})
+					await wallet.disburseToken(trader1, investmentId, token.address, value, settlementAmount, {from: trader1})
 					
 					await platform.joinAsTrader({from: trader2})
 					await platform.joinAsInvestor({from: investor2})
@@ -2154,30 +2023,30 @@ describe('TraderPaired', function () {
 					log.event.should.eq('Investment')
 					const event = log.args
 					wallet2 = await MultiSigFundWallet.at(event.wallet)
-					await wallet2.setTrader(trader2, {from: investor2})
+					await wallet2.setTrader(trader2, true, {from: investor2})
 					await token.approve(wallet2.address, amount, {from: investor2})
-					await wallet2.fundToken(token.address, amount, {from: investor2})
+					await wallet2.fundToken(trader2, token.address, amount, {from: investor2})
 				})
 
 				it('can\'t approve own disbursement', async () => {
-					await wallet.approveDisbursementToken(0, token.address, 0, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, 0, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong disbursement', async () => {
-					await wallet.approveDisbursementToken(1, token.address, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 1, token.address, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong settlementAmount', async () => {
-					await wallet.approveDisbursementToken(0, token.address, tokens(0.01), {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, tokens(0.01), {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('investor not found', async () => {
-					await wallet.approveDisbursementToken(0, token.address, 0, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, 0, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('already disbursed', async () => {
-					await wallet.approveDisbursementToken(0, token.address, 0, {from: investor1})
-					await wallet.approveDisbursementToken(0, token.address, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, 0, {from: investor1})
+					await wallet.approveDisbursementToken(trader1, 0, token.address, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 			})
 
@@ -2188,7 +2057,7 @@ describe('TraderPaired', function () {
 					settlementAmount = tokens(0.001)
 
 					await token.approve(wallet.address, settlementAmount, {from: trader1})
-					await wallet.disburseToken(investmentId, token.address, value, settlementAmount, {from: trader1})
+					await wallet.disburseToken(trader1, investmentId, token.address, value, settlementAmount, {from: trader1})
 					
 					await platform.joinAsTrader({from: trader2})
 					await platform.joinAsInvestor({from: investor2})
@@ -2199,30 +2068,30 @@ describe('TraderPaired', function () {
 					log.event.should.eq('Investment')
 					const event = log.args
 					wallet2 = await MultiSigFundWallet.at(event.wallet)
-					await wallet2.setTrader(trader2, {from: investor2})
+					await wallet2.setTrader(trader2, true, {from: investor2})
 					await token.approve(wallet2.address, amount, {from: investor2})
-					await wallet2.fundToken(token.address, amount, {from: investor2})
+					await wallet2.fundToken(trader2, token.address, amount, {from: investor2})
 				})
 
 				it('can\'t approve own disbursement', async () => {
-					await wallet.approveDisbursementToken(0, token.address, 0, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, 0, {from: trader1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong disbursement', async () => {
-					await wallet.approveDisbursementToken(1, token.address, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 1, token.address, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('wrong settlementAmount', async () => {
-					await wallet.approveDisbursementToken(0, token.address, tokens(0.0001), {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, tokens(0.0001), {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('investor not found', async () => {
-					await wallet.approveDisbursementToken(0, token.address, 0, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, 0, {from: dummy}).should.be.rejectedWith(EVM_REVERT)
 				})
 
 				it('already disbursed', async () => {
-					await wallet.approveDisbursementToken(0, token.address, 0, {from: investor1})
-					await wallet.approveDisbursementToken(0, token.address, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
+					await wallet.approveDisbursementToken(trader1, 0, token.address, 0, {from: investor1})
+					await wallet.approveDisbursementToken(trader1, 0, token.address, 0, {from: investor1}).should.be.rejectedWith(EVM_REVERT)
 				})
 			})
 		})

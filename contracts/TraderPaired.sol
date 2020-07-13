@@ -147,8 +147,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         address[] memory wallets = MultiSigFundWalletFactory(multiSigFundWalletFactory).getInstantiations(_investorAddress);
         
         for(uint256 i = 0; i < wallets.length; i++) {
-            address _trader = MultiSigFundWallet(wallets[i]).trader();
-            if (_trader == _traderAddress) {
+            if (MultiSigFundWallet(wallets[i]).traders(_traderAddress)) {
                 return true;
             }
         }
