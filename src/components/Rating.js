@@ -25,7 +25,7 @@ function RatingStars(props) {
         </Tooltip>
       }
     >
-      <span>
+      <span key={`rating-${asset}`}>
         <Stars props={props.props}/>
       </span>
     </OverlayTrigger>
@@ -33,15 +33,15 @@ function RatingStars(props) {
 }
 
 function Stars(props) {
-  const {rating} = props.props
+  const {asset, rating} = props.props
   let numStars = Number.parseInt(rating)
 
   let stars = [];
   for (var i = 0; i < 10; i++) {
     if (i <= numStars) {
-      stars.push(<span class="fas fa-star"></span>)
+      stars.push(<span className="fas fa-star" key={`rating-${asset}-${i}`}></span>)
     } else {
-      stars.push(<span class="far fa-star"></span>)
+      stars.push(<span className="far fa-star" key={`rating-${asset}-${i}`}></span>)
     }
   }
 

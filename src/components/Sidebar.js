@@ -1,13 +1,11 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import Spinner from './Spinner'
+import TraderSidebarMenu from './trader/TraderSidebarMenu'
+import InvestorSidebarMenu from './investor/InvestorSidebarMenu'
 import {
-  accountSelector, 
-  traderPairedSelector,
-  traderPairedLoadedSelector,
   traderSelector,
-  investorSelector,
-  traderJoiningSelector
+  investorSelector
 } from '../store/selectors'
 import { 
   pageSelected
@@ -28,22 +26,20 @@ class Sidebar extends Component {
 
         {/* Nav Item - Dashboard */}
 
-        { !this.props.traderPairedLoaded ? 
-          <li className="nav-item active">
-            <div className="nav-link">
-              <i className="fas fa-fw fa-tachometer-alt"></i>
-              <span>Please Connect Metamask</span>
-            </div>
-          </li> : 
-          
-            this.props.joined ?
+        { 
+          this.props.joined ? 
+            <div>
+              {
+                this.props.trader ?
+                <TraderSidebarMenu /> :
+                <InvestorSidebarMenu />
+              }
             
-              this.props.trader ?
-              <TraderButton props={this.props} /> :
-              <InvestorButton props={this.props} />
-             :
+            </div>
+          :
 
-            <JoinButton props={this.props} />
+          <div>
+          </div>
         }
 
         {/* Divider */}
@@ -72,62 +68,14 @@ function Logo(props) {
     </a>
   );
 }
-function JoinButton(props) {
-  const { traderJoining } = props.props
-  const handleClick = () => props.props.dispatch(pageSelected('join'));
 
-  return (
-    <div>
-    {
-      traderJoining ?
-        <Spinner />
-        :
-        <li className="nav-item active">
-          <a className="nav-link" href="#" onClick={handleClick}>
-            <i className="fas fa-fw fa-tachometer-alt"></i>
-            <span>Join Now!</span></a>
-        </li>
-    }
-    </div>
-  );
-}
-
-function TraderButton(props) {
-  const handleClick = () => props.props.dispatch(pageSelected('trader'));
-
-  return (
-    <div>
-      <li className="nav-item active">
-        <a className="nav-link" href="#" onClick={handleClick}>
-          <i className="fas fa-fw fa-tachometer-alt"></i>
-          <span>Trader Dashboard</span></a>
-      </li>
-    </div>
-  );
-}
-
-function InvestorButton(props) {
-  const handleClick = () => props.props.dispatch(pageSelected('investor'));
-
-  return (
-    <li className="nav-item active">
-      <a className="nav-link" href="#" onClick={handleClick}>
-        <i className="fas fa-fw fa-tachometer-alt"></i>
-        <span>Investor Dashboard</span></a>
-    </li>
-  );
-}
 function mapStateToProps(state) {
   const trader = traderSelector(state)
   const investor = investorSelector(state)
   return {
-    account: accountSelector(state),
-    traderPaired: traderPairedSelector(state),
-    traderPairedLoaded: traderPairedLoadedSelector(state),
     joined: trader || investor,
     trader: trader,
-    investor: investor,
-    traderJoining: traderJoiningSelector(state)
+    investor: investor
   }
 }
 

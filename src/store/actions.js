@@ -19,9 +19,51 @@ export function traderPairedLoaded(contract) {
 	}
 }
 
-export function allTradersLoaded(traders) {
+export function pairedInvestmentsLoaded(contract) {
 	return {
-		type: 'ALL_TRADERS_LOADED',
+		type: 'PAIREDINVESTMENTS_LOADED',
+		contract
+	}
+}
+
+export function walletFactoryLoaded(contract) {
+	return {
+		type: 'WALLETFACTORY_LOADED',
+		contract
+	}
+}
+
+export function walletCreating(creating) {
+	return {
+		type: 'WALLET_CREATING',
+		creating
+	}
+}
+
+export function walletLoaded(contract) {
+	return {
+		type: 'WALLET_LOADED',
+		contract
+	}
+}
+
+export function tokensLoaded(tokens) {
+	return {
+		type: 'TOKENS_LOADED',
+		tokens
+	}
+}
+
+export function balanceLoaded(balance) {
+	return {
+		type: 'BALANCE_LOADED',
+		balance
+	}
+}
+
+export function tradersLoaded(traders) {
+	return {
+		type: 'TRADERS_LOADED',
 		traders
 	}
 }
@@ -30,6 +72,14 @@ export function traderLoaded(trader) {
 	return {
 		type: 'TRADER_LOADED',
 		trader
+	}
+}
+
+export function traderAllocationsLoaded(trader, allocations) {
+	return {
+		type: 'TRADER_ALLOCATIONS_LOADED',
+		trader,
+		allocations
 	}
 }
 
@@ -46,10 +96,23 @@ export function investorLoaded(investor) {
 	}
 }
 
+export function investorJoining() {
+	return {
+		type: 'INVESTOR_JOINING'
+	}
+}
+
 export function pageSelected(page) {
 	return {
 		type: 'PAGE_SELECTED',
 		page
+	}
+}
+
+export function investorInvestmentsLoaded(investments) {
+	return {
+		type: 'INVESTOR_INVESTMENTS_LOADED',
+		investments
 	}
 }
 

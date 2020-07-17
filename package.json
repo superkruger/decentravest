@@ -19,6 +19,8 @@
     "@babel/preset-env": "^7.9.5",
     "@babel/register": "^7.9.0",
     "@babel/runtime": "^7.10.3",
+    "@openzeppelin/contract-loader": "^0.6.1",
+    "@openzeppelin/contracts": "2.5.0",
     "@openzeppelin/contracts-ethereum-package": "2.5.0",
     "@openzeppelin/upgrades": "2.8.0",
     "@testing-library/jest-dom": "^4.2.4",

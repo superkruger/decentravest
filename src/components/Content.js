@@ -4,8 +4,14 @@ import Topbar from './Topbar'
 import Footer from './Footer'
 import Intro from './Intro'
 import Join from './Join'
-import Trader from './Trader'
-import Investor from './Investor'
+import Trader from './trader/Trader'
+import Investor from './investor/Investor'
+
+import TraderAllocations from './trader/TraderAllocations'
+import TraderInvestments from './trader/TraderInvestments'
+
+import InvestorTraders from './investor/InvestorTraders'
+import InvestorInvestments from './investor/InvestorInvestments'
 
 import {
   accountSelector, 
@@ -39,8 +45,12 @@ class Content extends Component {
                 {
                   'home': <Intro />,
                   'join': <Join />,
-                  'trader': <Trader />,
-                  'investor': <Investor />
+                  'trader_dashboard': <Trader />,
+                  'trader_allocations': <TraderAllocations />,
+                  'trader_investments': <TraderInvestments />,
+                  'investor_dashboard': <Investor />,
+                  'investor_traders': <InvestorTraders />,
+                  'investor_investments': <InvestorInvestments />
                 }[this.props.page]
               }
           

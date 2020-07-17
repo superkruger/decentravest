@@ -33,3 +33,14 @@ export const formatBalance = (balance, asset) => {
 	const formatted = Math.round(balance.times(precision).toNumber()) / precision
 	return formatted
 }
+
+export const getTokenSymbol = (address) => {
+	switch(address) {
+		case `${process.env.REACT_APP_DAI_ADDRESS}`:
+			return 'DAI'
+		case `${process.env.REACT_APP_USDC_ADDRESS}`:
+			return 'USDC'
+		default:
+			return 'ETH'
+	}
+}

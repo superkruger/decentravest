@@ -6,7 +6,7 @@ contract Factory {
     /*
      *  Events
      */
-    event ContractInstantiation(address sender, address instantiation);
+    event ContractInstantiation(address creator, address instantiation);
 
     /*
      *  Storage
@@ -40,12 +40,13 @@ contract Factory {
      * Internal functions
      */
     /// @dev Registers contract in factory registry.
-    /// @param instantiation Address of contract instantiation.
-    function register(address instantiation)
+    /// @param _instantiation Address of contract instantiation.
+    /// @param _creator Address of contract creator.
+    function register(address _instantiation, address _creator)
         internal
     {
-        isInstantiation[instantiation] = true;
-        instantiations[msg.sender].push(instantiation);
-        emit ContractInstantiation(msg.sender, instantiation);
+        isInstantiation[_instantiation] = true;
+        instantiations[_creator].push(_instantiation);
+        emit ContractInstantiation(_creator, _instantiation);
     }
 }

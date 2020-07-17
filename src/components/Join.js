@@ -6,7 +6,8 @@ import {
   accountSelector, 
   traderPairedSelector,
   positionsCountSelector,
-  traderJoiningSelector
+  traderJoiningSelector,
+  investorJoiningSelector
 } from '../store/selectors'
 import { 
   joinAsTrader, 
@@ -34,12 +35,12 @@ class Join extends Component {
             <h1>Are you a Trader or an Investor?</h1>
             <p>
               Traders enjoy the benefit of trading risk-free. All your losses and trading fees are covered by Investors.
-              You take away 20%* of profits.
+              You take away 70%* of profits.
             </p>
 
             <p>
               Investors enjoy the benefit of choice from a pool of the best Traders. Simply deposit funds, and 
-              You take away 80%* of profits.
+              You take away 30%* of profits.
             </p>
 
             <p>
@@ -75,7 +76,7 @@ class Join extends Component {
                   <div className="card bg-light text-dark">
                     
                     <div className="card-body">
-                      <InvestorButton props={this.props} /> <i>Coming soon...</i>
+                      <InvestorButton props={this.props} />
                     </div>
                     <div className="card-footer">
                       If you have ETH, DAI or USDC to invest, join here.
@@ -126,13 +127,17 @@ function TraderButton(props) {
 }
 
 function InvestorButton(props) {
+  const { investorJoining } = props.props
   const handleClick = () => investorJoin(props.props)
 
   return (
+    investorJoining ?
+    <Spinner />
+    :
     <Button
       variant="primary"
       onClick={handleClick}
-    >
+      >
       Join as Investor
     </Button>
   )
@@ -168,8 +173,9 @@ function mapStateToProps(state) {
     account: account,
     traderPaired: traderPaired,
     ready: account && traderPaired,
-    positionsCount: 1,//positionsCountSelector(state),
-    traderJoining: traderJoiningSelector(state)
+    positionsCount: positionsCountSelector(state),
+    traderJoining: traderJoiningSelector(state),
+    investorJoining: investorJoiningSelector(state)
   }
 }
 

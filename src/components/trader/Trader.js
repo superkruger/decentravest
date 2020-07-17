@@ -1,30 +1,29 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import Spinner from './Spinner'
-import Rating from './Rating'
+import Spinner from '../Spinner'
+import Rating from '../Rating'
 import { 
   loadTraderPositions,
   loadTraderRatings
-} from '../store/dydxInteractions'
+} from '../../store/dydxInteractions'
 import { 
   accountSelector, 
   traderPairedSelector,
-  allTradersSelector,
+  tradersSelector,
   traderPositionsSelector,
   traderRatingsSelector
-} from '../store/selectors'
-import { ZERO_ADDRESS } from '../helpers'
+} from '../../store/selectors'
+import { ZERO_ADDRESS } from '../../helpers'
 
 class Trader extends Component {
   componentDidMount() {
-    const { account, allTraders, dispatch } = this.props
+    const { account, traders, dispatch } = this.props
     if (account !== null && account != ZERO_ADDRESS) {
 
-      // FIXME: use real account
       loadTraderPositions(account, dispatch)
 
-      if (allTraders.length > 0) {
-        loadTraderRatings(account, allTraders, dispatch)
+      if (traders.length > 0) {
+        loadTraderRatings(account, traders, dispatch)
       }
     }
   }
@@ -141,9 +140,9 @@ function mapStateToProps(state) {
   return {
     account: account,
     traderPaired: traderPaired,
-    allTraders: allTradersSelector(state),
+    traders: tradersSelector(state),
     traderPositions: traderPositionsSelector(state),
-    traderRatings: traderRatingsSelector(state)
+    traderRatings: traderRatingsSelector(state, account)
   }
 }
 

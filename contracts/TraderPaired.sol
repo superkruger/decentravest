@@ -30,8 +30,6 @@ contract TraderPaired is Initializable, Ownable, Pausable {
     mapping(address => mapping(uint256 => uint256)) public investorInvestments;
     mapping(address => mapping(address => _Allocation)) public allocations;
 
-    mapping(address => mapping(address => uint256)) public balances; // mapping of token balances to addresses
-
     event Trader(address indexed trader, uint256 date);
     event Investor(address indexed investor, uint256 date);
     event Investment(address indexed wallet, address indexed investor, uint256 date);
@@ -286,27 +284,5 @@ contract TraderPaired is Initializable, Ownable, Pausable {
             now
         );
     }
-
-    // //
-    // //    Investor withdraws previously deposited ether funds, perhaps including profits (and losses)
-    // //
-    // function withdrawEther(uint256 _amount) external whenNotPaused {
-    //     uint256 balance = balances[msg.sender][ETHER];
-    //     balances[msg.sender][ETHER] = balance.sub(_amount);
-    //     msg.sender.transfer(_amount);
-    //     emit Withdraw(ETHER, msg.sender, _amount, balances[msg.sender][ETHER], now);
-    // }
-
-    // //
-    // //    Investor withdraws previously deposited token funds, perhaps including profits (and losses)
-    // //
-    // function withdrawToken(address _token, uint256 _amount) external whenNotPaused {
-    //     require(_token != ETHER);
-    //     uint256 balance = balances[msg.sender][_token];
-    //     // require(IERC20(_token).transferFrom(address(this), msg.sender, _amount));
-    //     require(IERC20(_token).transfer(msg.sender, _amount));
-    //     balances[msg.sender][_token] = balance.sub(_amount);
-    //     emit Withdraw(_token, msg.sender, _amount, balances[msg.sender][_token], now);
-    // }
 
 }

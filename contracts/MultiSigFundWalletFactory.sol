@@ -12,6 +12,6 @@ contract MultiSigFundWalletFactory is Factory {
     {
         MultiSigFundWallet msfw = new MultiSigFundWallet(_fund, _investor, _admin);
         wallet = address(msfw);
-        register(wallet);
+        register(wallet, _investor);
     }
 }

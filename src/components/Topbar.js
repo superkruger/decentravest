@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import Identicon from 'identicon.js'
+import AddressLink from './AddressLink'
 import {
   accountSelector
 } from '../store/selectors'
@@ -31,15 +31,7 @@ class Topbar extends Component {
           <li className="nav-item dropdown no-arrow">
             { account
                   ? 
-                    <a className="nav-link" title={`${account}`} href={`https://etherscan.io/address/${account}`} target="_blank" rel="noopener">
-                      <img
-                        className="ml-2"
-                        width='25'
-                        height='25'
-                        src={`data:image/png;base64,${new Identicon(account, 25).toString()}`}
-                        alt={`${account}`}
-                      />
-                    </a>
+                    <AddressLink address={account}/>
                     
                   : <span></span>
                 }

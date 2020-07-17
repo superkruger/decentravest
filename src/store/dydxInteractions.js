@@ -11,7 +11,8 @@ import { etherToWei } from '../helpers'
 
 export const loadPositionsCount = async (account, dispatch) => {
 	try {
-		axios.get('https://api.dydx.exchange/v1/positions?status=CLOSED&owner=' + account)
+		let url = `${process.env.REACT_APP_DYDX_CLOSED_URL}`
+		axios.get(url.replace('$1', account))
 		  .then(function (response) {
 		    // handle success
 		    dispatch(positionsCountLoaded(response.data.positions.length))
@@ -83,7 +84,7 @@ export const loadTraderRatings = async (account, allTraders, dispatch) => {
 			USDC: 0
 		}
 
-		let positions = await getTraderPositions(trader)
+		let positions = await getTraderPositions(trader.user)
 
 		for (let positionIndex=0; positionIndex<positions.length; positionIndex++) {
 			let position = positions[positionIndex]
@@ -92,7 +93,7 @@ export const loadTraderRatings = async (account, allTraders, dispatch) => {
 			traderCnt[position.asset] = traderCnt[position.asset] + 1
 			// traderAvg[position.asset] = traderTotal[position.asset].dividedBy(traderCnt[position.asset])
 
-			if (trader === account) {
+			if (trader.user === account) {
 				accountTotal[position.asset] = traderTotal[position.asset]
 				accountCnt[position.asset] = traderCnt[position.asset]
 			}
@@ -142,7 +143,7 @@ export const loadTraderRatings = async (account, allTraders, dispatch) => {
 						}
 					})
 
-					dispatch(traderRatingsLoaded(ratings))
+					dispatch(traderRatingsLoaded(account, ratings))
 				}
 			}
 		}
@@ -181,8 +182,8 @@ const getTraderPositions = async (account) => {
 
 const getTraderAndMarketPositions = async (account, market) => {
 	try {
-
-		let response = await axios.get('https://api.dydx.exchange/v1/positions?status=CLOSED&market=' + market + '&owner=' + account)
+		let url = `${process.env.REACT_APP_DYDX_CLOSED_MARKET_URL}`
+		let response = await axios.get(url.replace('$1', market).replace('$2', account))
 		
 	    // handle success
 	    // console.log('Response', response)
