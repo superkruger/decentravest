@@ -26,6 +26,7 @@ contract PairedInvestments is Initializable, Ownable {
 
     enum InvestmentState {
         Invested,
+        Stopped,
         ExitRequestedInvestor,
         ExitRequestedTrader,
         Divested
@@ -93,6 +94,19 @@ contract PairedInvestments is Initializable, Ownable {
         return investmentCount;
     }
 
+    function stop(address _traderAddress, address _investorAddress, uint256 _investmentId) 
+        public 
+        onlyManager 
+    {
+        _Investment storage _investment = investments[_investmentId];
+
+        require(_investment.trader == _traderAddress);
+        require(_investment.investor == _investorAddress);
+        require(_investment.state == InvestmentState.Invested);
+
+        _investment.state = InvestmentState.Stopped;
+    }
+
     function requestExitInvestor(address _traderAddress, address _investorAddress, uint256 _investmentId, uint256 _value) 
         public  
     {
@@ -139,7 +153,7 @@ contract PairedInvestments is Initializable, Ownable {
 
         require(_investment.trader == _traderAddress);
         require(_investment.investor == _investorAddress);
-        require(_investment.state == InvestmentState.Invested);
+        require(_investment.state == InvestmentState.Stopped);
 
         _investment.value = _value;
         _investment.state = _state;

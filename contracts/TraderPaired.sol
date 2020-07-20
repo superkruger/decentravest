@@ -30,15 +30,14 @@ contract TraderPaired is Initializable, Ownable, Pausable {
     mapping(address => mapping(uint256 => uint256)) public investorInvestments;
     mapping(address => mapping(address => _Allocation)) public allocations;
 
-    event Trader(address indexed trader, uint256 date);
-    event Investor(address indexed investor, uint256 date);
+    event Trader(address indexed user, uint256 date);
+    event Investor(address indexed user, uint256 date);
     event Investment(address indexed wallet, address indexed investor, uint256 date);
     event Allocate(address indexed trader, address token, uint256 amount, uint256 date);
-    event Withdraw(address indexed token, address indexed user, uint256 amount, uint256 balance, uint256 date);
-    event Invest(uint256 id, address indexed investor, address indexed trader, address indexed token, uint256 amount, uint256 date);
-    event RequestExit(address indexed trader, uint256 investmentId, uint256 value, uint256 date);
-    event RejectExit(address indexed trader, uint256 investmentId, uint256 value, uint256 date);
-    event ApproveExit(address indexed trader, uint256 investmentId, uint256 date);
+    event Invest(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address token, uint256 amount, uint256 date);
+    event Stop(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address from, uint256 date);
+    event RequestExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address from, uint256 value, uint256 date);
+    event ApproveExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, uint256 date);
 
     struct _Trader {
         address user;
@@ -140,6 +139,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
 
     function isInvested(address _traderAddress, address _investorAddress) 
         internal
+        view
         returns (bool) 
     {
         address[] memory wallets = MultiSigFundWalletFactory(multiSigFundWalletFactory).getInstantiations(_investorAddress);
@@ -196,10 +196,37 @@ contract TraderPaired is Initializable, Ownable, Pausable {
 
         emit Invest(
             investmentCount,
+            msg.sender,
+            _traderAddress,
             _investorAddress,
-            _trader.user,
             _token,
             _amount,
+            now
+        );
+    }
+
+    //
+    //    Trader/Investor stops an investment
+    //
+    function stop(address _traderAddress, address _investorAddress, address _from, uint256 _investmentId) 
+        public 
+        whenNotPaused 
+        onlyWallet 
+    {
+        _Trader memory _trader = traders[_traderAddress];
+        require(_trader.user == _traderAddress);
+
+        PairedInvestments(pairedInvestments).stop(
+            _traderAddress, 
+            _investorAddress, 
+            _investmentId);
+
+        emit Stop(
+            _investmentId,
+            msg.sender,
+            _traderAddress,
+            _investorAddress,
+            _from,
             now
         );
     }
@@ -222,8 +249,11 @@ contract TraderPaired is Initializable, Ownable, Pausable {
             _value);
 
         emit RequestExit(
+            _investmentId,
+            msg.sender,
             _traderAddress,
-            _investmentId, 
+            _investorAddress,
+            _investorAddress,
             _value,
             now
         );
@@ -248,8 +278,11 @@ contract TraderPaired is Initializable, Ownable, Pausable {
             _amount);
 
         emit RequestExit(
+            _investmentId,
+            msg.sender,
             _traderAddress,
-            _investmentId, 
+            _investorAddress,
+            _traderAddress,
             _value,
             now
         );
@@ -279,8 +312,10 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         payouts[2] = _result[2];
 
         emit ApproveExit(
-            _traderAddress,
             _investmentId,
+            msg.sender,
+            _traderAddress,
+            _investorAddress,
             now
         );
     }

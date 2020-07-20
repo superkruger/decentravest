@@ -2,9 +2,12 @@ import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Jumbotron, Button, Container, Row, Col } from 'react-bootstrap'
 import Spinner from './Spinner'
-import { 
+import {
+  web3Selector,
   accountSelector, 
   traderPairedSelector,
+  pairedInvestmentsSelector,
+  walletFactorySelector,
   positionsCountSelector,
   traderJoiningSelector,
   investorJoiningSelector
@@ -68,6 +71,8 @@ class Join extends Component {
                       <br/>
 
                       For now, we <strong>ONLY</strong> count Isolated Margin trades toward your score as a trader.
+
+                      <b>Please use a DEDICATED wallet for this portal and trades, because all profits/losses will be split amongst investors</b>
                     </div>
                   </div>
                 </Col>
@@ -144,10 +149,10 @@ function InvestorButton(props) {
 }
 
 const traderJoin = async (props) => {
-  const { account, traderPaired, dispatch } = props
+  const { account, traderPaired, web3, dispatch } = props
 
   try {
-    await joinAsTrader(account, traderPaired, dispatch)
+    await joinAsTrader(account, traderPaired, web3, dispatch)
   } catch(e) {
     console.log(e)
     return;
@@ -155,10 +160,10 @@ const traderJoin = async (props) => {
 }
 
 const investorJoin = async (props) => {
-  const { account, traderPaired, dispatch } = props
+  const { account, web3, traderPaired, pairedInvestments, walletFactory, dispatch } = props
 
   try {
-    await joinAsInvestor(account, traderPaired, dispatch)
+    await joinAsInvestor(account, web3, traderPaired, pairedInvestments, walletFactory, dispatch)
   } catch(e) {
     console.log(e)
     return;
@@ -170,8 +175,11 @@ function mapStateToProps(state) {
   const traderPaired = traderPairedSelector(state)
 
   return {
+    web3: web3Selector(state),
     account: account,
     traderPaired: traderPaired,
+    pairedInvestments: pairedInvestmentsSelector(state),
+    walletFactory: walletFactorySelector(state),
     ready: account && traderPaired,
     positionsCount: positionsCountSelector(state),
     traderJoining: traderJoiningSelector(state),

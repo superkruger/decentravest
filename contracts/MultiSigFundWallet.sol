@@ -28,6 +28,7 @@ contract MultiSigFundWallet {
 
     event SetTrader(address trader, bool active);
     event Fund(address trader, address investor, uint256 investmentId, address token, uint256 amount, uint256 date);
+    event Stopped(address trader, address initiator, uint256 investmentId, uint256 date);
     event DisbursementCreated(address trader, address initiator, uint256 investmentId, uint32 disbursementId, uint256 date);
     event DisbursementCompleted(address initiator, address signedBy, uint256 investmentId, uint32 disbursementId, uint256 date);
     event Payout(address token, uint256 amount, address to);
@@ -58,8 +59,8 @@ contract MultiSigFundWallet {
         _;
     }
 
-    modifier traderOrInvestor() {
-        require(msg.sender == investor || traders[msg.sender]);
+    modifier traderOrInvestor(address _trader) {
+        require(msg.sender == investor || (traders[msg.sender] && msg.sender == _trader));
         _;
     }
 
@@ -143,6 +144,16 @@ contract MultiSigFundWallet {
         emit Fund(_trader, msg.sender, investmentId, _token, _amount, now);
     }
 
+    function stop(address _trader, uint256 _investmentId)
+        external
+        traderOrInvestor(_trader)
+        isTrader(_trader)
+    {
+        TraderPaired(fund).stop(_trader, investor, msg.sender, _investmentId);
+        
+        emit Stopped(_trader, msg.sender, _investmentId, now);
+    }
+
     function disburseEther(address _trader, uint256 _investmentId, uint256 _value)
         external
         payable
@@ -161,13 +172,12 @@ contract MultiSigFundWallet {
 
     function _disburse(address _trader, address _initiator, uint256 _investmentId, address _token, uint256 _value, uint256 _amount)
         internal 
-        traderOrInvestor
+        traderOrInvestor(_trader)
         isTrader(_trader)
     {
         if (_initiator == investor) {
             TraderPaired(fund).requestExitInvestor(_trader, investor, _investmentId, _value);
         } else {
-            require(msg.sender == _trader);
             TraderPaired(fund).requestExitTrader(_trader, investor, _investmentId, _value, _amount);
         }
 
@@ -288,6 +298,7 @@ contract MultiSigFundWallet {
 
     function _validateSignature(address _trader, uint32 _disbursementId)
         internal
+        view
         returns (bool)
     {
         Disbursement storage _disbursement = disbursements[_disbursementId];

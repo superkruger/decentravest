@@ -40,9 +40,17 @@ export function walletCreating(creating) {
 	}
 }
 
-export function walletLoaded(contract) {
+export function mainWalletLoaded(contract) {
+	return {
+		type: 'MAIN_WALLET_LOADED',
+		contract
+	}
+}
+
+export function walletLoaded(investor, contract) {
 	return {
 		type: 'WALLET_LOADED',
+		investor,
 		contract
 	}
 }
@@ -75,6 +83,13 @@ export function traderLoaded(trader) {
 	}
 }
 
+export function mainTraderLoaded(trader) {
+	return {
+		type: 'MAIN_TRADER_LOADED',
+		trader
+	}
+}
+
 export function traderAllocationsLoaded(trader, allocations) {
 	return {
 		type: 'TRADER_ALLOCATIONS_LOADED',
@@ -96,6 +111,13 @@ export function investorLoaded(investor) {
 	}
 }
 
+export function mainInvestorLoaded(investor) {
+	return {
+		type: 'MAIN_INVESTOR_LOADED',
+		investor
+	}
+}
+
 export function investorJoining() {
 	return {
 		type: 'INVESTOR_JOINING'
@@ -109,37 +131,47 @@ export function pageSelected(page) {
 	}
 }
 
-export function investorInvestmentsLoaded(investments) {
+export function investmentLoaded(investment) {
+	investment.changing = false
 	return {
-		type: 'INVESTOR_INVESTMENTS_LOADED',
-		investments
+		type: 'INVESTMENT_LOADED',
+		investment
 	}
 }
 
-// export function projectsLoaded(projects) {
+export function investmentChanging(investment, changing) {
+	investment.changing = changing
+	return investmentLoaded(investment)
+}
+
+export function disbursementCreated(disbursement) {
+	return {
+		type: 'DISBURSEMENT_CREATED',
+		disbursement
+	}
+}
+
+// export function investmentStopped(investment) {
+// 	investment.changing = false
 // 	return {
-// 		type: 'PROJECTS_LOADED',
-// 		projects
+// 		type: 'INVESTMENT_STOPPED',
+// 		investment
 // 	}
 // }
 
-// export function projectStarted(project) {
+// export function investmentExitRequested(investment) {
 // 	return {
-// 		type: 'PROJECT_STARTED',
-// 		project
+// 		type: 'INVESTMENT_EXIT_REQUESTED',
+// 		investment
 // 	}
 // }
 
-// export function fundingReceived(funding) {
+// export function investmentExitApproved(investment) {
 // 	return {
-// 		type: 'FUNDING_RECEIVED',
-// 		funding
+// 		type: 'INVESTMENT_EXIT_APPROVED',
+// 		investment
 // 	}
 // }
 
-// export function creatorPaid(creator) {
-// 	return {
-// 		type: 'CREATOR_PAID',
-// 		creator
-// 	}
-// }
+
+

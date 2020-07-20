@@ -4,7 +4,8 @@ import Spinner from '../Spinner'
 import {
   accountSelector, 
   traderPairedSelector,
-  investorSelector
+  investorSelector,
+  walletSelector
 } from '../../store/selectors'
 import { 
   pageSelected
@@ -13,14 +14,21 @@ import {
 class InvestorSidebarMenu extends Component {
 
   render() {
+    const {wallet} = this.props
+    
     return (
       <div>
 
         <DashboardButton props={this.props} /> 
-            
-        <TradersButton props={this.props} />
 
-        <InvestmentsButton props={this.props} />
+        {
+          wallet ?   
+            <div>
+              <TradersButton props={this.props} />
+              <InvestmentsButton props={this.props} />
+            </div> :
+          <div/>
+        }
 
       </div>
     )
@@ -67,7 +75,8 @@ function mapStateToProps(state) {
   return {
     account: accountSelector(state),
     traderPaired: traderPairedSelector(state),
-    investor: investorSelector(state)
+    investor: investorSelector(state),
+    wallet: walletSelector(state)
   }
 }
 

@@ -3,8 +3,7 @@ import { connect } from 'react-redux'
 import { Button } from 'react-bootstrap'
 import Spinner from '../Spinner'
 import { etherToWei } from '../../helpers'
-import { 
-  loadWallet,
+import {
   createWallet
 } from '../../store/interactions'
 import { 
@@ -13,30 +12,21 @@ import {
   investorSelector,
   traderPairedSelector,
   walletFactorySelector,
-  walletLoadingSelector,
   walletSelector,
   walletCreatingSelector
 } from '../../store/selectors'
 
 class Investor extends Component {
 
-  componentDidMount() {
-    const { web3, account, traderPaired, walletFactory, dispatch } = this.props
-    loadWallet(account, walletFactory, web3, dispatch)
-  }
-
   render() {
-    const { walletLoading, wallet } = this.props
+    const { wallet } = this.props
 
     return (
       <div>
-        { 
-          walletLoading ?
-            <Spinner /> :
-            
-              wallet ?
-                <Wallet props={this.props}/> :
-                <CreateWallet props={this.props}/>
+        {
+          wallet ?
+            <Wallet props={this.props}/> :
+            <CreateWallet props={this.props}/>
             
         }
       </div>
@@ -78,7 +68,6 @@ function mapStateToProps(state) {
     investor: investorSelector(state),
     traderPaired: traderPairedSelector(state),
     walletFactory: walletFactorySelector(state),
-    walletLoading: walletLoadingSelector(state),
     wallet: walletSelector(state),
     walletCreating: walletCreatingSelector(state)
   }

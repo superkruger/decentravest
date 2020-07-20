@@ -11,31 +11,28 @@ export const accountSelector = createSelector(account, a => a)
 const web3 = state => get(state, 'web3.connection')
 export const web3Selector = createSelector(web3, w => w)
 
-const traderPairedLoaded = state => get(state, 'traderPaired.loaded', false)
+const traderPairedLoaded = state => get(state, 'web3.traderPaired.loaded', false)
 export const traderPairedLoadedSelector = createSelector(traderPairedLoaded, el => el)
 
-const traderPaired = state => get(state, 'traderPaired.contract')
+const traderPaired = state => get(state, 'web3.traderPaired.contract')
 export const traderPairedSelector = createSelector(traderPaired, e => e)
 
-const pairedInvestments = state => get(state, 'pairedInvestments.contract')
+const pairedInvestments = state => get(state, 'web3.pairedInvestments.contract')
 export const pairedInvestmentsSelector = createSelector(pairedInvestments, e => e)
 
-const walletFactory = state => get(state, 'traderPaired.walletFactory')
+const walletFactory = state => get(state, 'web3.walletFactory.contract')
 export const walletFactorySelector = createSelector(walletFactory, e => e)
 
-const wallet = state => get(state, 'wallet.contract')
-export const walletSelector = createSelector(wallet, e => e)
-
-const walletLoading = state => get(state, 'wallet.loading', true)
-export const walletLoadingSelector = createSelector(walletLoading, e => e)
-
-const walletCreating = state => get(state, 'wallet.creating', false)
-export const walletCreatingSelector = createSelector(walletCreating, e => e)
-
-const tokens = state => get(state, 'traderPaired.tokens', [])
+const tokens = state => get(state, 'web3.tokens', [])
 export const tokensSelector = createSelector(tokens, t => t)
 
-const balances = state => get(state, 'traderPaired.balances', [])
+const wallet = state => get(state, 'investor.wallet.contract')
+export const walletSelector = createSelector(wallet, e => e)
+
+const walletCreating = state => get(state, 'investor.wallet.creating', false)
+export const walletCreatingSelector = createSelector(walletCreating, e => e)
+
+const balances = state => get(state, 'web3.balances', [])
 export const balancesSelector = createSelector(balances, (balances) => {
 	if (balances !== undefined) {
 
@@ -58,26 +55,26 @@ const decorateBalance = (balance) => {
 	})
 }
 
-const traders = state => get(state, 'traderPaired.traders', [])
+const traders = state => get(state, 'web3.traders', [])
 export const tradersSelector = createSelector(traders, e => e)
 
-const trader = state => get(state, 'traderPaired.trader')
+const trader = state => get(state, 'trader.trader')
 export const traderSelector = createSelector(trader, e => e)
 
-const traderJoining = state => get(state, 'traderPaired.traderJoining', false)
+const traderJoining = state => get(state, 'trader.joining', false)
 export const traderJoiningSelector = createSelector(traderJoining, e => e)
 
-const investor = state => get(state, 'traderPaired.investor')
+const investor = state => get(state, 'investor.investor')
 export const investorSelector = createSelector(investor, e => e)
 
-const investorJoining = state => get(state, 'traderPaired.investorJoining', false)
+const investorJoining = state => get(state, 'investor.joining', false)
 export const investorJoiningSelector = createSelector(investorJoining, e => e)
 
-const positionsCount = state => get(state, 'traderPaired.positionsCount', 0)
+const positionsCount = state => get(state, 'web3.positionsCount', 0)
 export const positionsCountSelector = createSelector(positionsCount, e => e)
 
 const traderRatings = (state, trader) => {
-	const traderObj = find(state.traderPaired.traders, {user: trader})
+	const traderObj = find(state.web3.traders, {user: trader})
 	if (traderObj && traderObj.ratings) {
 		return traderObj.ratings
 	}
@@ -86,16 +83,14 @@ const traderRatings = (state, trader) => {
 export const traderRatingsSelector = createSelector(traderRatings, e => e)
 
 const traderAllocations = (state, trader) => {
-	const traderObj = find(state.traderPaired.traders, {user: trader})
+	const traderObj = find(state.web3.traders, {user: trader})
 	if (traderObj && traderObj.allocations) {
 		return traderObj.allocations
 	}
 	return []
 }
 export const traderAllocationsSelector = createSelector(traderAllocations, (allocations) => {
-	console.log("Allocations", allocations)
 	if (allocations) {
-
 		allocations = decorateTraderAllocations(allocations)
 
 		// group by name
@@ -127,10 +122,10 @@ const decorateTraderAllocation = (allocation) => {
 	})
 }
 
-const traderPositionsLoaded = state => get(state, 'traderPaired.traderpositions.loaded', false)
+const traderPositionsLoaded = state => get(state, 'trader.positions.loaded', false)
 export const traderPositionsLoadedSelector = createSelector(traderPositionsLoaded, e => e)
 
-const traderPositions = state => get(state, 'traderPaired.traderpositions.data', [])
+const traderPositions = state => get(state, 'trader.positions.data', [])
 export const traderPositionsSelector = createSelector(traderPositions, (positions) => {
 	// console.log('Positions', positions)
 	if (positions !== undefined) {
@@ -170,8 +165,8 @@ const decoratePositionProfit = (position) => {
 	})
 }
 
-const investorInvestments = state => get(state, 'pairedInvestments.investorInvestments', [])
-export const investorInvestmentsSelector = createSelector(investorInvestments, (investments) => {
+const investments = state => get(state, 'web3.investments', [])
+export const investmentsSelector = createSelector(investments, (investments) => {
 	if (investments !== undefined) {
 		investments = decorateInvestments(investments)
 	}
@@ -193,34 +188,3 @@ const decorateInvestment = (investment) => {
 		profitClass: investment.value.gt(investment.amount) ? GREEN : investment.value.lt(investment.amount) ? RED : NEUTRAL
 	})
 }
-
-
-// // Projects
-// const projectsLoaded = state => get(state, 'crowdsale.projects.loaded', false)
-// export const projectsLoadedSelector = createSelector(projectsLoaded, l => l)
-
-// const projects = state => get(state, 'crowdsale.projects.data', [])
-// export const projectsSelector = createSelector(
-// 	projects,
-// 	(projects) => {
-// 		projects = decorateProjects(projects)
-
-// 		// sort descending for display
-// 		projects = projects.sort((a, b) => b.deadline - a.deadline)
-// 		return projects
-// 	}
-// )
-
-// const decorateProjects = (projects) => {
-// 	return projects.map((project) => {
-// 		project = decorateProject(project)
-// 		return project
-// 	})
-// }
-
-// const decorateProject = (project) => {
-// 	return ({
-// 		...project,
-// 		formattedTimestamp: moment.unix(project.deadline).format('hh:mm:ss D/M/Y')
-// 	})
-// }
