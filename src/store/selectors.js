@@ -130,7 +130,7 @@ export const traderPositionsSelector = createSelector(traderPositions, (position
 	// console.log('Positions', positions)
 	if (positions !== undefined) {
 
-		positions = positions.sort((a, b) => b.createdAt - a.createdAt)
+		positions = positions.sort((a, b) => b.start.diff(a.start))
 		positions = decorateTraderPositions(positions)
 
 		// group by asset
@@ -150,7 +150,7 @@ const decorateTraderPosition = (position) => {
 
 	return ({
 		...position,
-		formattedCreatedAt: position.createdAt.format('hh:mm:ss D-M-Y'),
+		formattedStart: position.start.format('hh:mm:ss D-M-Y'),
 		profit: decoratePositionProfit(position)
 	})
 }
@@ -188,3 +188,9 @@ const decorateInvestment = (investment) => {
 		profitClass: investment.value.gt(investment.amount) ? GREEN : investment.value.lt(investment.amount) ? RED : NEUTRAL
 	})
 }
+
+const investmentActionRequired = (state) => {
+	const actionRequired = state.web3.investments.some(investment => investment.state === 2 && investment.from !== state.web3.account)
+	return actionRequired
+}
+export const investmentActionRequiredSelector = createSelector(investmentActionRequired, e => e)

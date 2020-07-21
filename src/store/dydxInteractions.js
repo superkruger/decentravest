@@ -162,7 +162,7 @@ export const loadTraderPositions = async (account, dispatch) => {
 	}
 }
 
-const getTraderPositions = async (account) => {
+export const getTraderPositions = async (account) => {
 	try {
 		let positions = await getTraderAndMarketPositions(account, 'WETH-DAI')
 		let p = await getTraderAndMarketPositions(account, 'WETH-USDC')
@@ -219,23 +219,25 @@ const mapTraderPosition = (position) => {
 	let profit = new BigNumber(0)
 	const transfers = mappedStandardActions.filter(action => action.transferAmount)
 	if (transfers.length > 1) {
-		profit = transfers[0].transferAmount.minus(transfers[transfers.length - 1].transferAmount)
+		
+		const mappedPosition = {
+			uuid: position.uuid,
+			type: position.type,
+			status: position.status,
+			asset: mappedStandardActions[0].asset,
+			market: position.market,
+			start: moment(transfers[transfers.length - 1].confirmedAt),
+			end: moment(transfers[0].confirmedAt),
+			profit: transfers[0].transferAmount.minus(transfers[transfers.length - 1].transferAmount),
+			fee: fee,
+			nettProfit: profit.minus(fee),
+			standardActions: mappedStandardActions
+		}
+
+		return mappedPosition
 	}
 
-	const mappedPosition = {
-		uuid: position.uuid,
-		type: position.type,
-		status: position.status,
-		asset: mappedStandardActions[0].asset,
-		market: position.market,
-		createdAt: moment(position.createdAt),
-		profit: profit,
-		fee: fee,
-		nettProfit: profit.minus(fee),
-		standardActions: mappedStandardActions
-	}
-
-	return mappedPosition
+	return null
 }
 
 const mapStandardActions = (standardActions) => {

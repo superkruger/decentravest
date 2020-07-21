@@ -1,11 +1,13 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
+import { Badge } from 'react-bootstrap'
 import Spinner from '../Spinner'
 import {
   accountSelector, 
   traderPairedSelector,
   investorSelector,
-  walletSelector
+  walletSelector,
+  investmentActionRequiredSelector
 } from '../../store/selectors'
 import { 
   pageSelected
@@ -15,7 +17,7 @@ class InvestorSidebarMenu extends Component {
 
   render() {
     const {wallet} = this.props
-    
+
     return (
       <div>
 
@@ -36,7 +38,7 @@ class InvestorSidebarMenu extends Component {
 }
 
 function DashboardButton(props) {
-  const handleClick = () => props.props.dispatch(pageSelected('investor_dashboard'));
+  const handleClick = () => props.props.dispatch(pageSelected('investor_dashboard'))
 
   return (
     <li className="nav-item active">
@@ -44,11 +46,11 @@ function DashboardButton(props) {
         <i className="fas fa-fw fa-tachometer-alt"></i>
         <span>Investor Dashboard</span></a>
     </li>
-  );
+  )
 }
 
 function TradersButton(props) {
-  const handleClick = () => props.props.dispatch(pageSelected('investor_traders'));
+  const handleClick = () => props.props.dispatch(pageSelected('investor_traders'))
 
   return (
     <li className="nav-item active">
@@ -56,19 +58,27 @@ function TradersButton(props) {
         <i className="fas fa-fw fa-users"></i>
         <span>Traders</span></a>
     </li>
-  );
+  )
 }
 
 function InvestmentsButton(props) {
-  const handleClick = () => props.props.dispatch(pageSelected('investor_investments'));
+  const { investmentActionRequired } = props.props
+  const handleClick = () => props.props.dispatch(pageSelected('investor_investments'))
 
   return (
     <li className="nav-item active">
       <a className="nav-link" href="#" onClick={handleClick}>
         <i className="fas fa-fw fa-coins"></i>
-        <span>Investments</span></a>
+        <span>
+          Investments
+          {
+            investmentActionRequired && 
+              <Badge variant="danger">!</Badge>
+          }
+        </span>
+      </a>
     </li>
-  );
+  )
 }
 
 function mapStateToProps(state) {
@@ -76,7 +86,8 @@ function mapStateToProps(state) {
     account: accountSelector(state),
     traderPaired: traderPairedSelector(state),
     investor: investorSelector(state),
-    wallet: walletSelector(state)
+    wallet: walletSelector(state),
+    investmentActionRequired: investmentActionRequiredSelector(state)
   }
 }
 

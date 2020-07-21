@@ -42,10 +42,10 @@ class TraderAllocations extends Component {
             <Col sm={12}>
 
               <div className="card shadow mb-4">
-                <a href="#ETH_Allocation" className="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="ETH_Allocation">
+                <a href="#ETH_Allocation" className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="ETH_Allocation">
                   <h6 className="m-0 font-weight-bold text-primary">ETH Allocation</h6>
                 </a>
-                <div className="collapse show" id="ETH_Allocation">
+                <div className="collapse" id="ETH_Allocation">
                   <div className="card-body">
                     <Container>
                       <Row>
@@ -78,10 +78,10 @@ class TraderAllocations extends Component {
               </div>
 
               <div className="card shadow mb-4">
-                <a href="#DAI_Allocation" className="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="DAI_Allocation">
+                <a href="#DAI_Allocation" className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="DAI_Allocation">
                   <h6 className="m-0 font-weight-bold text-primary">DAI Allocation</h6>
                 </a>
-                <div className="collapse show" id="DAI_Allocation">
+                <div className="collapse" id="DAI_Allocation">
                   <div className="card-body">
                     <Container>
                       <Row>
@@ -114,10 +114,10 @@ class TraderAllocations extends Component {
               </div>
 
               <div className="card shadow mb-4">
-                <a href="#USDC_Allocation" className="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="USDC_Allocation">
+                <a href="#USDC_Allocation" className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="USDC_Allocation">
                   <h6 className="m-0 font-weight-bold text-primary">USDC Allocation</h6>
                 </a>
-                <div className="collapse show" id="USDC_Allocation">
+                <div className="collapse" id="USDC_Allocation">
                   <div className="card-body">
                     <Container>
                       <Row>

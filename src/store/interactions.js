@@ -1,11 +1,13 @@
 import Web3 from 'web3'
+import moment from 'moment'
 import BigNumber from 'bignumber.js'
 import TraderPaired from '../abis/TraderPaired.json'
 import PairedInvestments from '../abis/PairedInvestments.json'
 import MultiSigFundWalletFactory from '../abis/MultiSigFundWalletFactory.json'
 import MultiSigFundWallet from '../abis/MultiSigFundWallet.json'
 import ERC20 from '../abis/IERC20.json'
-import { ZERO_ADDRESS, etherToWei } from '../helpers'
+import { ZERO_ADDRESS, etherToWei, addressForAsset } from '../helpers'
+import { getTraderPositions } from './dydxInteractions'
 import { 
 	web3Loaded,
 	web3AccountLoaded,
@@ -147,9 +149,9 @@ const loadMainTrader = async (trader, web3, traderPaired, dispatch) => {
 }
 
 const loadMainInvestor = async (investor, web3, traderPaired, pairedInvestments, walletFactory, dispatch) => {
-	await loadMainWallet(investor.user, walletFactory, web3, dispatch)
 	await loadInvestorInvestments(investor, traderPaired, pairedInvestments, dispatch)
-
+	await loadMainWallet(investor.user, walletFactory, web3, dispatch)
+	
 	dispatch(mainInvestorLoaded(investor))
 }
 
@@ -163,10 +165,10 @@ const loadTraders = async (traderPaired, dispatch) => {
 	)
 	const traders = stream.map(event => event.returnValues)
 	console.log('loadTraders', traders)
-	traders.forEach(trader => dispatch(traderLoaded(trader)))
+	traders.forEach(trader => dispatch(traderLoaded(mapTrader(trader))))
 
 	traderPaired.events.Trader({filter: {}}, (error, event) => {
-		dispatch(traderLoaded(event.returnValues))
+		dispatch(traderLoaded(mapTrader(event.returnValues)))
 	})
 }
 
@@ -617,11 +619,20 @@ export const approveDisbursement = (account, investment, wallet, dispatch) => {
 	}
 }
 
+const mapTrader = (event) => {
+	return {
+		... event,
+		date: moment.unix(event.date)
+	}
+}
+
 const mapInvest = (event) => {
 	return {
 		... event,
 		amount: new BigNumber(event.amount),
 		value: new BigNumber(event.amount),
+		start: moment.unix(event.date),
+		date: moment.unix(event.date),
 		state: 0
 	}
 }
@@ -629,6 +640,8 @@ const mapInvest = (event) => {
 const mapStop = (event) => {
 	return {
 		... event,
+		end: moment.unix(event.date),
+		date: moment.unix(event.date),
 		state: 1
 	}
 }
@@ -637,6 +650,7 @@ const mapRequestExit = (event) => {
 	return {
 		... event,
 		value: new BigNumber(event.value),
+		date: moment.unix(event.date),
 		state: 2
 	}
 }
@@ -644,16 +658,103 @@ const mapRequestExit = (event) => {
 const mapApproveExit = (event) => {
 	return {
 		... event,
+		date: moment.unix(event.date),
 		state: 4
 	}
+}
+
+export const loadInvestmentValues = (investments, traderPaired, dispatch) => {
+	investments.forEach(async (investment) => {
+		console.log("loadInvestmentValues", investment)
+		// get all positions for this investment
+		let positions = await getTraderPositions(investment.trader)
+		positions = positions.filter(
+			(position) => addressForAsset(position.asset) === investment.token
+						&& position.start.isAfter(investment.start) 
+						&& ((position.end.isBefore(investment.end)
+							|| investment.state === 0))
+		)
+
+		console.log("P", positions)
+
+		const traderInvestments = await getTraderInvestments(investment.trader, traderPaired)
+
+		console.log("traderInvestments", traderInvestments)
+
+		// for each position get all investments that it should be split over
+		// and calculate profit/loss
+		let profit = new BigNumber(0)
+		await positions.forEach(async (position) => {
+			console.log("position.profit", position.profit.toString())
+			let totalAmount = await getPositionInvestmentsAmount(position, traderInvestments)
+			console.log("totalAmount", totalAmount.toString())
+
+			// split profit according to share of total amount
+			let sharePercentage = investment.amount.dividedBy(totalAmount)
+			console.log("sharePercentage", sharePercentage.toString())
+
+			let positionProfit = position.profit.multipliedBy(sharePercentage)
+			console.log("positionProfit", positionProfit.toString())
+
+			profit = profit.plus(positionProfit)
+		})
+
+		console.log("profit", profit.toString())
+		investment.value = investment.amount.plus(profit)
+		dispatch(investmentLoaded(investment))
+	})
+}
+
+const getTraderInvestments = async (account, traderPaired) => {
+	let result = []
+	try {
+		let stream = await traderPaired.getPastEvents(
+			'Invest',
+			{
+				filter: {trader: account},
+				fromBlock: 0
+			}
+		)
+		let investList = stream.map(event => mapInvest(event.returnValues))
+
+		stream = await traderPaired.getPastEvents(
+			'Stop',
+			{
+				filter: {trader: account},
+				fromBlock: 0
+			}
+		)
+		let stopList = stream.map(event => mapStop(event.returnValues))
+
+		investList.forEach((investment) => {
+			let index = stopList.findIndex(stopped => stopped.id === investment.id)
+			if (index !== -1) {
+				investment.state = stopList[index].state
+				investment.end = stopList[index].end
+			}
+			return investment
+		})
+		result = investList
+
+	} catch (error) {
+		console.log('Could not getTraderInvestments', error)
+	}
+	return result
+}
+
+const getPositionInvestmentsAmount = async (position, traderInvestments) => {
+	const investments = traderInvestments.filter(
+		(investment) => addressForAsset(position.asset) === investment.token
+					&& position.start.isAfter(investment.start) 
+						&& ((position.end.isBefore(investment.end)
+							|| investment.state === 0))
+	)
+	
+	let totalAmount = investments.reduce((total, investment) => total.plus(investment.amount), new BigNumber(0))
+	return totalAmount
 }
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// export const subscribeTotTaderPairedEvents = async (traderPaired, dispatch) => {
-// 	traderPaired.events.ProjectStarted({}, (error, event) => {
-// 		dispatch(projectStarted(event.returnValues))
-// 	})
-// }

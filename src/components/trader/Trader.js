@@ -35,10 +35,10 @@ class Trader extends Component {
 
       <div>
         <div className="card shadow mb-4">
-          <a href="#WETH_Trades" className="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="WETH_Trades">
+          <a href="#WETH_Trades" className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="WETH_Trades">
             <h6 className="m-0 font-weight-bold text-primary">WETH Trades <Rating asset="WETH" rating={`${traderRatings["WETH"]}`}/></h6>
           </a>
-          <div className="collapse show" id="WETH_Trades">
+          <div className="collapse" id="WETH_Trades">
             <div className="card-body">
               <table className="table table-bordered table-light table-sm small" id="dataTable" width="100%">
                 <thead>
@@ -57,10 +57,10 @@ class Trader extends Component {
         </div>
 
         <div className="card shadow mb-4">
-          <a href="#DAI_Trades" className="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="DAI_Trades">
+          <a href="#DAI_Trades" className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="DAI_Trades">
             <h6 className="m-0 font-weight-bold text-primary">DAI Trades <Rating asset="DAI" rating={`${traderRatings["DAI"]}`}/></h6>
           </a>
-          <div className="collapse show" id="DAI_Trades">
+          <div className="collapse" id="DAI_Trades">
             <div className="card-body">
               <table className="table table-bordered table-light table-sm small" id="dataTable" width="100%">
                 <thead>
@@ -79,10 +79,10 @@ class Trader extends Component {
         </div>
 
         <div className="card shadow mb-4">
-          <a href="#USDC_Trades" className="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="USDC_Trades">
+          <a href="#USDC_Trades" className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="USDC_Trades">
             <h6 className="m-0 font-weight-bold text-primary">USDC Trades <Rating asset="USDC" rating={`${traderRatings["USDC"]}`}/></h6>
           </a>
-          <div className="collapse show" id="USDC_Trades">
+          <div className="collapse" id="USDC_Trades">
             <div className="card-body">
               <table className="table table-bordered table-light table-sm small" id="dataTable" width="100%">
                 <thead>
@@ -119,7 +119,7 @@ function showPositions(positions) {
         console.log(position)
         return (
             <tr key={position.uuid}>
-              <td className="text-muted">{position.formattedCreatedAt}</td>
+              <td className="text-muted">{position.formattedStart}</td>
               <td>{position.type}</td>
               <td className={`text-${position.profit.profitClass}`}>{position.profit.formattedProfit}</td>
               <td>{position.profit.formattedFeeAmount}</td>

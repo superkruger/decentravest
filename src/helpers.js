@@ -5,13 +5,17 @@ export const GREEN = 'success'
 export const RED = 'danger'
 export const NEUTRAL = 'info'
 
-const assetDecimals = {
-    'ETH': 18,
-    'WETH': 18,
-    'DAI': 18,
-    'SAI': 18,
-    'USDC': 6
-};
+const assets = {
+    'ETH': { decimals: 18, address: '0x0000000000000000000000000000000000000000' },
+    'WETH': { decimals: 18, address: '0x0000000000000000000000000000000000000000' },
+    'DAI': { decimals: 18, address: `${process.env.REACT_APP_DAI_ADDRESS}` },
+    'SAI': { decimals: 18, address: `${process.env.REACT_APP_SAI_ADDRESS}` },
+    'USDC': { decimals: 6, address: `${process.env.REACT_APP_USDC_ADDRESS}` }
+}
+
+export const addressForAsset = (asset) => {
+	return assets[asset] ? assets[asset].address : null
+}
 
 export const weiToEther = (wei, decimals) => {
 	if (wei) {
@@ -28,7 +32,7 @@ export const etherToWei = (e, decimals) => {
 
 export const formatBalance = (balance, asset) => {
 	const precision = 10000
-	balance = weiToEther(balance, assetDecimals[asset])
+	balance = weiToEther(balance, assets[asset].decimals)
 	// console.log('balance', balance.toString())
 	const formatted = Math.round(balance.times(precision).toNumber()) / precision
 	return formatted

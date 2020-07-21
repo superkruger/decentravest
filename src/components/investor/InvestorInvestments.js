@@ -1,12 +1,13 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import { Container, Row, Col, Form, Button } from 'react-bootstrap'
+import { Container, Row, Col, Form, Button, Badge } from 'react-bootstrap'
 import BigNumber from 'bignumber.js'
 import AddressImage from '../AddressImage'
 import Token from '../Token'
 import Spinner from '../Spinner'
 import { ZERO_ADDRESS, formatBalance } from '../../helpers'
 import { 
+  accountSelector,
   investorSelector,
   traderPairedSelector,
   pairedInvestmentsSelector,
@@ -16,10 +17,15 @@ import {
 import { 
   stopInvestment,
   disburseInvestment,
-  approveDisbursement
+  approveDisbursement,
+  loadInvestmentValues
 } from '../../store/interactions'
 
 class InvestorInvestments extends Component {
+  componentDidMount() {
+    const { investments, traderPaired, dispatch } = this.props
+    loadInvestmentValues(investments, traderPaired, dispatch)
+  }
 
   render() {
     const {investments} = this.props
@@ -36,6 +42,7 @@ class InvestorInvestments extends Component {
 }
 
 function showInvestments(investments, props) {
+  const { account } = props
 
   return (
     <div>
@@ -43,10 +50,14 @@ function showInvestments(investments, props) {
         console.log(investment)
         return (
           <div className="card shadow mb-4" key={investment.id}>
-            <a href="#investments" className="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="investments">
+            <a href={`#investments_${investment.id}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`investments_${investment.id}`}>
               <h6 className="m-0 font-weight-bold text-primary">
                 <Row>
                   <Col sm={3}>
+                    {
+                      investment.state == 2 && investment.from != account &&
+                        <Badge variant="danger">!</Badge>
+                    }
                     <AddressImage address={investment.trader}/>
                   </Col>
                   <Col sm={3}>
@@ -61,7 +72,7 @@ function showInvestments(investments, props) {
                 </Row>
               </h6>
             </a>
-            <div className="collapse show" id="investments">
+            <div className="collapse" id={`investments_${investment.id}`}>
               <div className="card-body">
                 {
                   {
@@ -113,6 +124,15 @@ function disburseHandler (props) {
 }
 
 function ApproveButton (props) {
+  const { account } = props.props
+  const { investment } = props
+
+  if (investment.from == account) {
+    return (
+      <span>waiting for approval...</span>
+    )
+  }
+
   return (
     <Button variant="primary" onClick={(e) => {approveHandler(props)}}>
       Approve
@@ -130,6 +150,7 @@ function approveHandler (props) {
 function mapStateToProps(state) {
 
   return {
+    account: accountSelector(state),
     investor: investorSelector(state),
     traderPaired: traderPairedSelector(state),
     pairedInvestments: pairedInvestmentsSelector(state),
