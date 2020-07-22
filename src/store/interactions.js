@@ -6,7 +6,7 @@ import PairedInvestments from '../abis/PairedInvestments.json'
 import MultiSigFundWalletFactory from '../abis/MultiSigFundWalletFactory.json'
 import MultiSigFundWallet from '../abis/MultiSigFundWallet.json'
 import ERC20 from '../abis/IERC20.json'
-import { ZERO_ADDRESS, etherToWei, addressForAsset } from '../helpers'
+import { log, ZERO_ADDRESS, etherToWei, tokenAddressForSymbol, tokenSymbolForAddress } from '../helpers'
 import { getTraderPositions } from './dydxInteractions'
 import { 
 	web3Loaded,
@@ -22,7 +22,7 @@ import {
 	traderJoining,
 	investorJoining,
 	pageSelected,
-	traderAllocationsLoaded,
+	traderAllocationLoaded,
 	walletFactoryLoaded,
 	walletCreating,
 	mainWalletLoaded,
@@ -57,7 +57,7 @@ export const loadWeb3 = async (dispatch) => {
 		web3 = new Web3(window.web3.currentProvider || 'http://127.0.0.1:8545')
 	}
 	else {
-		console.log('nothing')
+		log('nothing')
 		// Do nothing....
 	}
 
@@ -67,7 +67,7 @@ export const loadWeb3 = async (dispatch) => {
 	}
 	return web3
 
-	// console.log("W3V", Web3)
+	// log("W3V", Web3)
 	// let web3 = new Web3(window['ethereum'] || Web3.givenProvider || 'http://127.0.0.1:8545')
 	// web3.eth.handleRevert = true
 	// dispatch(web3Loaded(web3))
@@ -94,7 +94,7 @@ export const loadBalances = async (account, traderPaired, tokens, web3, dispatch
 export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 	try {
 		if (TraderPaired.networks[networkId] !== undefined) {
-			console.log("TraderPaired address: ", TraderPaired.networks[networkId].address)
+			log("TraderPaired address: ", TraderPaired.networks[networkId].address)
 			const traderPaired = await new web3.eth.Contract(TraderPaired.abi, TraderPaired.networks[networkId].address, {handleRevert: true})
 
 			const pairedInvestments = await new web3.eth.Contract(PairedInvestments.abi, PairedInvestments.networks[networkId].address, {handleRevert: true})
@@ -123,9 +123,9 @@ export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 			dispatch(traderPairedLoaded(traderPaired))
 
 			const trader = await traderPaired.methods.traders(account).call()
-			console.log('Trader', trader)
+			log('Trader', trader)
 			const investor = await traderPaired.methods.investors(account).call()
-			console.log('Investor', investor)
+			log('Investor', investor)
 
 			if (trader && trader.user !== ZERO_ADDRESS) {
 				await loadMainTrader(trader, web3, traderPaired, dispatch)
@@ -137,7 +137,7 @@ export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 			return traderPaired
 		}
 	} catch (error) {
-		console.log('Contract not deployed to the current network', error)
+		log('Contract not deployed to the current network', error)
 	}
 	return null
 }
@@ -164,7 +164,7 @@ const loadTraders = async (traderPaired, dispatch) => {
 		}
 	)
 	const traders = stream.map(event => event.returnValues)
-	console.log('loadTraders', traders)
+	log('loadTraders', traders)
 	traders.forEach(trader => dispatch(traderLoaded(mapTrader(trader))))
 
 	traderPaired.events.Trader({filter: {}}, (error, event) => {
@@ -251,10 +251,10 @@ export const joinAsTrader = async (account, traderPaired, web3, dispatch) => {
 			}
 		})
 		.on('error', (error) => {
-			console.log('Could not joinAsTrader', error)
+			log('Could not joinAsTrader', error)
 		})
 	} catch (error) {
-		console.log('Could not joinAsTrader', error)
+		log('Could not joinAsTrader', error)
 		return null
 	}
 }
@@ -275,10 +275,10 @@ export const joinAsInvestor = async (account, web3, traderPaired, pairedInvestme
 			}
 		})
 		.on('error', (error) => {
-			console.log('Could not joinAsInvestor', error)
+			log('Could not joinAsInvestor', error)
 		})
 	} catch (error) {
-		console.log('Could not joinAsInvestor', error)
+		log('Could not joinAsInvestor', error)
 		return null
 	}
 }
@@ -286,69 +286,71 @@ export const joinAsInvestor = async (account, web3, traderPaired, pairedInvestme
 
 export const loadTraderAllocations = async (account, traderPaired, dispatch) => {
 	try {
-		let allocations = await getTraderAllocations(account, traderPaired)
+		// Current allocations
 
-		dispatch(traderAllocationsLoaded(account, allocations))
-
-	} catch (error) {
-		console.log('Could not loadTraderAllocations', error)
-		return null
-	}
-}
-
-const getTraderAllocations = async (account, traderPaired) => {
-	try {
-		let allocations = []
 		// ETH
 		let tokenAllocation = await traderPaired.methods.allocations(account, ZERO_ADDRESS).call()
-		tokenAllocation = mapAllocation(tokenAllocation, "ETH", ZERO_ADDRESS)
-		allocations = allocations.concat(tokenAllocation)
+		tokenAllocation.token = ZERO_ADDRESS
+		dispatch(traderAllocationLoaded(account, mapAllocation(tokenAllocation)))
 
 		// DAI
 		tokenAllocation = await traderPaired.methods.allocations(account, `${process.env.REACT_APP_DAI_ADDRESS}`).call()
-		tokenAllocation = mapAllocation(tokenAllocation, "DAI", `${process.env.REACT_APP_DAI_ADDRESS}`)
-		allocations = allocations.concat(tokenAllocation)
+		tokenAllocation.token = `${process.env.REACT_APP_DAI_ADDRESS}`
+		dispatch(traderAllocationLoaded(account, mapAllocation(tokenAllocation)))
 
 		// USDC
 		tokenAllocation = await traderPaired.methods.allocations(account, `${process.env.REACT_APP_USDC_ADDRESS}`).call()
-		tokenAllocation = mapAllocation(tokenAllocation, "USDC", `${process.env.REACT_APP_USDC_ADDRESS}`)
-		allocations = allocations.concat(tokenAllocation)
+		tokenAllocation.token = `${process.env.REACT_APP_USDC_ADDRESS}`
+		dispatch(traderAllocationLoaded(account, mapAllocation(tokenAllocation)))
 
-		return allocations
+		// let stream = await traderPaired.getPastEvents(
+		// 	'Allocate',
+		// 	{
+		// 		filter: {trader: account},
+		// 		fromBlock: 0
+		// 	}
+		// )
+		// let allocations = stream.map(event => mapAllocation(event.returnValues))
+		// allocations.forEach(allocation => dispatch(traderAllocationLoaded(account, allocation)))
+
+		// New allocations
+		traderPaired.events.Allocate({filter: {trader: account}}, (error, event) => {
+			dispatch(traderAllocationLoaded(account, mapAllocation(event.returnValues)))
+		})
 
 	} catch (error) {
-		console.log('Could not getTraderAllocations', error)
+		log('Could not loadTraderAllocations', error)
 		return null
 	}
 }
 
-const mapAllocation = (allocation, name, address) => {
+
+const mapAllocation = (allocation) => {
 	
-	const mappedAllocation = {
+	return {
 		invested: new BigNumber(allocation.invested),
 		total: new BigNumber(allocation.total),
-		name: name,
-		address: address
+		symbol: tokenSymbolForAddress(allocation.token),
+		token: allocation.token,
+		date: moment.unix(allocation.date)
 	}
-
-	return mappedAllocation
 }
 
 export const setTraderAllocation = async (account, tokenAddress, amount, decimals, traderPaired, dispatch) => {
 	try {
+		log("setTraderAllocation", tokenAddress, amount.toString(), decimals)
 
 		traderPaired.methods.allocate(tokenAddress, etherToWei(amount, decimals)).send({from: account})
 		.on('transactionHash', async (hash) => {
 			
 		})
 		.on('receipt', async (receipt) => {
-			loadTraderAllocations(account, traderPaired, dispatch)
 		})
 		.on('error', (error) => {
-			console.log('Could not setTraderAllocation', error)
+			log('Could not setTraderAllocation', error)
 		})
 	} catch (error) {
-		console.log('Could not setTraderAllocation', error)
+		log('Could not setTraderAllocation', error)
 		return null
 	}
 }
@@ -364,11 +366,11 @@ export const createWallet = async (account, traderPaired, walletFactory, web3, d
 			loadMainWallet(account, walletFactory, web3, dispatch)
 		})
 		.on('error', (error) => {
-			console.log('Could not createWallet', error)
+			log('Could not createWallet', error)
 			dispatch(walletCreating(false))
 		})
 	} catch (error) {
-		console.log('Could not createWallet', error)
+		log('Could not createWallet', error)
 		return null
 	}
 }
@@ -388,7 +390,7 @@ const getInvestmentWallet = async (investment, web3, dispatch) => {
 		let wallet = await new web3.eth.Contract(MultiSigFundWallet.abi, investment.wallet, {handleRevert: true})
 		return wallet
 	} catch (error) {
-		console.log('Could not getInvestmentWallet', error)
+		log('Could not getInvestmentWallet', error)
 		return null
 	}
 }
@@ -418,7 +420,19 @@ const loadInvestorInvestments = async (investor, traderPaired, pairedInvestments
 		}
 	)
 	let investments = stream.map(event => event.returnValues)
-	investments.forEach(investment => dispatch(investmentLoaded(mapInvest(investment))))
+	investments.forEach((investment) => {
+		dispatch(investmentLoaded(mapInvest(investment)))
+		// // load allocation
+		// dispatch(traderAllocationLoaded(
+		// 	investment['trader'],
+		// 	mapAllocation({
+		// 		invested: investment['amountInvested'],
+		// 		total: investment['totalInvested'],
+		// 		token: investment['token'],
+		// 		date: investment['date']
+		// 	})
+		// ))
+	})
 
 	stream = await traderPaired.getPastEvents(
 		'Stop',
@@ -448,10 +462,33 @@ const loadInvestorInvestments = async (investor, traderPaired, pairedInvestments
 		}
 	)
 	investments = stream.map(event => event.returnValues)
-	investments.forEach(investment => dispatch(investmentLoaded(mapApproveExit(investment))))
+	investments.forEach((investment) => {
+		dispatch(investmentLoaded(mapApproveExit(investment)))
+		// // load allocation
+		// dispatch(traderAllocationLoaded(
+		// 	investment['trader'],
+		// 	mapAllocation({
+		// 		invested: investment['amountInvested'],
+		// 		total: investment['totalInvested'],
+		// 		token: investment['token'],
+		// 		date: investment['date']
+		// 	})
+		// ))
+	})
 
 	traderPaired.events.Invest({filter: {investor: investor.user}}, (error, event) => {
 		dispatch(investmentLoaded(mapInvest(event.returnValues)))
+
+		// load allocation
+		dispatch(traderAllocationLoaded(
+			event.returnValues['trader'],
+			mapAllocation({
+				invested: event.returnValues['amountInvested'],
+				total: event.returnValues['totalInvested'],
+				token: event.returnValues['token'],
+				date: event.returnValues['date']
+			})
+		))
 	})
 
 	traderPaired.events.Stop({filter: {investor: investor.user}}, (error, event) => {
@@ -464,6 +501,17 @@ const loadInvestorInvestments = async (investor, traderPaired, pairedInvestments
 
 	traderPaired.events.ApproveExit({filter: {investor: investor.user}}, (error, event) => {
 		dispatch(investmentLoaded(mapApproveExit(event.returnValues)))
+
+		// load allocation
+		dispatch(traderAllocationLoaded(
+			event.returnValues['trader'],
+			mapAllocation({
+				invested: event.returnValues['amountInvested'],
+				total: event.returnValues['totalInvested'],
+				token: event.returnValues['token'],
+				date: event.returnValues['date']
+			})
+		))
 	})
 }
 
@@ -476,17 +524,17 @@ export const invest = async (account, trader, tokenAddress, token, amount, walle
 				
 			})
 			.on('receipt', async (receipt) => {
-				investInTrader(account, trader, tokenAddress, token, amount, wallet, dispatch)
+				await investInTrader(account, trader, tokenAddress, token, amount, wallet, dispatch)
 			})
 			.on('error', (error) => {
-				console.log('Could not invest', error)
+				log('Could not invest', error)
 			})
 		} else {
-			investInTrader(account, trader, tokenAddress, token, amount, wallet, dispatch)
+			await investInTrader(account, trader, tokenAddress, token, amount, wallet, dispatch)
 		}
 		
 	} catch (error) {
-		console.log('Could not invest', error)
+		log('Could not invest', error)
 		return null
 	}
 }
@@ -500,13 +548,13 @@ const investInTrader = async (account, trader, tokenAddress, token, amount, wall
 			.on('transactionHash', async (hash) => {
 			})
 			.on('receipt', async (receipt) => {
-				console.log("FUNDED ETHER!")
+				log("FUNDED ETHER!")
 			})
 			.on('error', (error) => {
-				console.log('Could not fundEther', error)
+				log('Could not fundEther', error)
 			})
 		} else {
-			console.log("T", token)
+			log("T", token)
 			amount = etherToWei(amount, token.decimals)
 
 			token.contract.methods.approve(wallet.options.address, amount).send({from: account})
@@ -517,19 +565,19 @@ const investInTrader = async (account, trader, tokenAddress, token, amount, wall
 				.on('transactionHash', async (hash) => {
 				})
 				.on('receipt', async (receipt) => {
-					console.log("FUNDED TOKEN!")
+					log("FUNDED TOKEN!")
 				})
 				.on('error', (error) => {
-					console.log('Could not fundToken', error)
+					log('Could not fundToken', error)
 				})
 			})
 			.on('error', (error) => {
-				console.log('Could not approve token', error)
+				log('Could not approve token', error)
 			})
 		}
 		
 	} catch (error) {
-		console.log('Could not investInTrader', error)
+		log('Could not investInTrader', error)
 		return null
 	}
 }
@@ -544,11 +592,11 @@ export const stopInvestment = (account, investment, wallet, dispatch) => {
 		.on('receipt', async (receipt) => {
 		})
 		.on('error', (error) => {
-			console.log('Could not stopInvestment', error)
+			log('Could not stopInvestment', error)
 			dispatch(investmentChanging(investment, false))
 		})
 	} catch (error) {
-		console.log('Could not stopInvestment', error)
+		log('Could not stopInvestment', error)
 		return null
 	}
 }
@@ -557,31 +605,31 @@ export const disburseInvestment = (account, investment, wallet, dispatch) => {
 	try {
 		dispatch(investmentChanging(investment, true))
 		if (investment.token === ZERO_ADDRESS) {
-			wallet.methods.disburseEther(investment.trader, investment.id, investment.value).send({from: account})
+			wallet.methods.disburseEther(investment.trader, investment.id, investment.amount).send({from: account})
 			.on('transactionHash', async (hash) => {
 				
 			})
 			.on('receipt', async (receipt) => {
 			})
 			.on('error', (error) => {
-				console.log('Could not disburseInvestment', error)
+				log('Could not disburseInvestment', error)
 				dispatch(investmentChanging(investment, false))
 			})
 		} else {
-			wallet.methods.disburseToken(investment.trader, investment.id, investment.token, investment.value, 0).send({from: account})
+			wallet.methods.disburseToken(investment.trader, investment.id, investment.token, investment.amount, 0).send({from: account})
 			.on('transactionHash', async (hash) => {
 				
 			})
 			.on('receipt', async (receipt) => {
 			})
 			.on('error', (error) => {
-				console.log('Could not disburseInvestment', error)
+				log('Could not disburseInvestment', error)
 				dispatch(investmentChanging(investment, false))
 			})
 		}
 		
 	} catch (error) {
-		console.log('Could not disburseInvestment', error)
+		log('Could not disburseInvestment', error)
 		return null
 	}
 }
@@ -597,7 +645,7 @@ export const approveDisbursement = (account, investment, wallet, dispatch) => {
 			.on('receipt', async (receipt) => {
 			})
 			.on('error', (error) => {
-				console.log('Could not approveDisbursement', error)
+				log('Could not approveDisbursement', error)
 				dispatch(investmentChanging(investment, false))
 			})
 		} else {
@@ -608,13 +656,13 @@ export const approveDisbursement = (account, investment, wallet, dispatch) => {
 			.on('receipt', async (receipt) => {
 			})
 			.on('error', (error) => {
-				console.log('Could not approveDisbursement', error)
+				log('Could not approveDisbursement', error)
 				dispatch(investmentChanging(investment, false))
 			})
 		}
 		
 	} catch (error) {
-		console.log('Could not approveDisbursement', error)
+		log('Could not approveDisbursement', error)
 		return null
 	}
 }
@@ -630,9 +678,11 @@ const mapInvest = (event) => {
 	return {
 		... event,
 		amount: new BigNumber(event.amount),
-		value: new BigNumber(event.amount),
+		grossValue: new BigNumber(event.amount),
+		nettValue: new BigNumber(event.amount),
 		start: moment.unix(event.date),
 		date: moment.unix(event.date),
+		invested: new BigNumber(event.invested),
 		state: 0
 	}
 }
@@ -649,7 +699,6 @@ const mapStop = (event) => {
 const mapRequestExit = (event) => {
 	return {
 		... event,
-		value: new BigNumber(event.value),
 		date: moment.unix(event.date),
 		state: 2
 	}
@@ -659,59 +708,94 @@ const mapApproveExit = (event) => {
 	return {
 		... event,
 		date: moment.unix(event.date),
+		invested: new BigNumber(event.invested),
 		state: 4
 	}
 }
 
 export const loadInvestmentValues = (investments, traderPaired, dispatch) => {
 	investments.forEach(async (investment) => {
-		console.log("loadInvestmentValues", investment)
+		log("loadInvestmentValues", investment)
+
+
 		// get all positions for this investment
 		let positions = await getTraderPositions(investment.trader)
 		positions = positions.filter(
-			(position) => addressForAsset(position.asset) === investment.token
-						&& position.start.isAfter(investment.start) 
-						&& ((position.end.isBefore(investment.end)
-							|| investment.state === 0))
+			(position) => tokenAddressForSymbol(position.asset) === investment.token
+						// && position.start.isAfter(investment.start) 
+						// && ((position.end.isBefore(investment.end)
+						// 	|| investment.state === 0))
 		)
 
-		console.log("P", positions)
+		log("P", positions)
 
-		const traderInvestments = await getTraderInvestments(investment.trader, traderPaired)
+		const allocations = await getTraderAllocations(investment.trader, investment.token, traderPaired)
 
-		console.log("traderInvestments", traderInvestments)
+		const traderInvestments = await getTraderInvestments(investment.trader, investment.token, traderPaired)
+
+		log("traderInvestments", traderInvestments)
 
 		// for each position get all investments that it should be split over
 		// and calculate profit/loss
-		let profit = new BigNumber(0)
+		let grossProfit = new BigNumber(0)
 		await positions.forEach(async (position) => {
-			console.log("position.profit", position.profit.toString())
+
+			// find the allocation just before the start of this position
+			let allocation = allocations.find(allocation => allocation.date.isBefore(position.start))
+			// TODO: test code, remove this
+			if (!allocation) {
+				allocation = allocations[0]
+			}
+
+			log("position.profit", position.nettProfit.toString())
 			let totalAmount = await getPositionInvestmentsAmount(position, traderInvestments)
-			console.log("totalAmount", totalAmount.toString())
+			log("totalAmount", totalAmount.toString())
+
+			let investorsShare = totalAmount.dividedBy(allocation.total)
+			log("investorsShare", investorsShare.toString())
 
 			// split profit according to share of total amount
 			let sharePercentage = investment.amount.dividedBy(totalAmount)
-			console.log("sharePercentage", sharePercentage.toString())
+			log("sharePercentage", sharePercentage.toString())
 
-			let positionProfit = position.profit.multipliedBy(sharePercentage)
-			console.log("positionProfit", positionProfit.toString())
+			let positionProfit = position.nettProfit.multipliedBy(sharePercentage).multipliedBy(investorsShare)
+			log("positionProfit", positionProfit.toString())
 
-			profit = profit.plus(positionProfit)
+			grossProfit = grossProfit.plus(positionProfit)
 		})
 
-		console.log("profit", profit.toString())
-		investment.value = investment.amount.plus(profit)
+		let nettProfit = grossProfit.multipliedBy(0.3)
+		log("grossProfit", grossProfit.toString())
+		log("nettProfit", nettProfit.toString())
+		investment.grossValue = investment.amount.plus(grossProfit)
+		investment.nettValue = investment.amount.plus(nettProfit)
 		dispatch(investmentLoaded(investment))
 	})
 }
 
-const getTraderInvestments = async (account, traderPaired) => {
+const getTraderAllocations = async (account, token, traderPaired) => {
+	let stream = await traderPaired.getPastEvents(
+		'Allocate',
+		{
+			filter: {trader: account, token: token},
+			fromBlock: 0
+		}
+	)
+	let allocations = stream.map(event => mapAllocation(event.returnValues))
+						.sort((a, b) => a.date.isBefore(b.date))
+
+	log("getTraderAllocations", allocations)
+
+	return allocations
+}
+
+const getTraderInvestments = async (account, token, traderPaired) => {
 	let result = []
 	try {
 		let stream = await traderPaired.getPastEvents(
 			'Invest',
 			{
-				filter: {trader: account},
+				filter: {trader: account, token: token},
 				fromBlock: 0
 			}
 		)
@@ -720,7 +804,7 @@ const getTraderInvestments = async (account, traderPaired) => {
 		stream = await traderPaired.getPastEvents(
 			'Stop',
 			{
-				filter: {trader: account},
+				filter: {trader: account, token: token},
 				fromBlock: 0
 			}
 		)
@@ -737,17 +821,17 @@ const getTraderInvestments = async (account, traderPaired) => {
 		result = investList
 
 	} catch (error) {
-		console.log('Could not getTraderInvestments', error)
+		log('Could not getTraderInvestments', error)
 	}
 	return result
 }
 
 const getPositionInvestmentsAmount = async (position, traderInvestments) => {
 	const investments = traderInvestments.filter(
-		(investment) => addressForAsset(position.asset) === investment.token
-					&& position.start.isAfter(investment.start) 
-						&& ((position.end.isBefore(investment.end)
-							|| investment.state === 0))
+		(investment) => tokenAddressForSymbol(position.asset) === investment.token
+					// && position.start.isAfter(investment.start) 
+					// 	&& ((position.end.isBefore(investment.end)
+					// 		|| investment.state === 0))
 	)
 	
 	let totalAmount = investments.reduce((total, investment) => total.plus(investment.amount), new BigNumber(0))

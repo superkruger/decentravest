@@ -17,10 +17,15 @@ import {
 import { 
   stopInvestment,
   disburseInvestment,
-  approveDisbursement
+  approveDisbursement,
+  loadInvestmentValues
 } from '../../store/interactions'
 
 class TraderInvestments extends Component {
+  componentDidMount() {
+    const { investments, traderPaired, dispatch } = this.props
+    loadInvestmentValues(investments, traderPaired, dispatch)
+  }
 
   render() {
     const {investments} = this.props
@@ -42,27 +47,29 @@ function showInvestments(investments, props) {
   return (
     <div>
     { investments.map((investment) => {
-        console.log(investment)
         return (
           <div className="card shadow mb-4" key={investment.id}>
             <a href={`#investments_${investment.id}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`investments_${investment.id}`}>
               <h6 className="m-0 font-weight-bold text-primary">
                 <Row>
-                  <Col sm={3}>
+                  <Col sm={1}>
                     {
                       investment.state == 2 && investment.from != account &&
                         <Badge variant="danger">!</Badge>
                     }
-                    <AddressImage address={investment.trader}/>
+                    <AddressImage address={investment.investor}/>
                   </Col>
-                  <Col sm={3}>
+                  <Col sm={2}>
                     <Token address={investment.token} />
                   </Col>
                   <Col sm={3}>
                     <span>Amount: {investment.formattedAmount}</span>
                   </Col>
                   <Col sm={3}>
-                    <span className={`text-${investment.profitClass}`}>Value: {investment.formattedValue}</span>
+                    <span className={`text-${investment.profitClass}`}>Value: {investment.formattedGrossValue}</span>
+                  </Col>
+                  <Col sm={3}>
+                    <span className={`text-${investment.profitClass}`}>Value: {investment.formattedNettValue}</span>
                   </Col>
                 </Row>
               </h6>

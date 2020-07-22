@@ -35,10 +35,10 @@ class AllocationChart extends Component {
         return;
     }
 
-    // if(JSON.stringify(oldProps.data) !== JSON.stringify(this.props.data)) {
-    //     this.chart.data = this.props.data;
-    //     return;
-    // }
+    if(JSON.stringify(oldProps.data) !== JSON.stringify(this.props.data)) {
+        setChartData(this.chartContainer, this.props.data);
+        return;
+    }
   }
 
   render() {
@@ -47,9 +47,9 @@ class AllocationChart extends Component {
     return (
         
         <div>
-            <span>Allocated: {`${data[0].formattedTotal}`}</span><br/>
-            <span>Invested: {`${data[0].formattedInvested}`}</span>
-            <div id={`${data[0].name}-chartdiv`} style={{ width: "100%", height: "100px" }} />
+            <span>Allocated: {`${data.formattedTotal}`}</span><br/>
+            <span>Invested: {`${data.formattedInvested}`}</span>
+            <div id={`${data.symbol}-chartdiv`} style={{ width: "100%", height: "100px" }} />
         </div>
               
     )
@@ -58,16 +58,22 @@ class AllocationChart extends Component {
 
 function buildChart(props) {
     const {data} = props;
-    console.log("Data", data)
 
-    let container = am4core.create(data[0].name + "-chartdiv", am4core.Container);
+    let container = am4core.create(data.symbol + "-chartdiv", am4core.Container);
     container.width = am4core.percent(100);
     container.height = am4core.percent(100);
     container.layout = "vertical";
 
-    createBulletChart(container, data);
+    createBulletChart(container, [data]);
 
     return container;
+}
+
+function setChartData(parent, data) {
+    let child = parent.children.values[0]
+    if (child) {
+        child.data = [data]
+    }
 }
 
 function createBulletChart(parent, data) {
@@ -80,7 +86,7 @@ function createBulletChart(parent, data) {
     chart.data = data;
 
     let categoryAxis = chart.yAxes.push(new am4charts.CategoryAxis());
-    categoryAxis.dataFields.category = "name";
+    categoryAxis.dataFields.category = "symbol";
     categoryAxis.renderer.minGridDistance = 30;
     categoryAxis.renderer.grid.template.disabled = true;
 
@@ -103,7 +109,7 @@ function createBulletChart(parent, data) {
   
     let series = chart.series.push(new am4charts.ColumnSeries());
     series.dataFields.valueX = "investedPercentage";
-    series.dataFields.categoryY = "name";
+    series.dataFields.categoryY = "symbol";
     series.columns.template.fill = am4core.color("#fff");
     series.columns.template.stroke = am4core.color("#000");
     series.columns.template.strokeWidth = 1;
@@ -113,7 +119,7 @@ function createBulletChart(parent, data) {
 
     let series2 = chart.series.push(new am4charts.StepLineSeries());
     series2.dataFields.valueX = "investedPercentageTarget";
-    series2.dataFields.categoryY = "name";
+    series2.dataFields.categoryY = "symbol";
     series2.strokeWidth = 3;
     series2.noRisers = true;
     series2.startLocation = 0.15;

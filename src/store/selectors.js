@@ -5,6 +5,9 @@ import { NEUTRAL, RED, GREEN, formatBalance, getTokenSymbol } from '../helpers'
 const page = (state) => get(state, 'app.page', 'home')
 export const pageSelector = createSelector(page, a => a)
 
+const sidebarClosed = (state) => get(state, 'app.sidebarClosed', false)
+export const sidebarClosedSelector = createSelector(sidebarClosed, a => a)
+
 const account = (state) => get(state, 'web3.account')
 export const accountSelector = createSelector(account, a => a)
 
@@ -92,9 +95,6 @@ const traderAllocations = (state, trader) => {
 export const traderAllocationsSelector = createSelector(traderAllocations, (allocations) => {
 	if (allocations) {
 		allocations = decorateTraderAllocations(allocations)
-
-		// group by name
-		allocations = groupBy(allocations, (a) => a.name)
 	}
 	return allocations
 })
@@ -184,13 +184,16 @@ const decorateInvestment = (investment) => {
 	return ({
 		...investment,
 		formattedAmount: formatBalance(investment.amount, getTokenSymbol(investment.token)),
-		formattedValue: formatBalance(investment.value, getTokenSymbol(investment.token)),
-		profitClass: investment.value.gt(investment.amount) ? GREEN : investment.value.lt(investment.amount) ? RED : NEUTRAL
+		formattedGrossValue: formatBalance(investment.grossValue, getTokenSymbol(investment.token)),
+		formattedNettValue: formatBalance(investment.nettValue, getTokenSymbol(investment.token)),
+		profitClass: investment.grossValue.gt(investment.amount) ? GREEN : investment.grossValue.lt(investment.amount) ? RED : NEUTRAL
 	})
 }
 
 const investmentActionRequired = (state) => {
-	const actionRequired = state.web3.investments.some(investment => investment.state === 2 && investment.from !== state.web3.account)
-	return actionRequired
+	if (!state.web3.investments) {
+		return false
+	}
+	return state.web3.investments.some(investment => investment.state === 2 && investment.from !== state.web3.account)
 }
 export const investmentActionRequiredSelector = createSelector(investmentActionRequired, e => e)

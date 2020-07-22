@@ -4,6 +4,8 @@ function app (state = {}, action ) {
 	switch (action.type) {
 		case 'PAGE_SELECTED':
 			return { ...state, page: action.page }
+		case 'SIDEBAR_TOGGLED':
+			return { ...state, sidebarClosed: !state.sidebarClosed }
 		default:
 			return state
 	}
@@ -67,15 +69,34 @@ function web3 (state = {}, action ) {
 					]
 				}
 			}
-		case 'TRADER_ALLOCATIONS_LOADED':
+		case 'TRADER_ALLOCATION_LOADED':
 			{
 				let index, data
 
-				index = state.traders.findIndex(trader => trader.user === action.trader)
+				index = state.traders.findIndex(trader => trader.user === action.account)
 				if (index !== -1) {
+
+					let allocationData
+					let trader = state.traders[index]
+					if (!trader.allocations) {
+						trader.allocations = []
+					}
+					let allocationIndex = trader.allocations.findIndex(allocation => allocation.token === action.allocation.token)
+					if (allocationIndex === -1) {
+						allocationData = [...trader.allocations, action.allocation]
+					} else {
+						trader.allocations[allocationIndex] = {
+							...trader.allocations[allocationIndex],
+							...action.allocation
+						}
+						allocationData = trader.allocations
+					}
+
 					state.traders[index] = {
 						...state.traders[index],
-						allocations: action.allocations
+						allocations: [
+							...allocationData
+						]
 					}
 				}
 				data = state.traders

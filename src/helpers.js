@@ -5,16 +5,38 @@ export const GREEN = 'success'
 export const RED = 'danger'
 export const NEUTRAL = 'info'
 
-const assets = {
-    'ETH': { decimals: 18, address: '0x0000000000000000000000000000000000000000' },
-    'WETH': { decimals: 18, address: '0x0000000000000000000000000000000000000000' },
-    'DAI': { decimals: 18, address: `${process.env.REACT_APP_DAI_ADDRESS}` },
-    'SAI': { decimals: 18, address: `${process.env.REACT_APP_SAI_ADDRESS}` },
-    'USDC': { decimals: 6, address: `${process.env.REACT_APP_USDC_ADDRESS}` }
+const tokens = [
+    { symbol: 'ETH', decimals: 18, address: ZERO_ADDRESS },
+    { symbol: 'WETH', decimals: 18, address: ZERO_ADDRESS },
+    { symbol: 'DAI', decimals: 18, address: `${process.env.REACT_APP_DAI_ADDRESS}` },
+    { symbol: 'SAI', decimals: 18, address: `${process.env.REACT_APP_SAI_ADDRESS}` },
+    { symbol: 'USDC', decimals: 6, address: `${process.env.REACT_APP_USDC_ADDRESS}` }
+]
+
+export const log = (...logs) => {
+	if (process.env.NODE_ENV === 'development') {
+		console.log(logs)
+	}
 }
 
-export const addressForAsset = (asset) => {
-	return assets[asset] ? assets[asset].address : null
+export const tokenAddressForSymbol = (symbol) => {
+	let token = tokens.find(token => token.symbol === symbol)
+	return token ? token.address : null
+}
+
+export const tokenSymbolForAddress = (address) => {
+	let token = tokens.find(token => token.address === address)
+	return token ? token.symbol : null
+}
+
+export const tokenDecimalsForSymbol = (symbol) => {
+	let token = tokens.find(token => token.symbol === symbol)
+	return token ? token.decimals : 18
+}
+
+export const tokenDecimalsForAddress = (address) => {
+	let token = tokens.find(token => token.address === address)
+	return token ? token.decimals : 18
 }
 
 export const weiToEther = (wei, decimals) => {
@@ -32,7 +54,7 @@ export const etherToWei = (e, decimals) => {
 
 export const formatBalance = (balance, asset) => {
 	const precision = 10000
-	balance = weiToEther(balance, assets[asset].decimals)
+	balance = weiToEther(balance, tokenDecimalsForSymbol(asset))
 	// console.log('balance', balance.toString())
 	const formatted = Math.round(balance.times(precision).toNumber()) / precision
 	return formatted

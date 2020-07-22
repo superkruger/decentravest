@@ -249,10 +249,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        3683,
-                        3684
+                        3709,
+                        3710
                       ],
-                      "referencedDeclaration": 3684,
+                      "referencedDeclaration": 3710,
                       "src": "1016:7:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
@@ -616,7 +616,7 @@
                         "name": "this",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 3694,
+                        "referencedDeclaration": 3720,
                         "src": "1820:4:7",
                         "typeDescriptions": {
                           "typeIdentifier": "t_contract$_Initializable_$787",

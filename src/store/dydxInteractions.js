@@ -216,9 +216,10 @@ const mapTraderPosition = (position) => {
 		return total.plus(action.convertedFeeAmount)
 	}, new BigNumber(0))
 
-	let profit = new BigNumber(0)
 	const transfers = mappedStandardActions.filter(action => action.transferAmount)
 	if (transfers.length > 1) {
+
+		let profit = transfers[0].transferAmount.minus(transfers[transfers.length - 1].transferAmount)
 		
 		const mappedPosition = {
 			uuid: position.uuid,
@@ -228,7 +229,7 @@ const mapTraderPosition = (position) => {
 			market: position.market,
 			start: moment(transfers[transfers.length - 1].confirmedAt),
 			end: moment(transfers[0].confirmedAt),
-			profit: transfers[0].transferAmount.minus(transfers[transfers.length - 1].transferAmount),
+			profit: profit,
 			fee: fee,
 			nettProfit: profit.minus(fee),
 			standardActions: mappedStandardActions

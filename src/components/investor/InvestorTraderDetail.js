@@ -45,114 +45,58 @@ class InvestorTraderDetail extends Component {
       )
     }
 
+    console.log("traderAllocations...", traderAllocations)
+
     return (
       <Container>
           <Row>
             <Col sm={12}>
-              <div className="card bg-light text-dark">
-                
-                <div className="card-header">
-                  <h3>ETH <Rating asset="WETH" rating={`${traderRatings["WETH"]}`}/></h3>
-                </div>
-                <div className="card-body">
-                  <Row>
-                    <Col sm={6}>
-                        <div>
-                          {
-                            traderAllocations["ETH"] !== undefined ?
-                            <AllocationChart data={traderAllocations["ETH"]}/> :
-                            <Spinner />
-                          }
+              { 
+                traderAllocations.map((allocation) => {
+
+                  if (!allocation.symbol) {
+                    return (<div/>)
+                  }
+
+                  let ratingsSymbol = allocation.symbol === 'ETH' ? 'WETH' : allocation.symbol
+
+                  return (
+                    <div className="card shadow mb-4" key={allocation.symbol}>
+                      <a href={`#${allocation.symbol}_Allocation`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`${allocation.symbol}_Allocation`}>
+                        <h6 className="m-0 font-weight-bold text-primary">{allocation.symbol} <Rating asset={allocation.symbol} rating={`${traderRatings[ratingsSymbol]}`}/></h6>
+                      </a>
+                      <div className="collapse" id={`${allocation.symbol}_Allocation`}>
+                        <div className="card-body">
+                          <Container>
+                            <Row>
+                              <Col sm={6}>
+                                <div>
+                                  {
+                                    <AllocationChart data={allocation}/>
+                                  }
+                                </div>
+                              </Col>
+                              <Col sm={6}>
+                                  <div>
+                                    <Balance props={this.props} symbol={allocation.symbol}/>
+                                    <Form>
+                                      <Form.Group controlId={`${allocation.symbol}AllocationAmount`}>
+                                        <Form.Control type="number" placeholder={`Enter ${allocation.symbol} Amount`} />
+                                      </Form.Group>
+                                      <Button variant="primary" onClick={(e) => {investHandler(allocation.token, allocation.symbol + "AllocationAmount", this.props)}}>
+                                        Invest {allocation.symbol}
+                                      </Button>
+                                    </Form>
+                                  </div>
+                              </Col>
+                            </Row>
+                          </Container>
                         </div>
-                    </Col>
-                    <Col sm={6}>
-                        <div>
-                          <Balance props={this.props} symbol="ETH"/>
-                          <Form>
-                            <Form.Group controlId="ethAllocationAmount">
-                              <Form.Control type="number" placeholder="Enter ETH Amount" />
-                            </Form.Group>
-                            <Button variant="primary" onClick={(e) => {investHandler(ZERO_ADDRESS, "ethAllocationAmount", this.props)}}>
-                              Invest ETH
-                            </Button>
-                          </Form>
-                        </div>
-                    </Col>
-                  </Row>
-                </div>
-              </div>
-            </Col>
-          </Row>
-          <Row>
-            <Col sm={12}>
-              <div className="card bg-light text-dark">
-                
-                <div className="card-header">
-                  <h3>DAI <Rating asset="DAI" rating={`${traderRatings["DAI"]}`}/></h3>
-                </div>
-                <div className="card-body">
-                  <Row>
-                    <Col sm={6}>
-                        <div>
-                            {
-                              traderAllocations["DAI"] !== undefined ?
-                              <AllocationChart data={traderAllocations["DAI"]}/> :
-                              <Spinner />
-                            }
-                        </div>
-                    </Col>
-                    <Col sm={6}>
-                        <div>
-                          <Balance props={this.props} symbol="DAI"/>
-                          <Form>
-                            <Form.Group controlId="daiAllocationAmount">
-                              <Form.Control type="number" placeholder="Enter DAI Amount" />
-                            </Form.Group>
-                            <Button variant="primary" onClick={(e) => {investHandler(`${process.env.REACT_APP_DAI_ADDRESS}`, "daiAllocationAmount", this.props)}}>
-                              Invest DAI
-                            </Button>
-                          </Form>
-                        </div>
-                    </Col>
-                  </Row>
-                </div>
-              </div>
-            </Col>
-          </Row>
-          <Row>
-            <Col sm={12}>
-              <div className="card bg-light text-dark">
-                
-                <div className="card-header">
-                  <h3>USDC <Rating asset="USDC" rating={`${traderRatings["USDC"]}`}/></h3>
-                </div>
-                <div className="card-body">
-                  <Row>
-                    <Col sm={6}>
-                        <div>
-                            {
-                              traderAllocations["USDC"] !== undefined ?
-                              <AllocationChart data={traderAllocations["USDC"]}/> :
-                              <Spinner />
-                            }
-                        </div>
-                    </Col>
-                    <Col sm={6}>
-                        <div>
-                          <Balance props={this.props} symbol="USDC"/>
-                          <Form>
-                            <Form.Group controlId="usdcAllocationAmount">
-                              <Form.Control type="number" placeholder="Enter USDC Amount" />
-                            </Form.Group>
-                            <Button variant="primary" onClick={(e) => {investHandler(`${process.env.REACT_APP_USDC_ADDRESS}`, "usdcAllocationAmount", this.props)}}>
-                              Invest USDC
-                            </Button>
-                          </Form>
-                        </div>
-                    </Col>
-                  </Row>
-                </div>
-              </div>
+                      </div>
+                    </div>
+                  )
+                })
+              }
             </Col>
           </Row>
         </Container>

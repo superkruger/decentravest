@@ -17,7 +17,8 @@ import {
   traderPairedSelector,
   traderPairedLoadedSelector,
   traderSelector,
-  investorSelector
+  investorSelector,
+  sidebarClosedSelector
 } from '../store/selectors'
 
 class App extends Component {
@@ -32,8 +33,10 @@ class App extends Component {
   }
 
   render() {
+    const { sidebarClosed } = this.props
+
     return (
-      <div id="page-top">
+      <div id="page-top" className={ sidebarClosed ? 'sidebar-toggled' : ''}>
         <div id="wrapper">
           <Sidebar />
           <Content />
@@ -70,7 +73,8 @@ function mapStateToProps(state) {
     traderPairedLoaded: traderPairedLoadedSelector(state),
     joined: trader || investor,
     trader: trader,
-    investor: investor
+    investor: investor,
+    sidebarClosed: sidebarClosedSelector(state)
   }
 }
 

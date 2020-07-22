@@ -33,11 +33,11 @@ contract TraderPaired is Initializable, Ownable, Pausable {
     event Trader(address indexed user, uint256 date);
     event Investor(address indexed user, uint256 date);
     event Investment(address indexed wallet, address indexed investor, uint256 date);
-    event Allocate(address indexed trader, address token, uint256 amount, uint256 date);
-    event Invest(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address token, uint256 amount, uint256 date);
+    event Allocate(address indexed trader, address indexed token, uint256 total, uint256 invested, uint256 date);
+    event Invest(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address token, uint256 amount, uint256 amountInvested, uint256 totalInvested, uint256 date);
     event Stop(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address from, uint256 date);
     event RequestExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address from, uint256 value, uint256 date);
-    event ApproveExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, uint256 date);
+    event ApproveExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, uint256 amountInvested, uint256 totalInvested, uint256 date);
 
     struct _Trader {
         address user;
@@ -134,7 +134,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
 
         allocations[msg.sender][_token].total = _amount;
 
-        emit Allocate(msg.sender, _token, _amount, now);
+        emit Allocate(msg.sender, _token, _amount, allocations[msg.sender][_token].invested, now);
     }
 
     function isInvested(address _traderAddress, address _investorAddress) 
@@ -201,6 +201,8 @@ contract TraderPaired is Initializable, Ownable, Pausable {
             _investorAddress,
             _token,
             _amount,
+            allocation.invested,
+            allocation.total,
             now
         );
     }
@@ -305,7 +307,9 @@ contract TraderPaired is Initializable, Ownable, Pausable {
             _investmentId, 
             _amount);
 
-        allocations[_traderAddress][_token].invested = allocations[_traderAddress][_token].invested.sub(_result[3]);
+        _Allocation storage allocation = allocations[_traderAddress][_token];
+
+        allocation.invested = allocation.invested.sub(_result[3]);
         
         payouts[0] = _result[0];
         payouts[1] = _result[1];
@@ -316,6 +320,8 @@ contract TraderPaired is Initializable, Ownable, Pausable {
             msg.sender,
             _traderAddress,
             _investorAddress,
+            allocation.invested,
+            allocation.total,
             now
         );
     }

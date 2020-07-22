@@ -53,21 +53,24 @@ function showInvestments(investments, props) {
             <a href={`#investments_${investment.id}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`investments_${investment.id}`}>
               <h6 className="m-0 font-weight-bold text-primary">
                 <Row>
-                  <Col sm={3}>
+                  <Col sm={1}>
                     {
                       investment.state == 2 && investment.from != account &&
                         <Badge variant="danger">!</Badge>
                     }
                     <AddressImage address={investment.trader}/>
                   </Col>
-                  <Col sm={3}>
+                  <Col sm={2}>
                     <Token address={investment.token} />
                   </Col>
                   <Col sm={3}>
                     <span>Amount: {investment.formattedAmount}</span>
                   </Col>
                   <Col sm={3}>
-                    <span className={`text-${investment.profitClass}`}>Value: {investment.formattedValue}</span>
+                    <span className={`text-${investment.profitClass}`}>Gross Value: {investment.formattedGrossValue}</span>
+                  </Col>
+                  <Col sm={3}>
+                    <span className={`text-${investment.profitClass}`}>Nett Value: {investment.formattedNettValue}</span>
                   </Col>
                 </Row>
               </h6>

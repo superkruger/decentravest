@@ -1,3 +1,17 @@
+
+export function pageSelected(page) {
+	return {
+		type: 'PAGE_SELECTED',
+		page
+	}
+}
+
+export function sidebarToggled() {
+	return {
+		type: 'SIDEBAR_TOGGLED'
+	}
+}
+
 export function web3Loaded(connection) {
 	return {
 		type: 'WEB3_LOADED',
@@ -90,11 +104,13 @@ export function mainTraderLoaded(trader) {
 	}
 }
 
-export function traderAllocationsLoaded(trader, allocations) {
+export function traderAllocationLoaded(account, allocation) {
+	console.log("traderAllocationLoaded", account)
+	console.log("traderAllocationLoaded", allocation.invested.toString(), allocation.total.toString())
 	return {
-		type: 'TRADER_ALLOCATIONS_LOADED',
-		trader,
-		allocations
+		type: 'TRADER_ALLOCATION_LOADED',
+		account,
+		allocation
 	}
 }
 
@@ -121,13 +137,6 @@ export function mainInvestorLoaded(investor) {
 export function investorJoining() {
 	return {
 		type: 'INVESTOR_JOINING'
-	}
-}
-
-export function pageSelected(page) {
-	return {
-		type: 'PAGE_SELECTED',
-		page
 	}
 }
 
