@@ -1,4 +1,6 @@
 import BigNumber from 'bignumber.js'
+
+const web3 = require("web3");
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 export const GREEN = 'success'
@@ -37,6 +39,11 @@ export const tokenDecimalsForSymbol = (symbol) => {
 export const tokenDecimalsForAddress = (address) => {
 	let token = tokens.find(token => token.address === address)
 	return token ? token.decimals : 18
+}
+
+export const toBN = (weiNumber) => {
+	// We always work with BigNumber in wei, and decimals in wei are superfluous
+	return weiNumber.toString().split('.')[0]
 }
 
 export const weiToEther = (wei, decimals) => {

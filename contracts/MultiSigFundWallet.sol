@@ -23,13 +23,13 @@ contract MultiSigFundWallet {
 
     uint32 private disbursementIdx;
 
-    mapping (uint32 => Disbursement) private disbursements;
+    mapping (uint32 => Disbursement) public disbursements;
     uint32[] private pendingDisbursements;
 
     event SetTrader(address trader, bool active);
     event Fund(address trader, address investor, uint256 investmentId, address token, uint256 amount, uint256 date);
     event Stopped(address trader, address initiator, uint256 investmentId, uint256 date);
-    event DisbursementCreated(address trader, address initiator, uint256 investmentId, uint32 disbursementId, uint256 date);
+    event DisbursementCreated(address trader, address initiator, uint256 investmentId, uint32 disbursementId, address token, uint256 value, uint256 amount, uint256 date);
     event DisbursementCompleted(address initiator, address signedBy, uint256 investmentId, uint32 disbursementId, uint256 date);
     event Payout(address token, uint256 amount, address to);
 
@@ -195,7 +195,7 @@ contract MultiSigFundWallet {
         disbursements[_disbursementId] = _disbursement;
         pendingDisbursements.push(_disbursementId);
 
-        emit DisbursementCreated(_trader, _initiator, _investmentId, _disbursementId, now);
+        emit DisbursementCreated(_trader, _initiator, _investmentId, _disbursementId, _token, _value, _amount, now);
     }
 
     function getPendingDisbursements()

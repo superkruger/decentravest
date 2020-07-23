@@ -6,7 +6,7 @@ import PairedInvestments from '../abis/PairedInvestments.json'
 import MultiSigFundWalletFactory from '../abis/MultiSigFundWalletFactory.json'
 import MultiSigFundWallet from '../abis/MultiSigFundWallet.json'
 import ERC20 from '../abis/IERC20.json'
-import { log, ZERO_ADDRESS, etherToWei, tokenAddressForSymbol, tokenSymbolForAddress } from '../helpers'
+import { log, ZERO_ADDRESS, toBN, etherToWei, tokenAddressForSymbol, tokenSymbolForAddress } from '../helpers'
 import { getTraderPositions } from './dydxInteractions'
 import { 
 	web3Loaded,
@@ -33,6 +33,8 @@ import {
 import { 
   loadAllTraderPositions
 } from './dydxInteractions'
+
+BigNumber.set({ DECIMAL_PLACES: 20, ROUNDING_MODE: 2 })
 
 export const loadWeb3 = async (dispatch) => {
 
@@ -407,6 +409,7 @@ const registerWalletEvents = async (wallet, dispatch) => {
 	disbursements.forEach(disbursement => dispatch(disbursementCreated(disbursement)))
 
 	wallet.events.DisbursementCreated({filter: {}}, (error, event) => {
+		console.log("DisbursementCreated.value", event.returnValues['value'])
 		dispatch(disbursementCreated(event.returnValues))
 	})
 }
@@ -601,11 +604,24 @@ export const stopInvestment = (account, investment, wallet, dispatch) => {
 	}
 }
 
-export const disburseInvestment = (account, investment, wallet, dispatch) => {
+export const disburseInvestment = async (account, investment, wallet, pairedInvestments, dispatch) => {
 	try {
+		let profitsAndFees = await pairedInvestments.methods.calculateProfitsAndFees(toBN(investment.grossValue), toBN(investment.amount), 100, 100, 3000).call()
+		console.log("profitsAndFees", profitsAndFees)
+
+		let amount = 0
+		if (account === investment.trader) {
+			if (investment.grossValue.isGreaterThan(investment.amount)) {
+				amount = toBN(new BigNumber(profitsAndFees[3]).plus(new BigNumber(profitsAndFees[0])).plus(new BigNumber(profitsAndFees[1])))
+			} else {
+				amount = profitsAndFees[0]
+			}
+		}
+		log("disburseInvestment amount", amount.toString())
+
 		dispatch(investmentChanging(investment, true))
 		if (investment.token === ZERO_ADDRESS) {
-			wallet.methods.disburseEther(investment.trader, investment.id, investment.amount).send({from: account})
+			wallet.methods.disburseEther(investment.trader, investment.id, toBN(investment.grossValue)).send({from: account, value: amount})
 			.on('transactionHash', async (hash) => {
 				
 			})
@@ -616,7 +632,7 @@ export const disburseInvestment = (account, investment, wallet, dispatch) => {
 				dispatch(investmentChanging(investment, false))
 			})
 		} else {
-			wallet.methods.disburseToken(investment.trader, investment.id, investment.token, investment.amount, 0).send({from: account})
+			wallet.methods.disburseToken(investment.trader, investment.id, investment.token, toBN(investment.grossValue), amount).send({from: account})
 			.on('transactionHash', async (hash) => {
 				
 			})
@@ -634,35 +650,50 @@ export const disburseInvestment = (account, investment, wallet, dispatch) => {
 	}
 }
 
-export const approveDisbursement = (account, investment, wallet, dispatch) => {
+export const approveDisbursement = async (account, investment, wallet, pairedInvestments, dispatch) => {
 	try {
+		let profitsAndFees = await pairedInvestments.methods.calculateProfitsAndFees(toBN(investment.grossValue), toBN(investment.amount), 100, 100, 3000).call()
+		console.log("profitsAndFees", profitsAndFees)
+
+
+		let amount = new BigNumber(0)
+		if (account === investment.trader) {
+			if (investment.grossValue.isGreaterThan(investment.amount)) {
+				amount = toBN(new BigNumber(profitsAndFees[3]).plus(new BigNumber(profitsAndFees[0])).plus(new BigNumber(profitsAndFees[1])))
+			} else {
+				amount = profitsAndFees[0]
+			}
+		}
+
+		log("disburseInvestment", account, investment.trader, investment.disbursementId, amount)
+
 		dispatch(investmentChanging(investment, true))
 		if (investment.token === ZERO_ADDRESS) {
-			wallet.methods.approveDisbursementEther(investment.trader, investment.disbursementId).send({from: account})
+			wallet.methods.approveDisbursementEther(investment.trader, investment.disbursementId).send({from: account, value: amount})
 			.on('transactionHash', async (hash) => {
 				
 			})
 			.on('receipt', async (receipt) => {
 			})
 			.on('error', (error) => {
-				log('Could not approveDisbursement', error)
+				log('Could not approveDisbursement 1', error)
 				dispatch(investmentChanging(investment, false))
 			})
 		} else {
-			wallet.methods.approveDisbursementToken(investment.trader, investment.disbursementId, investment.token, 0).send({from: account})
+			wallet.methods.approveDisbursementToken(investment.trader, investment.disbursementId, investment.token, amount).send({from: account})
 			.on('transactionHash', async (hash) => {
 				
 			})
 			.on('receipt', async (receipt) => {
 			})
 			.on('error', (error) => {
-				log('Could not approveDisbursement', error)
+				log('Could not approveDisbursement 2', error)
 				dispatch(investmentChanging(investment, false))
 			})
 		}
 		
 	} catch (error) {
-		log('Could not approveDisbursement', error)
+		log('Could not approveDisbursement 3', error)
 		return null
 	}
 }
@@ -709,7 +740,8 @@ const mapApproveExit = (event) => {
 		... event,
 		date: moment.unix(event.date),
 		invested: new BigNumber(event.invested),
-		state: 4
+		state: 4,
+		expected: event.expected
 	}
 }
 
@@ -764,7 +796,10 @@ export const loadInvestmentValues = (investments, traderPaired, dispatch) => {
 			grossProfit = grossProfit.plus(positionProfit)
 		})
 
-		let nettProfit = grossProfit.multipliedBy(0.3)
+		let nettProfit = grossProfit
+		if (nettProfit.isPositive()) {
+			nettProfit = nettProfit.multipliedBy(0.3)
+		}
 		log("grossProfit", grossProfit.toString())
 		log("nettProfit", nettProfit.toString())
 		investment.grossValue = investment.amount.plus(grossProfit)

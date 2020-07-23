@@ -120,10 +120,10 @@ function DisburseButton (props) {
 }
 
 function disburseHandler (props) {
-  const { investor, wallet, dispatch } = props.props
+  const { investor, wallet, pairedInvestments, dispatch } = props.props
   const { investment } = props
 
-  disburseInvestment(investor.user, investment, wallet, dispatch)
+  disburseInvestment(investor.user, investment, wallet, pairedInvestments, dispatch)
 }
 
 function ApproveButton (props) {
@@ -144,10 +144,10 @@ function ApproveButton (props) {
 }
 
 function approveHandler (props) {
-  const { investor, wallet, dispatch } = props.props
+  const { investor, wallet, pairedInvestments, dispatch } = props.props
   const { investment } = props
 
-  approveDisbursement(investor.user, investment, wallet, dispatch)
+  approveDisbursement(investor.user, investment, wallet, pairedInvestments, dispatch)
 }
 
 function mapStateToProps(state) {

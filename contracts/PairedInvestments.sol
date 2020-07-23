@@ -125,7 +125,7 @@ contract PairedInvestments is Initializable, Ownable {
                 uint256 _investorFee,
                 ,
                 uint256 _investorProfit
-            ) = _calculateProfitsAndFees(
+            ) = calculateProfitsAndFees(
                 _value, 
                 _investment.amount, 
                 traderFeePercent, 
@@ -162,7 +162,7 @@ contract PairedInvestments is Initializable, Ownable {
     function approveExit(address _traderAddress, address _investorAddress, uint256 _investmentId, uint256 _amount) 
         public 
         onlyManager 
-        returns (uint256[4] memory result) 
+        returns (uint256[5] memory result) 
     {
 
         _Investment storage _investment = investments[_investmentId];
@@ -171,6 +171,8 @@ contract PairedInvestments is Initializable, Ownable {
         require(_investment.state == InvestmentState.ExitRequestedInvestor || 
                 _investment.state == InvestmentState.ExitRequestedTrader);
 
+        uint256 _expected = 0;
+
         if (_investment.value > _investment.amount) {
 
         	(
@@ -178,7 +180,7 @@ contract PairedInvestments is Initializable, Ownable {
             	uint256 _investorFee,
             	,
             	uint256 _investorProfit
-            ) = _calculateProfitsAndFees(
+            ) = calculateProfitsAndFees(
             	_investment.value, 
             	_investment.amount, 
             	traderFeePercent, 
@@ -189,10 +191,10 @@ contract PairedInvestments is Initializable, Ownable {
             // if the investor requested the exit, the trader will have to pay the amount
             // if the trader requested the exit, they've already paid the amount
             if (_investment.state == InvestmentState.ExitRequestedInvestor) {
-                require(_investorProfit.add(_traderFee).add(_investorFee) == _amount);
-            } else {
-                require(0 == _amount);
+                _expected = _investorProfit.add(_traderFee).add(_investorFee);   
             }
+
+            require(_expected == _amount);
 
             // investment amount plus profit (minus fee)
             result[1] = _investment.amount.add(_investorProfit);
@@ -208,10 +210,10 @@ contract PairedInvestments is Initializable, Ownable {
             // if the investor requested the exit, the trader will have to pay the amount
             // if the trader requested the exit, they've already paid the amount
             if (_investment.state == InvestmentState.ExitRequestedInvestor) {
-        	   require(_traderFee == _amount);
-            } else {
-                require(0 == _amount);
+        	   _expected =_traderFee;
             }
+
+            require(_expected == _amount);
 
             // take losses away from investor
             result[1] = _investment.value;
@@ -226,23 +228,29 @@ contract PairedInvestments is Initializable, Ownable {
         _investment.state = InvestmentState.Divested;
 
         result[3] = _investment.amount;
+        result[4] = _expected;
     }
 
-    function _calculateProfitsAndFees(
+    function calculateProfitsAndFees(
 		uint256 _value,
 		uint256 _amount,
 		uint256 _traderFeePercent,
 		uint256 _investorFeePercent,
 		uint256 _investorProfitPercent
-		) internal pure returns (uint256, uint256, uint256, uint256) {
+	) public pure returns (uint256, uint256, uint256, uint256) {
 		
-		uint256 _profit = _value - _amount;
-        uint256 _investorProfit = _profit.mul(_investorProfitPercent.sub(_investorFeePercent)).div(10000);
-        uint256 _traderProfit = _profit.mul(uint256(10000).sub(_investorProfitPercent).sub(_traderFeePercent)).div(10000);
-        uint256 _fee = _profit.sub(_investorProfit).sub(_traderProfit);
-        uint256 _investorFee = _fee.div(2);
-        uint256 _traderFee = _fee.sub(_investorFee);
+        if (_value > _amount) {
+    		uint256 _profit = _value - _amount;
+            uint256 _investorProfit = _profit.mul(_investorProfitPercent.sub(_investorFeePercent)).div(10000);
+            uint256 _traderProfit = _profit.mul(uint256(10000).sub(_investorProfitPercent).sub(_traderFeePercent)).div(10000);
+            uint256 _fee = _profit.sub(_investorProfit).sub(_traderProfit);
+            uint256 _investorFee = _fee.div(2);
+            uint256 _traderFee = _fee.sub(_investorFee);
 
-        return (_traderFee, _investorFee, _traderProfit, _investorProfit);
+            return (_traderFee, _investorFee, _traderProfit, _investorProfit);
+        }
+
+        uint _traderFee = (_amount.sub(_value)).mul(_traderFeePercent).div(10000);
+        return (_traderFee, 0, 0, 0);
 	}
 }

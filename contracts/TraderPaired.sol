@@ -37,7 +37,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
     event Invest(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address token, uint256 amount, uint256 amountInvested, uint256 totalInvested, uint256 date);
     event Stop(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address from, uint256 date);
     event RequestExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address from, uint256 value, uint256 date);
-    event ApproveExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, uint256 amountInvested, uint256 totalInvested, uint256 date);
+    event ApproveExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, uint256 amountInvested, uint256 totalInvested, uint256 expected, uint256 date);
 
     struct _Trader {
         address user;
@@ -301,7 +301,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         require(_trader.user == _traderAddress);
         require(_investor.user == _investorAddress);
 
-        uint256[4] memory _result = PairedInvestments(pairedInvestments).approveExit(
+        uint256[5] memory _result = PairedInvestments(pairedInvestments).approveExit(
             _traderAddress,
             _investorAddress, 
             _investmentId, 
@@ -322,6 +322,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
             _investorAddress,
             allocation.invested,
             allocation.total,
+            _result[4],
             now
         );
     }
