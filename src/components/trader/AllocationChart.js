@@ -49,7 +49,7 @@ class AllocationChart extends Component {
         <div>
             <span>Allocated: {`${data.formattedTotal}`}</span><br/>
             <span>Invested: {`${data.formattedInvested}`}</span>
-            <div id={`${data.symbol}-chartdiv`} style={{ width: "100%", height: "100px" }} />
+            <div id={`${data.trader}-${data.symbol}-chartdiv`} style={{ width: "100%", height: "100px" }} />
         </div>
               
     )
@@ -59,7 +59,7 @@ class AllocationChart extends Component {
 function buildChart(props) {
     const {data} = props;
 
-    let container = am4core.create(data.symbol + "-chartdiv", am4core.Container);
+    let container = am4core.create(data.trader + "-" + data.symbol + "-chartdiv", am4core.Container);
     container.width = am4core.percent(100);
     container.height = am4core.percent(100);
     container.layout = "vertical";

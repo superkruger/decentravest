@@ -105,8 +105,7 @@ export function mainTraderLoaded(trader) {
 }
 
 export function traderAllocationLoaded(account, allocation) {
-	console.log("traderAllocationLoaded", account)
-	console.log("traderAllocationLoaded", allocation.invested.toString(), allocation.total.toString())
+	allocation.trader = account
 	return {
 		type: 'TRADER_ALLOCATION_LOADED',
 		account,

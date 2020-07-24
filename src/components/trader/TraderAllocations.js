@@ -53,19 +53,21 @@ class TraderAllocations extends Component {
                 allocationList.map((allocation) => {
                   const traderAllocation = getTraderAllocation(allocation.token, traderAllocations)
 
+                  console.log("traderAllocation", traderAllocation)
+
                   return (
-                    <div className="card shadow mb-4" key={allocation.symbol}>
-                      <a href={`#${allocation.symbol}_Allocation`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`${allocation.symbol}_Allocation`}>
+                    <div className="card shadow mb-4" key={`${allocation.symbol}_${allocation.trader}`}>
+                      <a href={`#${allocation.symbol}${allocation.trader}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`${allocation.symbol}${allocation.trader}`}>
                         <h6 className="m-0 font-weight-bold text-primary">{allocation.symbol} Allocation</h6>
                       </a>
-                      <div className="collapse" id={`${allocation.symbol}_Allocation`}>
+                      <div className="collapse" id={`${allocation.symbol}${allocation.trader}`}>
                         <div className="card-body">
                           <Container>
                             <Row>
                               <Col sm={6}>
                                   <div>
                                     {
-                                      traderAllocation
+                                      traderAllocation && traderAllocation.total > 0
                                       ? <AllocationChart data={traderAllocation}/>
                                       : <span>No allocation made</span>
                                     }
@@ -75,10 +77,10 @@ class TraderAllocations extends Component {
                                   <div>
                                     <Balance props={this.props} symbol={allocation.symbol}/>
                                     <Form>
-                                      <Form.Group controlId={`${allocation.symbol}AllocationAmount`}>
+                                      <Form.Group controlId={`${allocation.symbol}${allocation.trader}_Amount`}>
                                         <Form.Control type="number" placeholder={`Enter ${allocation.symbol} Amount`} />
                                       </Form.Group>
-                                      <Button variant="primary" onClick={(e) => {allocationSubmitHandler(allocation.token, allocation.symbol + "AllocationAmount", this.props)}}>
+                                      <Button variant="primary" onClick={(e) => {allocationSubmitHandler(allocation.token, allocation.symbol + allocation.trader + "_Amount", this.props)}}>
                                         Set {allocation.symbol} Allocation
                                       </Button>
                                     </Form>
