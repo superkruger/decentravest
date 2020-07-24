@@ -9,36 +9,46 @@ import "./TraderPaired.sol";
 contract MultiSigFundWallet {
     using SafeMath for uint256;
 
+    /*
+     *  Constants
+     */
     address constant ETHER = address(0); // allows storage of ether in blank address in token mapping
-
     uint8 constant MAX_TOKENS = 20;
 
+    /*
+     *  Storage
+     */
     address public fund;
-
     mapping (address => bool) public traders;
     address public investor;
     address public admin;
-
     mapping (address => mapping (address => uint256)) balances;
-
     uint32 private disbursementIdx;
-
     mapping (uint32 => Disbursement) public disbursements;
     uint32[] private pendingDisbursements;
 
+    /*
+     *  Events
+     */
     event SetTrader(address trader, bool active);
     event Fund(address trader, address investor, uint256 investmentId, address token, uint256 amount, uint256 date);
     event Stopped(address trader, address initiator, uint256 investmentId, uint256 date);
     event DisbursementCreated(address trader, address initiator, uint256 investmentId, uint32 disbursementId, address token, uint256 value, uint256 amount, uint256 date);
     event DisbursementCompleted(address initiator, address signedBy, uint256 investmentId, uint32 disbursementId, uint256 date);
     event Payout(address token, uint256 amount, address to);
-
+    
+    /*
+     *  Structs
+     */
     struct Disbursement {
         address trader;
         address initiator;
         uint256 investmentId;
     }
 
+    /*
+     *  Modifiers
+     */
     modifier isAdmin() {
         require(msg.sender == admin);
         _;
@@ -79,6 +89,10 @@ contract MultiSigFundWallet {
         revert();
     }
 
+    /// @dev Constructor
+    /// @param _fund Fund address
+    /// @param _investor Investor address
+    /// @param _admin Admin address
     constructor (address _fund, address _investor, address _admin)
         public
     {
@@ -90,6 +104,9 @@ contract MultiSigFundWallet {
         admin = _admin;
     }
 
+    /// @dev Add/Remove a trader
+    /// @param _trader Trader address
+    /// @param _active set active or not
     function setTrader(address _trader, bool _active) 
         external
         isInvestor
@@ -101,6 +118,8 @@ contract MultiSigFundWallet {
         emit SetTrader(_trader, _active);
     }
 
+    /// @dev Replace admin
+    /// @param _admin Admin address
     function replaceAdmin(address _admin) 
         external
         isAdmin
@@ -109,6 +128,8 @@ contract MultiSigFundWallet {
         admin = _admin;
     }
 
+    /// @dev Fund wallet with ether
+    /// @param _trader Trader address
     function fundEther(address _trader) 
         external 
         payable
@@ -116,12 +137,19 @@ contract MultiSigFundWallet {
         _fundEther(_trader, msg.value);
     }
 
+    /// @dev Fund wallet with token
+    /// @param _trader Trader address
+    /// @param _token Token address
+    /// @param _amount Amount of tokens
     function fundToken(address _trader, address _token, uint256 _amount)
         external 
     {
         _fundToken(_trader, _token, _amount);
     }
 
+    /// @dev Fund wallet with ether
+    /// @param _trader Trader address
+    /// @param _amount Amount of ether
     function _fundEther(address _trader, uint256 _amount) 
         internal
         isInvestor
@@ -132,6 +160,10 @@ contract MultiSigFundWallet {
         emit Fund(_trader, msg.sender, investmentId, ETHER, _amount, now);
     }
 
+    /// @dev Fund wallet with token
+    /// @param _trader Trader address
+    /// @param _token Token address
+    /// @param _amount Amount of tokens
     function _fundToken(address _trader, address _token, uint256 _amount)
         internal 
         isInvestor
@@ -144,6 +176,9 @@ contract MultiSigFundWallet {
         emit Fund(_trader, msg.sender, investmentId, _token, _amount, now);
     }
 
+    /// @dev Stop investment
+    /// @param _trader Trader address
+    /// @param _investmentId Investment id
     function stop(address _trader, uint256 _investmentId)
         external
         traderOrInvestor(_trader)
@@ -154,6 +189,10 @@ contract MultiSigFundWallet {
         emit Stopped(_trader, msg.sender, _investmentId, now);
     }
 
+    /// @dev Request investment disbursement in ether
+    /// @param _trader Trader address
+    /// @param _investmentId Investment id
+    /// @param _value Investment value
     function disburseEther(address _trader, uint256 _investmentId, uint256 _value)
         external
         payable
@@ -161,6 +200,12 @@ contract MultiSigFundWallet {
         _disburse(_trader, msg.sender, _investmentId, ETHER, _value, msg.value);
     }
 
+    /// @dev Request investment disbursement in tokens
+    /// @param _trader Trader address
+    /// @param _investmentId Investment id
+    /// @param _token Token address
+    /// @param _value Investment value
+    /// @param _amount transaction amount
     function disburseToken(address _trader, uint256 _investmentId, address _token, uint256 _value, uint256 _amount)
         external 
     {
@@ -170,6 +215,13 @@ contract MultiSigFundWallet {
         _disburse(_trader, msg.sender, _investmentId, _token, _value, _amount);
     }
 
+    /// @dev Request investment disbursement
+    /// @param _trader Trader address
+    /// @param _initiator Initiator address
+    /// @param _investmentId Investment id
+    /// @param _token Token address
+    /// @param _value Investment value
+    /// @param _amount transaction amount
     function _disburse(address _trader, address _initiator, uint256 _investmentId, address _token, uint256 _value, uint256 _amount)
         internal 
         traderOrInvestor(_trader)
@@ -198,6 +250,7 @@ contract MultiSigFundWallet {
         emit DisbursementCreated(_trader, _initiator, _investmentId, _disbursementId, _token, _value, _amount, now);
     }
 
+    /// @dev Get pending disbursements
     function getPendingDisbursements()
       external
       view
@@ -207,6 +260,9 @@ contract MultiSigFundWallet {
         return pendingDisbursements;
     }
 
+    /// @dev Approve ether disbursement
+    /// @param _trader Trader address
+    /// @param _disbursementId disbursement id
     function approveDisbursementEther(address _trader, uint32 _disbursementId)
       external
       payable 
@@ -214,6 +270,11 @@ contract MultiSigFundWallet {
         _approveDisbursement(_trader, _disbursementId, ETHER, msg.value);
     }
 
+    /// @dev Approve token disbursement
+    /// @param _trader Trader address
+    /// @param _disbursementId disbursement id
+    /// @param _token Token address
+    /// @param _amount transaction amount
     function approveDisbursementToken(address _trader, uint32 _disbursementId, address _token, uint256 _amount)
       external
     {
@@ -224,6 +285,11 @@ contract MultiSigFundWallet {
         _approveDisbursement(_trader, _disbursementId, _token, _amount);
     }
 
+    /// @dev Approve disbursement
+    /// @param _trader Trader address
+    /// @param _disbursementId disbursement id
+    /// @param _token Token address
+    /// @param _amount transaction amount
     function _approveDisbursement(address _trader, uint32 _disbursementId, address _token, uint256 _amount)
       internal
       validOwner
@@ -236,6 +302,11 @@ contract MultiSigFundWallet {
         deleteDisbursement(_disbursementId);
     }
 
+    /// @dev Fulfill disbursement
+    /// @param _trader Trader address
+    /// @param _disbursementId disbursement id
+    /// @param _token Token address
+    /// @param _amount transaction amount
     function _executeDisbursement(address _trader, uint32 _disbursementId, address _token, uint256 _amount) 
         internal 
     {
@@ -258,6 +329,10 @@ contract MultiSigFundWallet {
         }
     }
 
+    /// @dev Payout ether
+    /// @param _trader Trader address
+    /// @param _amount payment amount
+    /// @param _to Target address
     function _payoutEther(address _trader, uint256 _amount, address _to) 
         internal
     {
@@ -269,6 +344,11 @@ contract MultiSigFundWallet {
         }
     }
 
+    /// @dev Payout tokens
+    /// @param _trader Trader address
+    /// @param _token Token address
+    /// @param _amount payment amount
+    /// @param _to Target address
     function _payoutToken(address _trader, address _token, uint256 _amount, address _to) 
         internal
     {
@@ -279,6 +359,8 @@ contract MultiSigFundWallet {
         }
     }
 
+    /// @dev Delete disbursement
+    /// @param _disbursementId Disbursement id
     function deleteDisbursement(uint32 _disbursementId)
       public 
       validOwner
@@ -296,6 +378,10 @@ contract MultiSigFundWallet {
         delete disbursements[_disbursementId];
     }
 
+    /// @dev Validate disbursement signature
+    /// @param _trader Trader address
+    /// @param _disbursementId Disbursement id
+    /// @return true if disbursement approval is valid
     function _validateSignature(address _trader, uint32 _disbursementId)
         internal
         view
@@ -321,6 +407,8 @@ contract MultiSigFundWallet {
         return true;
     }
 
+    /// @dev Get wallet ether balance
+    /// @return ether balance
     function etherBalance()
         external
         view
@@ -329,6 +417,9 @@ contract MultiSigFundWallet {
         return address(this).balance;
     }
 
+    /// @dev Get wallet token balance
+    /// @param _token Token address
+    /// @return token balance
     function tokenBalance(address _token)
         external
         view

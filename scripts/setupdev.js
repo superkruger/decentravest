@@ -12,11 +12,9 @@ const readline = require('readline').createInterface({
   output: process.stdout
 })
 
-const web3 = require("web3");
-
 const ether = (n) => {
-	return new web3.utils.BN(
-		web3.utils.toWei(n.toString(), 'ether')
+	return new Web3.utils.BN(
+		Web3.utils.toWei(n.toString(), 'ether')
 	)
 }
 

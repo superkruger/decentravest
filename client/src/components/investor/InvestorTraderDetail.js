@@ -121,11 +121,7 @@ function Balance(props) {
 function investHandler (tokenAddress, inputId, props) {
   const {account, trader, tokens, wallet, dispatch} = props
 
-  console.log("ts", tokens, tokenAddress)
-
   const token = tokens.find(t => t.contract.options.address === tokenAddress)
-
-  console.log("t", token)
 
   const amount = document.getElementById(inputId).value
   invest(account, trader.user, tokenAddress, token, amount, wallet, dispatch)

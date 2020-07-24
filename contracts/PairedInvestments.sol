@@ -8,6 +8,9 @@ import "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol
 contract PairedInvestments is Initializable, Ownable {
 	using SafeMath for uint256;
 
+    /*
+     *  Storage
+     */
 	address public manager;
 
 	uint8 constant IDX_ADDRESS_traderAddress 		= 0;
@@ -24,6 +27,9 @@ contract PairedInvestments is Initializable, Ownable {
 	mapping(uint256 => _Investment) public investments;
     uint256 public investmentCount;
 
+    /*
+     *  Structs
+     */
     enum InvestmentState {
         Invested,
         Stopped,
@@ -49,6 +55,9 @@ contract PairedInvestments is Initializable, Ownable {
     	uint256 _amount;
     }
 
+    /*
+     *  Modifiers
+     */
     modifier onlyManager() {
         require(manager == msg.sender);
         _;

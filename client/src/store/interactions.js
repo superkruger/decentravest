@@ -44,19 +44,19 @@ export const loadWeb3 = async (dispatch) => {
 		await window.ethereum.enable()
 
 		window.ethereum.on('accountsChanged', async function (accounts) {
-		    // await loadWebApp(web3, dispatch)
-		    document.location.reload()
-		  })
+			// await loadWebApp(web3, dispatch)
+			document.location.reload()
+		})
 
-		  window.ethereum.on('chainChanged', () => {
-		    document.location.reload()
-		  })
+		window.ethereum.on('chainChanged', () => {
+			document.location.reload()
+		})
 
-		  window.ethereum.on('networkChanged', () => {
-		    document.location.reload()
-		  })
+		window.ethereum.on('networkChanged', () => {
+			document.location.reload()
+		})
 	} else if (window.web3) {
-		web3 = new Web3(window.web3.currentProvider || 'http://127.0.0.1:8545')
+		web3 = new Web3(window.web3.currentProvider || Web3.givenProvider || 'http://127.0.0.1:8545')
 	}
 	else {
 		log('nothing')
@@ -557,7 +557,6 @@ const investInTrader = async (account, trader, tokenAddress, token, amount, wall
 				log('Could not fundEther', error)
 			})
 		} else {
-			log("T", token)
 			amount = etherToWei(amount, token.decimals)
 
 			token.contract.methods.approve(wallet.options.address, amount).send({from: account})
@@ -604,7 +603,7 @@ export const stopInvestment = (account, investment, wallet, dispatch) => {
 	}
 }
 
-export const disburseInvestment = async (account, investment, wallet, pairedInvestments, dispatch) => {
+export const disburseInvestment = async (account, investment, wallet, token, pairedInvestments, dispatch) => {
 	try {
 		let profitsAndFees = await pairedInvestments.methods.calculateProfitsAndFees(toBN(investment.grossValue), toBN(investment.amount), 100, 100, 3000).call()
 		console.log("profitsAndFees", profitsAndFees)
@@ -632,14 +631,24 @@ export const disburseInvestment = async (account, investment, wallet, pairedInve
 				dispatch(investmentChanging(investment, false))
 			})
 		} else {
-			wallet.methods.disburseToken(investment.trader, investment.id, investment.token, toBN(investment.grossValue), amount).send({from: account})
+
+			token.contract.methods.approve(wallet.options.address, amount).send({from: account})
 			.on('transactionHash', async (hash) => {
-				
 			})
 			.on('receipt', async (receipt) => {
+				wallet.methods.disburseToken(investment.trader, investment.id, investment.token, toBN(investment.grossValue), amount).send({from: account})
+				.on('transactionHash', async (hash) => {
+					
+				})
+				.on('receipt', async (receipt) => {
+				})
+				.on('error', (error) => {
+					log('Could not disburseInvestment', error)
+					dispatch(investmentChanging(investment, false))
+				})
 			})
 			.on('error', (error) => {
-				log('Could not disburseInvestment', error)
+				log('Could not approve token', error)
 				dispatch(investmentChanging(investment, false))
 			})
 		}
@@ -650,7 +659,7 @@ export const disburseInvestment = async (account, investment, wallet, pairedInve
 	}
 }
 
-export const approveDisbursement = async (account, investment, wallet, pairedInvestments, dispatch) => {
+export const approveDisbursement = async (account, investment, wallet, token, pairedInvestments, dispatch) => {
 	try {
 		let profitsAndFees = await pairedInvestments.methods.calculateProfitsAndFees(toBN(investment.grossValue), toBN(investment.amount), 100, 100, 3000).call()
 		console.log("profitsAndFees", profitsAndFees)
@@ -680,14 +689,23 @@ export const approveDisbursement = async (account, investment, wallet, pairedInv
 				dispatch(investmentChanging(investment, false))
 			})
 		} else {
-			wallet.methods.approveDisbursementToken(investment.trader, investment.disbursementId, investment.token, amount).send({from: account})
+			token.contract.methods.approve(wallet.options.address, amount).send({from: account})
 			.on('transactionHash', async (hash) => {
-				
 			})
 			.on('receipt', async (receipt) => {
+				wallet.methods.approveDisbursementToken(investment.trader, investment.disbursementId, investment.token, amount).send({from: account})
+				.on('transactionHash', async (hash) => {
+					
+				})
+				.on('receipt', async (receipt) => {
+				})
+				.on('error', (error) => {
+					log('Could not approveDisbursement 2', error)
+					dispatch(investmentChanging(investment, false))
+				})
 			})
 			.on('error', (error) => {
-				log('Could not approveDisbursement 2', error)
+				log('Could not approve token', error)
 				dispatch(investmentChanging(investment, false))
 			})
 		}
@@ -796,6 +814,11 @@ export const loadInvestmentValues = (investments, traderPaired, dispatch) => {
 			grossProfit = grossProfit.plus(positionProfit)
 		})
 
+		if (investment.amount.plus(grossProfit).isNegative()) {
+			// if losses would amount to a negative valuation, just make the loss equal to the investment amount
+			grossProfit = investment.amount.negated()
+		}
+
 		let nettProfit = grossProfit
 		if (nettProfit.isPositive()) {
 			nettProfit = nettProfit.multipliedBy(0.3)
@@ -818,8 +841,6 @@ const getTraderAllocations = async (account, token, traderPaired) => {
 	)
 	let allocations = stream.map(event => mapAllocation(event.returnValues))
 						.sort((a, b) => a.date.isBefore(b.date))
-
-	log("getTraderAllocations", allocations)
 
 	return allocations
 }

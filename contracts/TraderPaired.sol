@@ -14,14 +14,19 @@ import "./MultiSigFundWallet.sol";
 contract TraderPaired is Initializable, Ownable, Pausable {
 	using SafeMath for uint256;
 
+    /*
+     *  Constants
+     */
     address constant ETHER = address(0); // allows storage of ether in blank address in token mapping
     address public feeAccount; // account that will receive fees
 
+    /*
+     *  Storage
+     */
     mapping(address => _Trader) public traders;
     mapping(address => _Investor) public investors;
 
     address public multiSigFundWalletFactory;
-
     address public pairedInvestments;
 
     mapping(address => bool) public tokens;
@@ -30,6 +35,9 @@ contract TraderPaired is Initializable, Ownable, Pausable {
     mapping(address => mapping(uint256 => uint256)) public investorInvestments;
     mapping(address => mapping(address => _Allocation)) public allocations;
 
+    /*
+     *  Events
+     */
     event Trader(address indexed user, uint256 date);
     event Investor(address indexed user, uint256 date);
     event Investment(address indexed wallet, address indexed investor, uint256 date);
@@ -39,6 +47,9 @@ contract TraderPaired is Initializable, Ownable, Pausable {
     event RequestExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address from, uint256 value, uint256 date);
     event ApproveExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, uint256 amountInvested, uint256 totalInvested, uint256 expected, uint256 date);
 
+    /*
+     *  Structs
+     */
     struct _Trader {
         address user;
         uint256 investmentCount;
@@ -54,6 +65,9 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         uint256 investmentCount;
     }
 
+    /*
+     *  Modifiers
+     */
     modifier isTrader(address trader) {
         require(trader != address(0) && traders[trader].user == trader);
         _;
@@ -74,23 +88,26 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         _;
     }
 
-    function initialize(
-            address _feeAccount
-            ) public initializer {
+    function initialize(address _feeAccount) 
+        public 
+        initializer 
+    {
         Ownable.initialize(msg.sender);
         Pausable.initialize(msg.sender);
         feeAccount = _feeAccount;
     }
 
-    function setMultiSigFundWalletFactory(
-            address _factory
-            ) public onlyOwner {
+    function setMultiSigFundWalletFactory(address _factory) 
+        public 
+        onlyOwner 
+    {
         multiSigFundWalletFactory = _factory;
     }
 
-    function setPairedInvestments(
-            address _pairedInvestments
-            ) public onlyOwner {
+    function setPairedInvestments(address _pairedInvestments) 
+        public 
+        onlyOwner 
+    {
         pairedInvestments = _pairedInvestments;
     }
 
@@ -99,11 +116,17 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         revert();
     }
 
-    function setToken(address _token, bool _valid) external onlyOwner {
+    function setToken(address _token, bool _valid) 
+        external 
+        onlyOwner 
+    {
         tokens[_token] = _valid;
     }
 
-    function joinAsTrader() external whenNotPaused {
+    function joinAsTrader() 
+        external 
+        whenNotPaused 
+    {
         require(traders[msg.sender].user == address(0));
         require(investors[msg.sender].user == address(0));
 
@@ -115,7 +138,10 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         emit Trader(msg.sender, now);
     }
 
-    function joinAsInvestor() external whenNotPaused {
+    function joinAsInvestor() 
+        external 
+        whenNotPaused 
+    {
         require(traders[msg.sender].user == address(0));
         require(investors[msg.sender].user == address(0));
 
@@ -127,7 +153,10 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         emit Investor(msg.sender, now);
     }
 
-    function allocate(address _token, uint256 _amount) external whenNotPaused {
+    function allocate(address _token, uint256 _amount) 
+        external 
+        whenNotPaused 
+    {
         require(tokens[_token]);
         _Trader memory _trader = traders[msg.sender];
         require(_trader.user == msg.sender);

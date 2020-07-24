@@ -1,5 +1,6 @@
 {
-  "name": "decentravest-root",
+  "homepage": "/",
+  "name": "decentravest-server",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -26,10 +27,11 @@
     "@testing-library/user-event": "^7.2.1",
     "@truffle/hdwallet-provider": "1.0.36",
     "bignumber.js": "^9.0.0",
+    "body-parser": "^1.19.0",
     "chai-as-promised": "7.1.1",
     "chai-bignumber": "3.0.0",
     "contract-proxy-kit": "^1.1.1",
-    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
     "flatted": "^2.0.2",
     "lodash": "^4.17.15",
     "moment": "2.24.0",
@@ -37,10 +39,7 @@
     "web3-eth-abi": "^1.2.9"
   },
   "scripts": {
-    "test": "oz compile && mocha --exit --recursive --require @babel/register test",
-    "client": "cd client && npm run start",
-    "server": "cd server && npm run start",
-    "start": "concurrently --kill-others \"npm run server\" \"npm run client\""
+    "start": "nodemon ./src/server.js"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -66,6 +65,7 @@
     "ganache-cli": "^6.9.1",
     "gh-pages": "^2.2.0",
     "husky": "^4.2.5",
-    "mocha": "^8.0.1"
+    "mocha": "^8.0.1",
+    "nodemon": "^2.0.4"
   }
 }

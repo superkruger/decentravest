@@ -8,11 +8,12 @@ import Spinner from '../Spinner'
 import { ZERO_ADDRESS, formatBalance } from '../../helpers'
 import { 
   accountSelector,
-  traderSelector,
+  investorSelector,
   traderPairedSelector,
   pairedInvestmentsSelector,
   investmentsSelector,
-  walletSelector
+  walletSelector,
+  tokensSelector
 } from '../../store/selectors'
 import { 
   stopInvestment,
@@ -21,7 +22,7 @@ import {
   loadInvestmentValues
 } from '../../store/interactions'
 
-class TraderInvestments extends Component {
+class InvestorInvestments extends Component {
   componentDidMount() {
     const { investments, traderPaired, dispatch } = this.props
     loadInvestmentValues(investments, traderPaired, dispatch)
@@ -47,6 +48,7 @@ function showInvestments(investments, props) {
   return (
     <div>
     { investments.map((investment) => {
+        console.log(investment)
         return (
           <div className="card shadow mb-4" key={investment.id}>
             <a href={`#investments_${investment.id}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`investments_${investment.id}`}>
@@ -57,7 +59,7 @@ function showInvestments(investments, props) {
                       investment.state == 2 && investment.from != account &&
                         <Badge variant="danger">!</Badge>
                     }
-                    <AddressImage address={investment.investor}/>
+                    <AddressImage address={investment.trader}/>
                   </Col>
                   <Col sm={2}>
                     <Token address={investment.token} />
@@ -66,10 +68,10 @@ function showInvestments(investments, props) {
                     <span>Amount: {investment.formattedAmount}</span>
                   </Col>
                   <Col sm={3}>
-                    <span className={`text-${investment.profitClass}`}>Value: {investment.formattedGrossValue}</span>
+                    <span className={`text-${investment.profitClass}`}>Gross Value: {investment.formattedGrossValue}</span>
                   </Col>
                   <Col sm={3}>
-                    <span className={`text-${investment.profitClass}`}>Value: {investment.formattedNettValue}</span>
+                    <span className={`text-${investment.profitClass}`}>Nett Value: {investment.formattedNettValue}</span>
                   </Col>
                 </Row>
               </h6>
@@ -104,10 +106,10 @@ function StopButton (props) {
 }
 
 function stopHandler (props) {
-  const { trader, dispatch } = props.props
+  const { investor, wallet, dispatch } = props.props
   const { investment } = props
 
-  stopInvestment(trader.user, investment, investment.walletContract, dispatch)
+  stopInvestment(investor.user, investment, wallet, dispatch)
 }
 
 function DisburseButton (props) {
@@ -119,10 +121,14 @@ function DisburseButton (props) {
 }
 
 function disburseHandler (props) {
-  const { trader, pairedInvestments, dispatch } = props.props
+  const { investor, wallet, tokens, pairedInvestments, dispatch } = props.props
   const { investment } = props
 
-  disburseInvestment(trader.user, investment, investment.walletContract, pairedInvestments, dispatch)
+  console.log("--investment disburse--", investment)
+
+  const token = tokens.find(t => t.contract.options.address === investment.token)
+
+  disburseInvestment(investor.user, investment, wallet, token, pairedInvestments, dispatch)
 }
 
 function ApproveButton (props) {
@@ -143,23 +149,29 @@ function ApproveButton (props) {
 }
 
 function approveHandler (props) {
-  const { trader, pairedInvestments, dispatch } = props.props
+  const { investor, wallet, tokens, pairedInvestments, dispatch } = props.props
   const { investment } = props
 
-  approveDisbursement(trader.user, investment, investment.walletContract, pairedInvestments, dispatch)
+  console.log("--investment approve--", investment)
+
+  const token = tokens.find(t => t.contract.options.address === investment.token)
+
+  approveDisbursement(investor.user, investment, wallet, token, pairedInvestments, dispatch)
 }
 
 function mapStateToProps(state) {
 
   return {
     account: accountSelector(state),
-    trader: traderSelector(state),
+    investor: investorSelector(state),
     traderPaired: traderPairedSelector(state),
     pairedInvestments: pairedInvestmentsSelector(state),
-    investments: investmentsSelector(state)
+    investments: investmentsSelector(state),
+    wallet: walletSelector(state),
+    tokens: tokensSelector(state)
   }
 }
 
-export default connect(mapStateToProps)(TraderInvestments)
+export default connect(mapStateToProps)(InvestorInvestments)
 
 
