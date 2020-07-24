@@ -116,8 +116,8 @@ const decorateTraderAllocation = (allocation) => {
 	return ({
 		...allocation,
 		investedPercentage: investedPercentage,
-		formattedTotal: formatBalance(allocation.total, allocation.name),
-		formattedInvested: formatBalance(allocation.invested, allocation.name),
+		formattedTotal: formatBalance(allocation.total, allocation.symbol),
+		formattedInvested: formatBalance(allocation.invested, allocation.symbol),
 		investedPercentageTarget: 100
 	})
 }

@@ -52,7 +52,7 @@ class InvestorTraderDetail extends Component {
               { 
                 traderAllocations.map((allocation) => {
 
-                  if (!allocation.symbol || allocation.total === 0) {
+                  if (!allocation.symbol || allocation.total.isZero()) {
                     return (<div/>)
                   }
 

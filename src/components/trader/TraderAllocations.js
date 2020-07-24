@@ -54,6 +54,9 @@ class TraderAllocations extends Component {
                   const traderAllocation = getTraderAllocation(allocation.token, traderAllocations)
 
                   console.log("traderAllocation", traderAllocation)
+                  if (traderAllocation) {
+                    console.log("traderAllocation.total", traderAllocation.total.toString())
+                  }
 
                   return (
                     <div className="card shadow mb-4" key={`${allocation.symbol}_${allocation.trader}`}>
@@ -67,7 +70,7 @@ class TraderAllocations extends Component {
                               <Col sm={6}>
                                   <div>
                                     {
-                                      traderAllocation && traderAllocation.total > 0
+                                      traderAllocation && !traderAllocation.total.isZero()
                                       ? <AllocationChart data={traderAllocation}/>
                                       : <span>No allocation made</span>
                                     }
