@@ -1,9 +1,9 @@
 {
   "manifestVersion": "2.2",
   "contracts": {
-    "TraderPaired": "TraderPaired",
     "PairedInvestments": "PairedInvestments",
-    "MultiSigFundWalletFactory": "MultiSigFundWalletFactory"
+    "MultiSigFundWalletFactory": "MultiSigFundWalletFactory",
+    "TraderPaired": "TraderPaired"
   },
   "dependencies": {
     "@openzeppelin/contracts-ethereum-package": "2.5.0"

@@ -11,7 +11,7 @@ module.exports = {
       host: 'localhost',
       port: 8545,
       gas: 6721975,
-      gasPrice: 20000000000,
+      gasPrice: 88000000000,
       networkId: '*'
     },
     ropsten: {
@@ -23,9 +23,22 @@ module.exports = {
           2
         )
       },
-      gas: 5000000,
-      gasPrice: 55000000000,
+      gas: 6000000,
+      gasPrice: 90000000000,
       network_id: 3
+    },
+    kovan: {
+      provider: function() {
+        return new HDWalletProvider(
+          privateKeys.split(','), // Array of account private keys
+          `https://kovan.infura.io/v3/${process.env.INFURA_API_KEY}`,// Url to an Ethereum Node
+          0,
+          2
+        )
+      },
+      gas: 6000000,
+      gasPrice: 88000000000,
+      network_id: 42
     },
     mainnet: {
       provider: function() {
@@ -36,8 +49,8 @@ module.exports = {
           2
         )
       },
-      gas: 10000000,
-      gasPrice: 25000000000,
+      gas: 6721975,
+      gasPrice: 88000000000,
       network_id: 1
     }
   }

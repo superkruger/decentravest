@@ -45,7 +45,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
     event Invest(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address token, uint256 amount, uint256 amountInvested, uint256 totalInvested, uint256 date);
     event Stop(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address from, uint256 date);
     event RequestExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address from, uint256 value, uint256 date);
-    event ApproveExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, uint256 amountInvested, uint256 totalInvested, uint256 expected, uint256 date);
+    event ApproveExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, uint256 amountInvested, uint256 totalInvested, uint256 date);
 
     /*
      *  Structs
@@ -88,6 +88,8 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         _;
     }
 
+    /// @dev Initialize
+    /// @param _feeAccount fee account
     function initialize(address _feeAccount) 
         public 
         initializer 
@@ -97,6 +99,8 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         feeAccount = _feeAccount;
     }
 
+    /// @dev set MultiSigFundWalletFactory
+    /// @param _factory contract address
     function setMultiSigFundWalletFactory(address _factory) 
         public 
         onlyOwner 
@@ -104,6 +108,8 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         multiSigFundWalletFactory = _factory;
     }
 
+    /// @dev set PairedInvestments
+    /// @param _pairedInvestments contract address
     function setPairedInvestments(address _pairedInvestments) 
         public 
         onlyOwner 
@@ -111,11 +117,14 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         pairedInvestments = _pairedInvestments;
     }
 
-    // reverts if ether is sent directly
+    /// @dev reverts if ether is sent directly
     function () external {
         revert();
     }
 
+    /// @dev activate/deactivate token
+    /// @param _token token address
+    /// @param _valid active or not
     function setToken(address _token, bool _valid) 
         external 
         onlyOwner 
@@ -123,6 +132,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         tokens[_token] = _valid;
     }
 
+    /// @dev Join as trader
     function joinAsTrader() 
         external 
         whenNotPaused 
@@ -138,6 +148,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         emit Trader(msg.sender, now);
     }
 
+    /// @dev Join as investor
     function joinAsInvestor() 
         external 
         whenNotPaused 
@@ -153,6 +164,9 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         emit Investor(msg.sender, now);
     }
 
+    /// @dev Allocate amount of tokens
+    /// @param _token token address
+    /// @param _amount amount to allocate
     function allocate(address _token, uint256 _amount) 
         external 
         whenNotPaused 
@@ -166,6 +180,10 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         emit Allocate(msg.sender, _token, _amount, allocations[msg.sender][_token].invested, now);
     }
 
+    /// @dev Checks if investor is invested with trader
+    /// @param _traderAddress trader address
+    /// @param _investorAddress investor address
+    /// @return invested
     function isInvested(address _traderAddress, address _investorAddress) 
         internal
         view
@@ -182,6 +200,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         return false;
     }
 
+    /// @dev Create new investment wallet
     function createInvestment() 
         external
         whenNotPaused
@@ -191,6 +210,12 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         emit Investment(wallet, msg.sender, now);
     }
 
+    /// @dev Invest
+    /// @param _traderAddress trader address
+    /// @param _investorAddress investor address
+    /// @param _token token address
+    /// @param _amount amount to invest
+    /// @return investment id
     function invest(address _traderAddress, address _investorAddress, address _token, uint256 _amount) 
         public 
         whenNotPaused 
@@ -236,9 +261,11 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         );
     }
 
-    //
-    //    Trader/Investor stops an investment
-    //
+    /// @dev Trader/Investor stops an investment
+    /// @param _traderAddress trader address
+    /// @param _investorAddress investor address
+    /// @param _from initiator address
+    /// @param _investmentId investment id
     function stop(address _traderAddress, address _investorAddress, address _from, uint256 _investmentId) 
         public 
         whenNotPaused 
@@ -262,9 +289,11 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         );
     }
 
-    //
-    //    Investor exits an investment
-    //
+    /// @dev Investor requests to exit an investment
+    /// @param _traderAddress trader address
+    /// @param _investorAddress investor address
+    /// @param _investmentId investment id
+    /// @param _value investment value
     function requestExitInvestor(address _traderAddress, address _investorAddress, uint256 _investmentId, uint256 _value) 
         public 
         whenNotPaused 
@@ -289,10 +318,13 @@ contract TraderPaired is Initializable, Ownable, Pausable {
             now
         );
     }
-
-    //
-    //    Trader exits an investment
-    //
+    
+    /// @dev Trader requests to exit an investment
+    /// @param _traderAddress trader address
+    /// @param _investorAddress investor address
+    /// @param _investmentId investment id
+    /// @param _value investment value
+    /// @param _amount transaction amount
     function requestExitTrader(address _traderAddress, address _investorAddress, uint256 _investmentId, uint256 _value, uint256 _amount) 
         public 
         whenNotPaused 
@@ -319,6 +351,12 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         );
     }
 
+    /// @dev Approve exit of investment
+    /// @param _traderAddress trader address
+    /// @param _investorAddress investor address
+    /// @param _investmentId investment id
+    /// @param _token token address
+    /// @param _amount transaction amount
     function approveExit(address _traderAddress, address _investorAddress, uint256 _investmentId, address _token, uint256 _amount) 
         public 
         whenNotPaused
@@ -330,7 +368,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         require(_trader.user == _traderAddress);
         require(_investor.user == _investorAddress);
 
-        uint256[5] memory _result = PairedInvestments(pairedInvestments).approveExit(
+        uint256[4] memory _result = PairedInvestments(pairedInvestments).approveExit(
             _traderAddress,
             _investorAddress, 
             _investmentId, 
@@ -351,7 +389,6 @@ contract TraderPaired is Initializable, Ownable, Pausable {
             _investorAddress,
             allocation.invested,
             allocation.total,
-            _result[4],
             now
         );
     }

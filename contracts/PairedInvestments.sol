@@ -63,6 +63,10 @@ contract PairedInvestments is Initializable, Ownable {
         _;
     }
 
+    /// @dev Initialize
+    /// @param _traderFeePercent trader fee percentage in unit of 100, i.e. 100 == 1% and 5 == 0.05% and 10000 == 100%
+    /// @param _investorFeePercent investor fee percentage
+    /// @param _investorProfitPercent investor profit percentage
     function initialize(
 	    	uint256 _traderFeePercent, 
 	        uint256 _investorFeePercent, 
@@ -76,6 +80,8 @@ contract PairedInvestments is Initializable, Ownable {
         investorProfitPercent = _investorProfitPercent;
     }
 
+    /// @dev Set manager
+    /// @param _manager manager address
     function setManager(address _manager) 
         public 
         onlyOwner 
@@ -83,6 +89,12 @@ contract PairedInvestments is Initializable, Ownable {
         manager = _manager;
     }
 
+    /// @dev New investment
+    /// @param _traderAddress trader address
+    /// @param _investorAddress investor address
+    /// @param _token token address
+    /// @param _amount amount to invest
+    /// @return investment id
     function invest(address _traderAddress, address _investorAddress, address _token, uint256 _amount) 
         public 
         onlyManager 
@@ -103,6 +115,10 @@ contract PairedInvestments is Initializable, Ownable {
         return investmentCount;
     }
 
+    /// @dev Stop investment
+    /// @param _traderAddress trader address
+    /// @param _investorAddress investor address
+    /// @param _investmentId investment id
     function stop(address _traderAddress, address _investorAddress, uint256 _investmentId) 
         public 
         onlyManager 
@@ -116,12 +132,23 @@ contract PairedInvestments is Initializable, Ownable {
         _investment.state = InvestmentState.Stopped;
     }
 
+    /// @dev Investor requests investment exit
+    /// @param _traderAddress trader address
+    /// @param _investorAddress investor address
+    /// @param _investmentId investment id
+    /// @param _value investment value
     function requestExitInvestor(address _traderAddress, address _investorAddress, uint256 _investmentId, uint256 _value) 
         public  
     {
         _requestExit(_traderAddress, _investorAddress, _investmentId, _value, InvestmentState.ExitRequestedInvestor);
     }
 
+    /// @dev Trader requests investment exit
+    /// @param _traderAddress trader address
+    /// @param _investorAddress investor address
+    /// @param _investmentId investment id
+    /// @param _value investment value
+    /// @param _amount transaction amount
     function requestExitTrader(address _traderAddress, address _investorAddress, uint256 _investmentId, uint256 _value, uint256 _amount) 
         public 
     {
@@ -154,6 +181,12 @@ contract PairedInvestments is Initializable, Ownable {
         _requestExit(_traderAddress, _investorAddress, _investmentId, _value, InvestmentState.ExitRequestedTrader);
     }
 
+    /// @dev Request investment exit
+    /// @param _traderAddress trader address
+    /// @param _investorAddress investor address
+    /// @param _investmentId investment id
+    /// @param _value investment value
+    /// @param _state new investment state
     function _requestExit(address _traderAddress, address _investorAddress, uint256 _investmentId, uint256 _value, InvestmentState _state) 
         internal 
         onlyManager 
@@ -168,10 +201,16 @@ contract PairedInvestments is Initializable, Ownable {
         _investment.state = _state;
     }
 
+    /// @dev Approve investment exit
+    /// @param _traderAddress trader address
+    /// @param _investorAddress investor address
+    /// @param _investmentId investment id
+    /// @param _amount transaction amount
+    /// @return array with: trader payout, investor payout, fee payout, original investment amount
     function approveExit(address _traderAddress, address _investorAddress, uint256 _investmentId, uint256 _amount) 
         public 
         onlyManager 
-        returns (uint256[5] memory result) 
+        returns (uint256[4] memory result) 
     {
 
         _Investment storage _investment = investments[_investmentId];
@@ -237,9 +276,15 @@ contract PairedInvestments is Initializable, Ownable {
         _investment.state = InvestmentState.Divested;
 
         result[3] = _investment.amount;
-        result[4] = _expected;
     }
 
+    /// @dev Calculate investment profits and fees
+    /// @param _value investment value
+    /// @param _amount original investment amount
+    /// @param _traderFeePercent trader fee percent
+    /// @param _investorFeePercent investor fee percent
+    /// @param _investorProfitPercent investor profit percent
+    /// @return array with: trader fee, investor fee, trader profit, investor profit
     function calculateProfitsAndFees(
 		uint256 _value,
 		uint256 _amount,

@@ -21,6 +21,7 @@ contract MultiSigFundWalletFactory is Factory, Ownable {
         _;
     }
 
+    /// @dev Initialize
     function initialize() 
         public 
         initializer 
@@ -28,6 +29,8 @@ contract MultiSigFundWalletFactory is Factory, Ownable {
         Ownable.initialize(msg.sender);
     }
 
+    /// @dev Set manager contract address
+    /// @param _manager Manager address
     function setManager(address _manager) 
         public 
         onlyOwner 
@@ -35,6 +38,11 @@ contract MultiSigFundWalletFactory is Factory, Ownable {
         manager = _manager;
     }
 
+    /// @dev Create a new multisig wallet
+    /// @param _fund Fund address
+    /// @param _investor Investor address
+    /// @param _admin Wallet admin address
+    /// @return new wallet address
     function create(address _fund, address _investor, address _admin)
         public
         onlyManager

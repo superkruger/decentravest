@@ -1,0 +1,150 @@
+{
+  "contracts": {
+    "MultiSigFundWalletFactory": {
+      "address": "0x29FF6E6ceD9e22EE097840410cE244c6f59779B7",
+      "constructorCode": "60806040526125f1806100136000396000f3fe",
+      "bodyBytecodeHash": "7b83a9a039744975bf815dcbad626c1fbecbd0d86cf2b2a7ab5c2cf8945af3bb",
+      "localBytecodeHash": "772c704c4ca501996c41f6ac6e0b96038603c9459f9c6abe9cea8a26c8a8028a",
+      "deployedBytecodeHash": "772c704c4ca501996c41f6ac6e0b96038603c9459f9c6abe9cea8a26c8a8028a",
+      "types": {
+        "t_bool": {
+          "id": "t_bool",
+          "kind": "elementary",
+          "label": "bool"
+        },
+        "t_mapping<t_bool>": {
+          "id": "t_mapping<t_bool>",
+          "valueType": "t_bool",
+          "label": "mapping(key => bool)",
+          "kind": "mapping"
+        },
+        "t_address": {
+          "id": "t_address",
+          "kind": "elementary",
+          "label": "address"
+        },
+        "t_array:dyn<t_address>": {
+          "id": "t_array:dyn<t_address>",
+          "valueType": "t_address",
+          "length": "dyn",
+          "kind": "array",
+          "label": "address[]"
+        },
+        "t_mapping<t_array:dyn<t_address>>": {
+          "id": "t_mapping<t_array:dyn<t_address>>",
+          "valueType": "t_array:dyn<t_address>",
+          "label": "mapping(key => address[])",
+          "kind": "mapping"
+        },
+        "t_uint256": {
+          "id": "t_uint256",
+          "kind": "elementary",
+          "label": "uint256"
+        },
+        "t_array:50<t_uint256>": {
+          "id": "t_array:50<t_uint256>",
+          "valueType": "t_uint256",
+          "length": "50",
+          "kind": "array",
+          "label": "uint256[50]"
+        }
+      },
+      "storage": [
+        {
+          "contract": "Factory",
+          "path": "contracts/Factory.sol",
+          "label": "isInstantiation",
+          "astId": 799,
+          "type": "t_mapping<t_bool>",
+          "src": "234:47:8"
+        },
+        {
+          "contract": "Factory",
+          "path": "contracts/Factory.sol",
+          "label": "instantiations",
+          "astId": 804,
+          "type": "t_mapping<t_array:dyn<t_address>>",
+          "src": "287:51:8"
+        },
+        {
+          "contract": "Initializable",
+          "path": "@openzeppelin/upgrades/contracts/Initializable.sol",
+          "label": "initialized",
+          "astId": 722,
+          "type": "t_bool",
+          "src": "757:24:7"
+        },
+        {
+          "contract": "Initializable",
+          "path": "@openzeppelin/upgrades/contracts/Initializable.sol",
+          "label": "initializing",
+          "astId": 724,
+          "type": "t_bool",
+          "src": "876:25:7"
+        },
+        {
+          "contract": "Initializable",
+          "path": "@openzeppelin/upgrades/contracts/Initializable.sol",
+          "label": "______gap",
+          "astId": 786,
+          "type": "t_array:50<t_uint256>",
+          "src": "1982:29:7"
+        },
+        {
+          "contract": "Ownable",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol",
+          "label": "_owner",
+          "astId": 535,
+          "type": "t_address",
+          "src": "526:22:5"
+        },
+        {
+          "contract": "Ownable",
+          "path": "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol",
+          "label": "______gap",
+          "astId": 648,
+          "type": "t_array:50<t_uint256>",
+          "src": "2471:29:5"
+        },
+        {
+          "contract": "MultiSigFundWalletFactory",
+          "path": "contracts/MultiSigFundWalletFactory.sol",
+          "label": "manager",
+          "astId": 2050,
+          "type": "t_address",
+          "src": "366:22:10"
+        }
+      ],
+      "warnings": {
+        "hasConstructor": false,
+        "hasSelfDestruct": false,
+        "hasDelegateCall": false,
+        "hasInitialValuesInDeclarations": false,
+        "uninitializedBaseContracts": []
+      }
+    }
+  },
+  "solidityLibs": {},
+  "proxies": {
+    "decentravest/MultiSigFundWalletFactory": [
+      {
+        "address": "0x96740c989508839e2b8F7788DbA8656942434543",
+        "version": "1.0.0",
+        "implementation": "0x29FF6E6ceD9e22EE097840410cE244c6f59779B7",
+        "admin": "0x0cb6d9EB2A785D366300ef979B02287e2D9d5ffA",
+        "kind": "Upgradeable"
+      }
+    ]
+  },
+  "manifestVersion": "2.2",
+  "version": "1.0.0",
+  "dependencies": {
+    "@openzeppelin/contracts-ethereum-package": {
+      "package": "0xB6F8F11b166D526932ee04ffe4D25B810f619E34",
+      "version": "2.5.0"
+    }
+  },
+  "proxyAdmin": {
+    "address": "0x0cb6d9EB2A785D366300ef979B02287e2D9d5ffA"
+  }
+}
