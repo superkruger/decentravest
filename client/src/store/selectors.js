@@ -2,6 +2,9 @@ import { find, get, groupBy } from 'lodash'
 import { createSelector } from 'reselect'
 import { NEUTRAL, RED, GREEN, formatBalance, getTokenSymbol } from '../helpers'
 
+const notifications = (state) => get(state, 'app.notifications', [])
+export const notificationsSelector = createSelector(notifications, a => a)
+
 const page = (state) => get(state, 'app.page', 'home')
 export const pageSelector = createSelector(page, a => a)
 
@@ -194,6 +197,19 @@ const investmentActionRequired = (state) => {
 	if (!state.web3.investments) {
 		return false
 	}
-	return state.web3.investments.some(investment => investment.state === 2 && investment.from !== state.web3.account)
+	return state.web3.investments.some((investment) => {
+
+		if (investment.state === "2" && investment.investor !== state.web3.account) {
+			return true
+		}
+
+		if (investment.state === "3" && investment.trader !== state.web3.account) {
+			return true
+		}
+		
+		return false
+	})
 }
 export const investmentActionRequiredSelector = createSelector(investmentActionRequired, e => e)
+
+

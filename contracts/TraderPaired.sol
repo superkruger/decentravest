@@ -35,11 +35,17 @@ contract TraderPaired is Initializable, Ownable, Pausable {
     mapping(address => mapping(uint256 => uint256)) public investorInvestments;
     mapping(address => mapping(address => _Allocation)) public allocations;
 
+    mapping(uint256 => address) public traderAddresses;
+    mapping(uint256 => address) public investorAddresses;
+
+    uint256 public traderCount;
+    uint256 public investorCount;
+
     /*
      *  Events
      */
-    event Trader(address indexed user, uint256 date);
-    event Investor(address indexed user, uint256 date);
+    event Trader(address indexed user, uint256 traderId, uint256 date);
+    event Investor(address indexed user, uint256 investorId, uint256 date);
     event Investment(address indexed wallet, address indexed investor, uint256 date);
     event Allocate(address indexed trader, address indexed token, uint256 total, uint256 invested, uint256 date);
     event Invest(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address token, uint256 amount, uint256 amountInvested, uint256 totalInvested, uint256 date);
@@ -145,7 +151,10 @@ contract TraderPaired is Initializable, Ownable, Pausable {
             investmentCount: 0
         });
 
-        emit Trader(msg.sender, now);
+        traderCount = traderCount.add(1);
+        traderAddresses[traderCount] = msg.sender;
+
+        emit Trader(msg.sender, traderCount, now);
     }
 
     /// @dev Join as investor
@@ -157,11 +166,14 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         require(investors[msg.sender].user == address(0));
 
         investors[msg.sender] = _Investor({
-                user: msg.sender,
-                investmentCount: 0
-            });
+            user: msg.sender,
+            investmentCount: 0
+        });
 
-        emit Investor(msg.sender, now);
+        investorCount = investorCount.add(1);
+        investorAddresses[investorCount] = msg.sender;
+
+        emit Investor(msg.sender, investorCount, now);
     }
 
     /// @dev Allocate amount of tokens
@@ -200,12 +212,24 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         return false;
     }
 
+    /// @dev Checks if investor has a wallet
+    /// @param _investorAddress investor address
+    /// @return has wallet
+    function hasWallet(address _investorAddress) 
+        internal
+        view
+        returns (bool) 
+    {
+        return MultiSigFundWalletFactory(multiSigFundWalletFactory).isInstantiation(_investorAddress);
+    }
+
     /// @dev Create new investment wallet
     function createInvestment() 
         external
         whenNotPaused
         isInvestor(msg.sender)
     {
+        require(!hasWallet(msg.sender));
         address wallet = MultiSigFundWalletFactory(multiSigFundWalletFactory).create(address(this), msg.sender, feeAccount);
         emit Investment(wallet, msg.sender, now);
     }
@@ -235,7 +259,8 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         require(allocation.total - allocation.invested >= _amount);
         allocation.invested = allocation.invested.add(_amount);
 
-        investmentCount = PairedInvestments(pairedInvestments).invest(
+        uint256 starttime;
+        (investmentCount, starttime) = PairedInvestments(pairedInvestments).invest(
             _traderAddress, 
             _investorAddress, 
             _token, 
@@ -257,7 +282,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
             _amount,
             allocation.invested,
             allocation.total,
-            now
+            starttime
         );
     }
 
@@ -274,7 +299,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         _Trader memory _trader = traders[_traderAddress];
         require(_trader.user == _traderAddress);
 
-        PairedInvestments(pairedInvestments).stop(
+        uint256 stoptime = PairedInvestments(pairedInvestments).stop(
             _traderAddress, 
             _investorAddress, 
             _investmentId);
@@ -285,7 +310,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
             _traderAddress,
             _investorAddress,
             _from,
-            now
+            stoptime
         );
     }
 

@@ -45,6 +45,8 @@ contract PairedInvestments is Initializable, Ownable {
         address token;
         uint256 amount;
         uint256 value;
+        uint256 start;
+        uint256 end;
         InvestmentState state;
     }
 
@@ -94,13 +96,14 @@ contract PairedInvestments is Initializable, Ownable {
     /// @param _investorAddress investor address
     /// @param _token token address
     /// @param _amount amount to invest
-    /// @return investment id
+    /// @return investment id and start date
     function invest(address _traderAddress, address _investorAddress, address _token, uint256 _amount) 
         public 
         onlyManager 
-        returns(uint256) 
+        returns(uint256, uint256) 
     {
         
+        uint256 start = now;
         investmentCount = investmentCount.add(1);
         investments[investmentCount] = _Investment({
                 id: investmentCount,
@@ -109,27 +112,35 @@ contract PairedInvestments is Initializable, Ownable {
                 token: _token,
                 amount: _amount,
                 value: 0,
+                start: start,
+                end: 0,
                 state: InvestmentState.Invested
             });
 
-        return investmentCount;
+        return (investmentCount, start);
     }
 
     /// @dev Stop investment
     /// @param _traderAddress trader address
     /// @param _investorAddress investor address
     /// @param _investmentId investment id
+    /// @return end date
     function stop(address _traderAddress, address _investorAddress, uint256 _investmentId) 
         public 
         onlyManager 
+        returns (uint256)
     {
+        uint256 end = now;
         _Investment storage _investment = investments[_investmentId];
 
         require(_investment.trader == _traderAddress);
         require(_investment.investor == _investorAddress);
         require(_investment.state == InvestmentState.Invested);
 
+        _investment.end = end;
         _investment.state = InvestmentState.Stopped;
+
+        return end;
     }
 
     /// @dev Investor requests investment exit

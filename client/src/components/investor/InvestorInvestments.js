@@ -56,7 +56,7 @@ function showInvestments(investments, props) {
                 <Row>
                   <Col sm={1}>
                     {
-                      investment.state == 2 && investment.from != account &&
+                      investment.state === "3" &&
                         <Badge variant="danger">!</Badge>
                     }
                     <AddressImage address={investment.trader}/>
@@ -135,7 +135,7 @@ function ApproveButton (props) {
   const { account } = props.props
   const { investment } = props
 
-  if (investment.from == account) {
+  if (investment.state == 2) {
     return (
       <span>waiting for approval...</span>
     )

@@ -2,6 +2,45 @@ import { combineReducers } from 'redux'
 
 function app (state = {}, action ) {
 	switch (action.type) {
+		case 'NOTIFICATION_ADDED':
+			{
+				// prevent duplicates
+				let index, data
+
+				if (!state.notifications) {
+					state.notifications = []
+				}
+				index = state.notifications.findIndex(notification => notification.id === action.notification.id)
+				if (index === -1) {
+					data = [...state.notifications, action.notification]
+				} else {
+					data = state.notifications
+				}
+				return { 
+					...state, 
+					notifications: [
+						...data
+					]
+				} 
+			}
+		case 'NOTIFICATION_REMOVED':
+			{
+				// prevent duplicates
+				let index, data
+
+				index = state.notifications.findIndex(notification => notification.id === action.id)
+				if (index !== -1) {
+					data = state.notifications.splice(index, 1)
+				} else {
+					data = state.notifications
+				}
+				return { 
+					...state, 
+					notifications: [
+						...data
+					]
+				} 
+			}
 		case 'PAGE_SELECTED':
 			return { ...state, page: action.page }
 		case 'SIDEBAR_TOGGLED':

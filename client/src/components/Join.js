@@ -149,10 +149,10 @@ function InvestorButton(props) {
 }
 
 const traderJoin = async (props) => {
-  const { account, traderPaired, web3, dispatch } = props
+  const { account, traderPaired, pairedInvestments, walletFactory, web3, dispatch } = props
 
   try {
-    await joinAsTrader(account, traderPaired, web3, dispatch)
+    await joinAsTrader(account, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
   } catch(e) {
     console.log(e)
     return;
@@ -160,10 +160,10 @@ const traderJoin = async (props) => {
 }
 
 const investorJoin = async (props) => {
-  const { account, web3, traderPaired, pairedInvestments, walletFactory, dispatch } = props
+  const { account, traderPaired, pairedInvestments, walletFactory, web3, dispatch } = props
 
   try {
-    await joinAsInvestor(account, web3, traderPaired, pairedInvestments, walletFactory, dispatch)
+    await joinAsInvestor(account, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
   } catch(e) {
     console.log(e)
     return;

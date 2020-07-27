@@ -1,4 +1,18 @@
 
+export function notificationAdded(notification) {
+	return {
+		type: 'NOTIFICATION_ADDED',
+		notification
+	}
+}
+
+export function notificationRemoved(id) {
+	return {
+		type: 'NOTIFICATION_REMOVED',
+		id
+	}
+}
+
 export function pageSelected(page) {
 	return {
 		type: 'PAGE_SELECTED',

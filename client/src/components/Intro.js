@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Container, Row, Col, Button } from 'react-bootstrap'
+import { notification } from '../helpers'
 import {
   traderPairedSelector,
   traderPairedLoadedSelector,
@@ -10,7 +11,8 @@ import {
   investorJoiningSelector
 } from '../store/selectors'
 import { 
-  pageSelected
+  pageSelected,
+  notificationAdded
 } from '../store/actions'
 
 class Intro extends Component {
@@ -38,7 +40,7 @@ class Intro extends Component {
                     <div>
                     {
                       (typeof window.ethereum !== 'undefined') ?
-                        <ConnectButton /> :
+                        <ConnectButton props={this.props} /> :
                       <span>Please install <a href="metamask.io" target="_blank" rel="noopener">Metamask</a></span>
                     }
                     </div>
@@ -68,7 +70,12 @@ class Intro extends Component {
 
 
 function ConnectButton(props) {
-  const handleClick = () => window.ethereum.request({ method: 'eth_requestAccounts' })
+  const { dispatch } = props.props
+
+  const handleClick = () => {
+    dispatch(notificationAdded(notification("metamask", "Connecting...")))
+    window.ethereum.request({ method: 'eth_requestAccounts' })
+  }
 
   return (
     <div>

@@ -3,6 +3,7 @@ import { connect } from 'react-redux'
 
 import Sidebar from './Sidebar'
 import Content from './Content'
+import Notifications from './Notifications'
 
 import './App.css'
 import { 
@@ -37,6 +38,7 @@ class App extends Component {
 
     return (
       <div id="page-top" className={ sidebarClosed ? 'sidebar-toggled' : ''}>
+        <Notifications />
         <div id="wrapper">
           <Sidebar />
           <Content />

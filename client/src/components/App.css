@@ -74,3 +74,16 @@ p + p, li + li, div + div {
   top: 6px;
   left: 10px;
 }
+
+#page-top {
+  /*position: relative;*/
+}
+
+.toast_container {
+  position: fixed;
+  min-height: 200px;
+  min-width: 200px;
+  top: 0;
+  right: 0;
+  z-index: 99999;
+}
