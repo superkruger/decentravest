@@ -877,9 +877,9 @@ export const loadInvestmentValues = (investments, traderPaired, dispatch) => {
 		let positions = await getTraderPositions(investment.trader)
 		positions = positions.filter(
 			(position) => tokenAddressForSymbol(position.asset) === investment.token
-						// && position.start.isAfter(investment.start) 
-						// && ((position.end.isBefore(investment.end)
-						// 	|| investment.state === "0"))
+						&& position.start.isAfter(investment.start) 
+						&& ((position.end.isBefore(investment.end)
+							|| investment.state === "0"))
 		)
 
 		log("P", positions)
@@ -990,9 +990,9 @@ const getTraderInvestments = async (account, token, traderPaired) => {
 const getPositionInvestmentsAmount = async (position, traderInvestments) => {
 	const investments = traderInvestments.filter(
 		(investment) => tokenAddressForSymbol(position.asset) === investment.token
-					// && position.start.isAfter(investment.start) 
-					// 	&& ((position.end.isBefore(investment.end)
-					// 		|| investment.state === "0"))
+					&& position.start.isAfter(investment.start) 
+						&& ((position.end.isBefore(investment.end)
+							|| investment.state === "0"))
 	)
 	
 	let totalAmount = investments.reduce((total, investment) => total.plus(investment.amount), new BigNumber(0))
