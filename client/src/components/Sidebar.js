@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import Spinner from './Spinner'
 import TraderSidebarMenu from './trader/TraderSidebarMenu'
 import InvestorSidebarMenu from './investor/InvestorSidebarMenu'
 import {

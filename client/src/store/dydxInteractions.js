@@ -7,7 +7,7 @@ import {
 	traderPositionLoaded,
 	traderRatingsLoaded
 } from './dydxActions.js'
-import { etherToWei } from '../helpers'
+import { log, etherToWei } from '../helpers'
 
 export const loadPositionsCount = async (account, dispatch) => {
 	try {
@@ -19,10 +19,10 @@ export const loadPositionsCount = async (account, dispatch) => {
 		  })
 		  .catch(function (error) {
 		    // handle error
-		    console.log(error)
+		    log(error)
 		  })
 	} catch (error) {
-		console.log('Could not get positions', error)
+		log('Could not get positions', error)
 		return null
 	}
 }
@@ -157,7 +157,7 @@ export const loadTraderPositions = async (account, dispatch) => {
 		positions.forEach((position, index) => dispatch(traderPositionLoaded(position)))
 
 	} catch (error) {
-		console.log('Could not get trader positions', error)
+		log('Could not get trader positions', error)
 		return null
 	}
 }
@@ -175,7 +175,7 @@ export const getTraderPositions = async (account) => {
 		}
 		return positions
 	} catch (error) {
-		console.log('Could not get trader positions', error)
+		log('Could not get trader positions', error)
 	}
 	return []
 }
@@ -186,7 +186,7 @@ const getTraderAndMarketPositions = async (account, market) => {
 		let response = await axios.get(url.replace('$1', market).replace('$2', account))
 		
 	    // handle success
-	    // console.log('Response', response)
+	    // log('Response', response)
 	    if (response.data.positions.length > 0) {
 	    	const mappedPositions = mapTraderPositions(response.data.positions)
 	    	return mappedPositions
@@ -194,7 +194,7 @@ const getTraderAndMarketPositions = async (account, market) => {
 	  
 	} catch(error) {
 	    // handle error
-	    console.log(error)
+	    log(error)
 	    
 	}
 	return []

@@ -1,12 +1,9 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Container, Row, Col, Form, Button } from 'react-bootstrap'
-import BigNumber from 'bignumber.js'
 import AddressImage from '../AddressImage'
-import Spinner from '../Spinner'
 import Rating from '../Rating'
 import AllocationChart from '../trader/AllocationChart'
-import { ZERO_ADDRESS, formatBalance, etherToWei } from '../../helpers'
 import { 
   web3Selector,
   accountSelector,
@@ -39,71 +36,81 @@ class InvestorTraderDetail extends Component {
   render() {
     const {trader, traderAllocations, traderRatings } = this.props
 
-    if (!traderAllocations || traderAllocations.length === 0) {
+    if (!traderAllocations || traderAllocations.length === 0 || !traderAllocations.some(allocation => !allocation.total.isZero())) {
       return (
-        <Spinner />
+        <div />
       )
     }
 
     return (
-      <Container>
-          <Row>
-            <Col sm={12}>
-              { 
-                traderAllocations.map((allocation) => {
+      <div className="card shadow mb-4">
+        <a href={`#trader_${trader.user}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`trader_${trader.user}`}>
+          <h6 className="m-0 font-weight-bold text-primary"><AddressImage address={trader.user}/></h6>
+        </a>
+        <div className="collapse" id={`trader_${trader.user}`}>
+          <div className="card-body">
+            <Container>
+              <Row>
+                <Col sm={12}>
+                  { 
+                    traderAllocations.map((allocation) => {
 
-                  if (!allocation.symbol || allocation.total.isZero()) {
-                    return (<div/>)
-                  }
+                      if (!allocation.symbol || allocation.total.isZero()) {
+                        return (<div/>)
+                      }
 
-                  let ratingsSymbol = allocation.symbol === 'ETH' ? 'WETH' : allocation.symbol
+                      let ratingsSymbol = allocation.symbol === 'ETH' ? 'WETH' : allocation.symbol
 
-                  return (
-                    <div className="card shadow mb-4" key={`${allocation.symbol}_${allocation.trader}`}>
-                      <a href={`#${allocation.symbol}${allocation.trader}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`${allocation.symbol}${allocation.trader}`}>
-                        <h6 className="m-0 font-weight-bold text-primary">{allocation.symbol} <Rating asset={allocation.symbol} rating={`${traderRatings[ratingsSymbol]}`}/></h6>
-                      </a>
-                      <div className="collapse" id={`${allocation.symbol}${allocation.trader}`}>
-                        <div className="card-body">
-                          <Container>
-                            <Row>
-                              <Col sm={6}>
-                                <div>
-                                  {
-                                    <AllocationChart data={allocation}/>
-                                  }
-                                </div>
-                              </Col>
-                              <Col sm={6}>
-                                  <div>
-                                    <Balance props={this.props} symbol={allocation.symbol}/>
-                                    <Form>
-                                      <Form.Group controlId={`${allocation.symbol}${allocation.trader}_Amount`}>
-                                        <Form.Control type="number" placeholder={`Enter ${allocation.symbol} Amount`} />
-                                      </Form.Group>
-                                      <Button variant="primary" onClick={(e) => {investHandler(allocation.token, allocation.symbol + allocation.trader + "_Amount", this.props)}}>
-                                        Invest {allocation.symbol}
-                                      </Button>
-                                    </Form>
-                                  </div>
-                              </Col>
-                            </Row>
-                          </Container>
+                      return (
+                        <div className="card shadow mb-4" key={`${allocation.symbol}_${allocation.trader}`}>
+                          <a href={`#${allocation.symbol}${allocation.trader}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`${allocation.symbol}${allocation.trader}`}>
+                            <h6 className="m-0 font-weight-bold text-primary">{allocation.symbol} <Rating asset={allocation.symbol} rating={`${traderRatings[ratingsSymbol]}`}/></h6>
+                          </a>
+                          <div className="collapse" id={`${allocation.symbol}${allocation.trader}`}>
+                            <div className="card-body">
+                              <Container>
+                                <Row>
+                                  <Col sm={6}>
+                                    <div>
+                                      {
+                                        <AllocationChart data={allocation}/>
+                                      }
+                                    </div>
+                                  </Col>
+                                  <Col sm={6}>
+                                      <div>
+                                        <Balance props={this.props} symbol={allocation.symbol}/>
+                                        <Form>
+                                          <Form.Group controlId={`${allocation.symbol}${allocation.trader}_Amount`}>
+                                            <Form.Control type="number" placeholder={`Enter ${allocation.symbol} Amount`} />
+                                          </Form.Group>
+                                          <Button variant="primary" onClick={(e) => {investHandler(allocation.token, allocation.symbol + allocation.trader + "_Amount", this.props)}}>
+                                            Invest {allocation.symbol}
+                                          </Button>
+                                        </Form>
+                                      </div>
+                                  </Col>
+                                </Row>
+                              </Container>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  )
-                })
-              }
-            </Col>
-          </Row>
-        </Container>
+                      )
+                    })
+                  }
+                </Col>
+              </Row>
+            </Container>
+          </div>
+        </div>
+      </div>
+      
     )
   }
 }
 
 function Balance(props) {
-  const {web3, account, tokens, balances} = props.props
+  const {balances} = props.props
   const {symbol} = props
 
   let balance = 0

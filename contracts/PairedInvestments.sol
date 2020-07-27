@@ -13,13 +13,6 @@ contract PairedInvestments is Initializable, Ownable {
      */
 	address public manager;
 
-	uint8 constant IDX_ADDRESS_traderAddress 		= 0;
-	uint8 constant IDX_ADDRESS_investorAddress 		= 1;
-
-	uint8 constant IDX_UINT256_investmentId 		= 0;
-	uint8 constant IDX_UINT256_value 				= 1;
-    uint8 constant IDX_UINT256_amount               = 2;
-
 	uint256 public traderFeePercent; // trader fee percentage in unit of 100, i.e. 100 == 1% and 5 == 0.05% and 10000 == 100%
     uint256 public investorFeePercent; // investor fee percentage in unit of 100, i.e. 100 == 1% and 5 == 0.05% and 10000 == 100%
     uint256 public investorProfitPercent;
@@ -48,13 +41,6 @@ contract PairedInvestments is Initializable, Ownable {
         uint256 start;
         uint256 end;
         InvestmentState state;
-    }
-
-    struct _InvestmentArgs {
-    	address _traderAddress;
-    	address _investorAddress; 
-    	uint256 _investmentId;
-    	uint256 _amount;
     }
 
     /*
@@ -223,7 +209,6 @@ contract PairedInvestments is Initializable, Ownable {
         onlyManager 
         returns (uint256[4] memory result) 
     {
-
         _Investment storage _investment = investments[_investmentId];
         require(_investment.trader == _traderAddress);
         require(_investment.investor == _investorAddress);
@@ -288,6 +273,25 @@ contract PairedInvestments is Initializable, Ownable {
 
         result[3] = _investment.amount;
     }
+
+    /// @dev Reject an exit request
+    /// @param _traderAddress trader address
+    /// @param _investmentId investment id
+    /// @param _value proposed investment value
+    function rejectExit(address _traderAddress, uint256 _investmentId, uint256 _value) 
+        public 
+        onlyManager
+    {
+        
+        _Investment storage _investment = investments[_investmentId];
+        require(_investment.trader == _traderAddress);
+        require(_investment.state == InvestmentState.ExitRequestedInvestor || 
+                _investment.state == InvestmentState.ExitRequestedTrader);
+        
+        _investment.value = _value;
+        _investment.state = InvestmentState.Stopped;
+    }
+
 
     /// @dev Calculate investment profits and fees
     /// @param _value investment value

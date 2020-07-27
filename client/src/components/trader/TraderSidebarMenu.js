@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Badge } from 'react-bootstrap'
-import Spinner from '../Spinner'
 import {
   accountSelector, 
   traderPairedSelector,
@@ -32,7 +31,7 @@ function DashboardButton(props) {
 
   return (
     <li className="nav-item active">
-      <a className="nav-link" href="#" onClick={handleClick}>
+      <a className="nav-link" href="/#" onClick={handleClick}>
         <i className="fas fa-fw fa-tachometer-alt"></i>
         <span>Trader Dashboard</span>
       </a>
@@ -45,7 +44,7 @@ function AllocationsButton(props) {
 
   return (
     <li className="nav-item active">
-      <a className="nav-link" href="#" onClick={handleClick}>
+      <a className="nav-link" href="/#" onClick={handleClick}>
         <i className="fas fa-fw fa-chart-pie"></i>
         <span>Allocations</span>
       </a>
@@ -59,7 +58,7 @@ function InvestmentsButton(props) {
 
   return (
     <li className="nav-item active">
-      <a className="nav-link" href="#" onClick={handleClick}>
+      <a className="nav-link" href="/#" onClick={handleClick}>
         <i className="fas fa-fw fa-coins"></i>
         <span>
           Investments

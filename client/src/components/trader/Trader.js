@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import Spinner from '../Spinner'
 import Rating from '../Rating'
 import { 
   loadTraderPositions,
@@ -18,7 +17,7 @@ import { ZERO_ADDRESS } from '../../helpers'
 class Trader extends Component {
   componentDidMount() {
     const { account, traders, dispatch } = this.props
-    if (account !== null && account != ZERO_ADDRESS) {
+    if (account !== null && account !== ZERO_ADDRESS) {
 
       loadTraderPositions(account, dispatch)
 
@@ -116,7 +115,6 @@ function showPositions(positions) {
   return (
     <tbody>
     { positions.map((position) => {
-        console.log(position)
         return (
             <tr key={position.uuid}>
               <td className="text-muted">{position.formattedStart}</td>

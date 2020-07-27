@@ -151,23 +151,15 @@ function InvestorButton(props) {
 const traderJoin = async (props) => {
   const { account, traderPaired, pairedInvestments, walletFactory, web3, dispatch } = props
 
-  try {
-    await joinAsTrader(account, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
-  } catch(e) {
-    console.log(e)
-    return;
-  }
+  await joinAsTrader(account, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
+
 }
 
 const investorJoin = async (props) => {
   const { account, traderPaired, pairedInvestments, walletFactory, web3, dispatch } = props
 
-  try {
-    await joinAsInvestor(account, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
-  } catch(e) {
-    console.log(e)
-    return;
-  }
+  await joinAsInvestor(account, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
+
 }
 
 function mapStateToProps(state) {

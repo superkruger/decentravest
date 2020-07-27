@@ -1,11 +1,9 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import { Container, Row, Col, Form, Button, Badge } from 'react-bootstrap'
-import BigNumber from 'bignumber.js'
+import { Container, Row, Col, Button, Badge } from 'react-bootstrap'
 import AddressImage from '../AddressImage'
 import Token from '../Token'
-import Spinner from '../Spinner'
-import { ZERO_ADDRESS, formatBalance } from '../../helpers'
+import { log, toBN } from '../../helpers'
 import { 
   accountSelector,
   investorSelector,
@@ -19,6 +17,7 @@ import {
   stopInvestment,
   disburseInvestment,
   approveDisbursement,
+  rejectDisbursement,
   loadInvestmentValues
 } from '../../store/interactions'
 
@@ -43,12 +42,11 @@ class InvestorInvestments extends Component {
 }
 
 function showInvestments(investments, props) {
-  const { account } = props
 
   return (
     <div>
     { investments.map((investment) => {
-        console.log(investment)
+        log(investment)
         return (
           <div className="card shadow mb-4" key={investment.id}>
             <a href={`#investments_${investment.id}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`investments_${investment.id}`}>
@@ -61,17 +59,14 @@ function showInvestments(investments, props) {
                     }
                     <AddressImage address={investment.trader}/>
                   </Col>
-                  <Col sm={2}>
+                  <Col sm={3}>
                     <Token address={investment.token} />
                   </Col>
-                  <Col sm={3}>
+                  <Col sm={4}>
                     <span>Amount: {investment.formattedAmount}</span>
                   </Col>
-                  <Col sm={3}>
-                    <span className={`text-${investment.profitClass}`}>Gross Value: {investment.formattedGrossValue}</span>
-                  </Col>
-                  <Col sm={3}>
-                    <span className={`text-${investment.profitClass}`}>Nett Value: {investment.formattedNettValue}</span>
+                  <Col sm={4}>
+                    <span className={`text-${investment.profitClass}`}>Profit: {investment.formattedInvestorProfit}</span>
                   </Col>
                 </Row>
               </h6>
@@ -124,7 +119,7 @@ function disburseHandler (props) {
   const { investor, wallet, tokens, pairedInvestments, dispatch } = props.props
   const { investment } = props
 
-  console.log("--investment disburse--", investment)
+  log("--investment disburse--", investment)
 
   const token = tokens.find(t => t.contract.options.address === investment.token)
 
@@ -132,19 +127,37 @@ function disburseHandler (props) {
 }
 
 function ApproveButton (props) {
-  const { account } = props.props
   const { investment } = props
 
-  if (investment.state == 2) {
+  if (investment.state === "2") {
     return (
       <span>waiting for approval...</span>
     )
   }
 
+  if (toBN(investment.value) === toBN(investment.grossValue)) {
+    return (
+      <Row>
+        <Col sm={12}>
+          <Button variant="primary" onClick={(e) => {approveHandler(props)}}>
+            Approve
+          </Button>
+        </Col>
+      </Row>
+    )
+  }
+
   return (
-    <Button variant="primary" onClick={(e) => {approveHandler(props)}}>
-      Approve
-    </Button>
+    <Row>
+      <Col sm={6}>
+        <span>A disbursement value of {investment.formattedValue} has been requested</span>
+      </Col>
+      <Col sm={6}>
+          <Button variant="primary" onClick={(e) => {rejectHandler(props)}}>
+            Reject
+          </Button>
+      </Col>
+    </Row>
   )
 }
 
@@ -152,11 +165,20 @@ function approveHandler (props) {
   const { investor, wallet, tokens, pairedInvestments, dispatch } = props.props
   const { investment } = props
 
-  console.log("--investment approve--", investment)
+  log("--investment approve--", investment)
 
   const token = tokens.find(t => t.contract.options.address === investment.token)
 
   approveDisbursement(investor.user, investment, wallet, token, pairedInvestments, dispatch)
+}
+
+function rejectHandler (props) {
+  const { investor, wallet, pairedInvestments, dispatch } = props.props
+  const { investment } = props
+
+  log("--investment reject--", investment)
+
+  rejectDisbursement(investor.user, investment, wallet, pairedInvestments, dispatch)
 }
 
 function mapStateToProps(state) {

@@ -1,10 +1,8 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Container, Row, Col, Form, Button } from 'react-bootstrap'
-import BigNumber from 'bignumber.js'
-import Spinner from '../Spinner'
 import AllocationChart from './AllocationChart'
-import { ZERO_ADDRESS, formatBalance, tokenDecimalsForAddress } from '../../helpers'
+import { ZERO_ADDRESS, tokenDecimalsForAddress } from '../../helpers'
 import { 
   web3Selector,
   accountSelector,
@@ -52,11 +50,6 @@ class TraderAllocations extends Component {
               { 
                 allocationList.map((allocation) => {
                   const traderAllocation = getTraderAllocation(allocation.token, traderAllocations)
-
-                  console.log("traderAllocation", traderAllocation)
-                  if (traderAllocation) {
-                    console.log("traderAllocation.total", traderAllocation.total.toString())
-                  }
 
                   return (
                     <div className="card shadow mb-4" key={`${allocation.symbol}_${allocation.trader}`}>
@@ -110,7 +103,7 @@ function getTraderAllocation(token, traderAllocations) {
 }
 
 function Balance(props) {
-  const {web3, account, tokens, balances} = props.props
+  const {balances} = props.props
   const {symbol} = props
 
   let balance = 0

@@ -4,7 +4,7 @@ import { connect } from 'react-redux'
 import Sidebar from './Sidebar'
 import Content from './Content'
 import Notifications from './Notifications'
-
+import { log } from '../helpers'
 import './App.css'
 import { 
   loadWeb3, 
@@ -29,8 +29,9 @@ class App extends Component {
 
   async loadBlockchainData(dispatch) {
     const web3 = await loadWeb3(dispatch)
-    
-    await loadWebApp(web3, dispatch)
+    if (web3) {
+      await loadWebApp(web3, dispatch)
+    }
   }
 
   render() {
@@ -54,7 +55,7 @@ class App extends Component {
 const loadWebApp = async(web3, dispatch) => {
   await web3.eth.net.getNetworkType()
   const networkId = await web3.eth.net.getId()
-  console.log("NI", networkId)
+  log("networkId", networkId)
   const account = await loadAccount(web3, dispatch)
   
   const traderPaired = await loadTraderPaired(account, web3, networkId, dispatch)

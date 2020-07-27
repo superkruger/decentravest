@@ -48,10 +48,11 @@ contract TraderPaired is Initializable, Ownable, Pausable {
     event Investor(address indexed user, uint256 investorId, uint256 date);
     event Investment(address indexed wallet, address indexed investor, uint256 date);
     event Allocate(address indexed trader, address indexed token, uint256 total, uint256 invested, uint256 date);
-    event Invest(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address token, uint256 amount, uint256 amountInvested, uint256 totalInvested, uint256 date);
+    event Invest(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address token, uint256 amount, uint256 allocationInvested, uint256 allocationTotal, uint256 date);
     event Stop(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address from, uint256 date);
     event RequestExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address from, uint256 value, uint256 date);
-    event ApproveExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, uint256 amountInvested, uint256 totalInvested, uint256 date);
+    event ApproveExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, uint256 allocationInvested, uint256 allocationTotal, uint256 date);
+    event RejectExit(uint256 id, address indexed wallet, address indexed trader, uint256 value, address from, uint256 date);
 
     /*
      *  Structs
@@ -417,5 +418,32 @@ contract TraderPaired is Initializable, Ownable, Pausable {
             now
         );
     }
+
+    /// @dev Reject exit of investment
+    /// @param _traderAddress trader address
+    /// @param _investmentId investment id
+    /// @param _value proposed investment value
+    /// @param _from initiator address
+    function rejectExit(address _traderAddress, uint256 _investmentId, uint256 _value, address _from)
+        public 
+        whenNotPaused
+        onlyWallet
+    {
+        PairedInvestments(pairedInvestments).rejectExit(
+            _traderAddress,
+            _investmentId,
+            _value
+        );
+
+        emit RejectExit(
+            _investmentId,
+            msg.sender,
+            _traderAddress,
+            _value,
+            _from,
+            now
+        );
+    }
+
 
 }

@@ -1,7 +1,6 @@
 import BigNumber from 'bignumber.js'
 const uuid = require("uuid")
 
-const web3 = require("web3");
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 export const GREEN = 'success'
@@ -79,9 +78,20 @@ export const getTokenSymbol = (address) => {
 	}
 }
 
-export const notification = (title, message, hash) => {
+export const info = (title, message, hash) => {
 	return {
 		id: uuid.v4(),
+		variant: 'info',
+		title: title,
+		message: message,
+		hash: hash
+	}
+}
+
+export const fail = (title, message, hash) => {
+	return {
+		id: uuid.v4(),
+		variant: 'danger',
 		title: title,
 		message: message,
 		hash: hash

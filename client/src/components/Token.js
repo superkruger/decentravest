@@ -1,5 +1,4 @@
 import React from 'react'
-import Identicon from 'identicon.js'
 
 export default function ({ address }) {
     return(

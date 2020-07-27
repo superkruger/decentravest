@@ -2,7 +2,6 @@ import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Button } from 'react-bootstrap'
 import Spinner from '../Spinner'
-import { etherToWei } from '../../helpers'
 import {
   createWallet
 } from '../../store/interactions'
@@ -53,7 +52,7 @@ function CreateWallet(props) {
 }
 
 function Wallet(props) {
-  const { account, wallet, investor, dispatch } = props.props
+  const { wallet } = props.props
 
   return (
     <span>Wallet: <a href={`http://etherscan.io/address/${wallet.options.address}`} target="_blank" rel="noopener">{wallet.options.address}</a></span>

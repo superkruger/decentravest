@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import { Toast } from 'react-bootstrap'
+import { Toast, Alert } from 'react-bootstrap'
 import {
   notificationRemoved
 } from '../store/actions'
@@ -55,11 +55,15 @@ function Notification(props) {
         <strong className="mr-auto">{notification.title}&nbsp;</strong>
         <small></small>
       </Toast.Header>
-      <Toast.Body>{notification.message}</Toast.Body>
-      {
-        notification.hash
-        && <a href={`https://etherscan.io/tx/${notification.hash}`} target="_blank" rel="noopener">Check transaction</a>
-      }
+      <Toast.Body>
+        <Alert variant={notification.variant}>
+          {notification.message}<br/>
+          {
+            notification.hash
+            && <a href={`https://etherscan.io/tx/${notification.hash}`} target="_blank" rel="noopener">Check transaction</a>
+          }
+        </Alert>
+      </Toast.Body>
     </Toast>
   )
 }

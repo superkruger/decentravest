@@ -1,6 +1,6 @@
 import { find, get, groupBy } from 'lodash'
 import { createSelector } from 'reselect'
-import { NEUTRAL, RED, GREEN, formatBalance, getTokenSymbol } from '../helpers'
+import { NEUTRAL, RED, GREEN, formatBalance, getTokenSymbol, log } from '../helpers'
 
 const notifications = (state) => get(state, 'app.notifications', [])
 export const notificationsSelector = createSelector(notifications, a => a)
@@ -90,6 +90,7 @@ export const traderRatingsSelector = createSelector(traderRatings, e => e)
 
 const traderAllocations = (state, trader) => {
 	const traderObj = find(state.web3.traders, {user: trader})
+	log("traderAllocations", traderObj)
 	if (traderObj && traderObj.allocations) {
 		return traderObj.allocations
 	}
@@ -130,7 +131,7 @@ export const traderPositionsLoadedSelector = createSelector(traderPositionsLoade
 
 const traderPositions = state => get(state, 'trader.positions.data', [])
 export const traderPositionsSelector = createSelector(traderPositions, (positions) => {
-	// console.log('Positions', positions)
+	// log('Positions', positions)
 	if (positions !== undefined) {
 
 		positions = positions.sort((a, b) => b.start.diff(a.start))
@@ -184,11 +185,14 @@ const decorateInvestments = (investments) => {
 }
 
 const decorateInvestment = (investment) => {
+	log("decorateInvestment", investment)
 	return ({
 		...investment,
 		formattedAmount: formatBalance(investment.amount, getTokenSymbol(investment.token)),
+		formattedValue: formatBalance(investment.value, getTokenSymbol(investment.token)),
 		formattedGrossValue: formatBalance(investment.grossValue, getTokenSymbol(investment.token)),
 		formattedNettValue: formatBalance(investment.nettValue, getTokenSymbol(investment.token)),
+		formattedInvestorProfit: formatBalance(investment.nettValue.minus(investment.amount), getTokenSymbol(investment.token)),
 		profitClass: investment.grossValue.gt(investment.amount) ? GREEN : investment.grossValue.lt(investment.amount) ? RED : NEUTRAL
 	})
 }
