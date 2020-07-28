@@ -7,11 +7,13 @@ import "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol
 import "@openzeppelin/contracts-ethereum-package/contracts/lifecycle/Pausable.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
 
-import "./PairedInvestments.sol";
-import "./MultiSigFundWalletFactory.sol";
-import "./MultiSigFundWallet.sol";
+import "./ITraderPaired.sol";
+import "./IPairedInvestments.sol";
+import "./IFactory.sol";
+import "./IMultiSigFundWalletFactory.sol";
+import "./IMultiSigFundWallet.sol";
 
-contract TraderPaired is Initializable, Ownable, Pausable {
+contract TraderPaired is Initializable, Ownable, Pausable, ITraderPaired {
 	using SafeMath for uint256;
 
     /*
@@ -91,7 +93,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
     }
 
     modifier onlyWallet {
-        require(MultiSigFundWalletFactory(multiSigFundWalletFactory).isInstantiation(msg.sender));
+        require(IFactory(multiSigFundWalletFactory).isInstantiation(msg.sender));
         _;
     }
 
@@ -202,10 +204,10 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         view
         returns (bool) 
     {
-        address[] memory wallets = MultiSigFundWalletFactory(multiSigFundWalletFactory).getInstantiations(_investorAddress);
+        address[] memory wallets = IFactory(multiSigFundWalletFactory).getInstantiations(_investorAddress);
         
         for(uint256 i = 0; i < wallets.length; i++) {
-            if (MultiSigFundWallet(wallets[i]).traders(_traderAddress)) {
+            if (IMultiSigFundWallet(wallets[i]).traders(_traderAddress)) {
                 return true;
             }
         }
@@ -221,7 +223,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         view
         returns (bool) 
     {
-        return MultiSigFundWalletFactory(multiSigFundWalletFactory).isInstantiation(_investorAddress);
+        return IFactory(multiSigFundWalletFactory).isInstantiation(_investorAddress);
     }
 
     /// @dev Create new investment wallet
@@ -231,7 +233,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         isInvestor(msg.sender)
     {
         require(!hasWallet(msg.sender));
-        address wallet = MultiSigFundWalletFactory(multiSigFundWalletFactory).create(address(this), msg.sender, feeAccount);
+        address wallet = IMultiSigFundWalletFactory(multiSigFundWalletFactory).create(address(this), msg.sender, feeAccount);
         emit Investment(wallet, msg.sender, now);
     }
 
@@ -261,7 +263,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         allocation.invested = allocation.invested.add(_amount);
 
         uint256 starttime;
-        (investmentCount, starttime) = PairedInvestments(pairedInvestments).invest(
+        (investmentCount, starttime) = IPairedInvestments(pairedInvestments).invest(
             _traderAddress, 
             _investorAddress, 
             _token, 
@@ -300,7 +302,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         _Trader memory _trader = traders[_traderAddress];
         require(_trader.user == _traderAddress);
 
-        uint256 stoptime = PairedInvestments(pairedInvestments).stop(
+        uint256 stoptime = IPairedInvestments(pairedInvestments).stop(
             _traderAddress, 
             _investorAddress, 
             _investmentId);
@@ -328,7 +330,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         _Trader memory _trader = traders[_traderAddress];
         require(_trader.user == _traderAddress);
 
-        PairedInvestments(pairedInvestments).requestExitInvestor(
+        IPairedInvestments(pairedInvestments).requestExitInvestor(
             _traderAddress, 
             _investorAddress, 
             _investmentId, 
@@ -359,7 +361,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         _Trader memory _trader = traders[_traderAddress];
         require(_trader.user == _traderAddress);
 
-        PairedInvestments(pairedInvestments).requestExitTrader(
+        IPairedInvestments(pairedInvestments).requestExitTrader(
             _traderAddress, 
             _investorAddress, 
             _investmentId, 
@@ -394,7 +396,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         require(_trader.user == _traderAddress);
         require(_investor.user == _investorAddress);
 
-        uint256[4] memory _result = PairedInvestments(pairedInvestments).approveExit(
+        uint256[4] memory _result = IPairedInvestments(pairedInvestments).approveExit(
             _traderAddress,
             _investorAddress, 
             _investmentId, 
@@ -429,7 +431,7 @@ contract TraderPaired is Initializable, Ownable, Pausable {
         whenNotPaused
         onlyWallet
     {
-        PairedInvestments(pairedInvestments).rejectExit(
+        IPairedInvestments(pairedInvestments).rejectExit(
             _traderAddress,
             _investmentId,
             _value

@@ -5,8 +5,10 @@ import "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol
 import "@openzeppelin/upgrades/contracts/Initializable.sol";
 import "./Factory.sol";
 import "./MultiSigFundWallet.sol";
+import "./IMultiSigFundWalletFactory.sol";
 
-contract MultiSigFundWalletFactory is Factory, Ownable {
+
+contract MultiSigFundWalletFactory is Factory, Ownable, IMultiSigFundWalletFactory {
 
 	/*
      *  Storage

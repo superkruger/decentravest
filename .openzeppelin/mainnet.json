@@ -1,11 +1,11 @@
 {
   "contracts": {
     "MultiSigFundWalletFactory": {
-      "address": "0x564E17012480C41130f1706e8AD166a7b2d55699",
+      "address": "0xE25745AaE09dF7B4e815462e07E39Aa4bb36908c",
       "constructorCode": "6080604052612839806100136000396000f3fe",
-      "bodyBytecodeHash": "7202966ad44b0527f63e9f3674598eca9a7c16816d3d8319a81b3f10ce030e76",
-      "localBytecodeHash": "795b4fb4ab082788dfdbb929366030f4c84fbf04e0f476a3547b2edd0d9cfc32",
-      "deployedBytecodeHash": "795b4fb4ab082788dfdbb929366030f4c84fbf04e0f476a3547b2edd0d9cfc32",
+      "bodyBytecodeHash": "69fa5f3d8a5e25cda0b87e048e743fe5f7fd74724cbf561505d1a4e667be2cb0",
+      "localBytecodeHash": "fca5e9e74fa9074f2713086c95327307294284e7c319ea8f001fbe74d57e8d02",
+      "deployedBytecodeHash": "fca5e9e74fa9074f2713086c95327307294284e7c319ea8f001fbe74d57e8d02",
       "types": {
         "t_bool": {
           "id": "t_bool",
@@ -54,17 +54,17 @@
           "contract": "Factory",
           "path": "contracts/Factory.sol",
           "label": "isInstantiation",
-          "astId": 799,
+          "astId": 802,
           "type": "t_mapping<t_bool>",
-          "src": "234:47:8"
+          "src": "272:47:8"
         },
         {
           "contract": "Factory",
           "path": "contracts/Factory.sol",
           "label": "instantiations",
-          "astId": 804,
+          "astId": 807,
           "type": "t_mapping<t_array:dyn<t_address>>",
-          "src": "287:51:8"
+          "src": "325:51:8"
         },
         {
           "contract": "Initializable",
@@ -110,9 +110,9 @@
           "contract": "MultiSigFundWalletFactory",
           "path": "contracts/MultiSigFundWalletFactory.sol",
           "label": "manager",
-          "astId": 2171,
+          "astId": 2399,
           "type": "t_address",
-          "src": "366:22:10"
+          "src": "438:22:15"
         }
       ],
       "warnings": {
@@ -120,7 +120,9 @@
         "hasSelfDestruct": false,
         "hasDelegateCall": false,
         "hasInitialValuesInDeclarations": false,
-        "uninitializedBaseContracts": []
+        "uninitializedBaseContracts": [],
+        "storageUncheckedVars": [],
+        "storageDiff": []
       }
     },
     "PairedInvestments": {
@@ -659,7 +661,7 @@
       {
         "address": "0x655f7c7df92977013249E9c6956eF17A46C42f0D",
         "version": "1.0.0",
-        "implementation": "0x564E17012480C41130f1706e8AD166a7b2d55699",
+        "implementation": "0xE25745AaE09dF7B4e815462e07E39Aa4bb36908c",
         "admin": "0x6a30c12EFA42BF6f06dE2150CE19bB3b2228E2a2",
         "kind": "Upgradeable"
       }
@@ -668,7 +670,7 @@
       {
         "address": "0x6954470799590Cc86f969ad75eA2ba6598440529",
         "version": "1.0.0",
-        "implementation": "0x0000000000000000000000000000000000000000",
+        "implementation": "0xa0c384e0D89048cd23288dcB25E1A0dDFC06F85B",
         "admin": "0x6a30c12EFA42BF6f06dE2150CE19bB3b2228E2a2",
         "kind": "Upgradeable"
       }

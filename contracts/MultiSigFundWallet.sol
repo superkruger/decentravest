@@ -4,9 +4,10 @@ pragma solidity >=0.4.21 <0.7.0;
 import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/IERC20.sol";
 
-import "./TraderPaired.sol";
+import "./ITraderPaired.sol";
+import "./IMultiSigFundWallet.sol";
 
-contract MultiSigFundWallet {
+contract MultiSigFundWallet is IMultiSigFundWallet {
     using SafeMath for uint256;
 
     /*
@@ -160,7 +161,7 @@ contract MultiSigFundWallet {
         isInvestor
         isTrader(_trader)
     {
-        uint256 investmentId = TraderPaired(fund).invest(_trader, investor, ETHER, _amount);
+        uint256 investmentId = ITraderPaired(fund).invest(_trader, investor, ETHER, _amount);
         balances[_trader][ETHER] = balances[_trader][ETHER].add(_amount);
         emit Fund(_trader, msg.sender, investmentId, ETHER, _amount, now);
     }
@@ -176,7 +177,7 @@ contract MultiSigFundWallet {
     {
         require(_token != ETHER);
         require(IERC20(_token).transferFrom(msg.sender, address(this), _amount));
-        uint256 investmentId = TraderPaired(fund).invest(_trader, investor, _token, _amount);
+        uint256 investmentId = ITraderPaired(fund).invest(_trader, investor, _token, _amount);
         balances[_trader][_token] = balances[_trader][_token].add(_amount);
         emit Fund(_trader, msg.sender, investmentId, _token, _amount, now);
     }
@@ -189,7 +190,7 @@ contract MultiSigFundWallet {
         traderOrInvestor(_trader)
         isTrader(_trader)
     {
-        TraderPaired(fund).stop(_trader, investor, msg.sender, _investmentId);
+        ITraderPaired(fund).stop(_trader, investor, msg.sender, _investmentId);
         
         emit Stopped(_trader, msg.sender, _investmentId, now);
     }
@@ -233,9 +234,9 @@ contract MultiSigFundWallet {
         isTrader(_trader)
     {
         if (_initiator == investor) {
-            TraderPaired(fund).requestExitInvestor(_trader, investor, _investmentId, _value);
+            ITraderPaired(fund).requestExitInvestor(_trader, investor, _investmentId, _value);
         } else {
-            TraderPaired(fund).requestExitTrader(_trader, investor, _investmentId, _value, _amount);
+            ITraderPaired(fund).requestExitTrader(_trader, investor, _investmentId, _value, _amount);
         }
 
         if (_amount > 0) {
@@ -317,7 +318,7 @@ contract MultiSigFundWallet {
       isTrader(_trader)
     {
         Disbursement memory _disbursement = disbursements[_disbursementId];
-        TraderPaired(fund).rejectExit(_trader, _disbursement.investmentId, _value, msg.sender);
+        ITraderPaired(fund).rejectExit(_trader, _disbursement.investmentId, _value, msg.sender);
         
         if (_disbursement.amount > 0) {
             if (_token == ETHER) {
@@ -340,7 +341,7 @@ contract MultiSigFundWallet {
         internal 
     {
         Disbursement storage _disbursement = disbursements[_disbursementId];
-        uint256[3] memory _payouts = TraderPaired(fund).approveExit(_trader, investor, _disbursement.investmentId, _token, _amount);
+        uint256[3] memory _payouts = ITraderPaired(fund).approveExit(_trader, investor, _disbursement.investmentId, _token, _amount);
 
         if (_amount > 0) {
             balances[_trader][_token] = balances[_trader][_token].add(_amount);

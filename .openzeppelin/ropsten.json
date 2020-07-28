@@ -358,11 +358,11 @@
       }
     },
     "MultiSigFundWalletFactory": {
-      "address": "0x686E8D671D7eFBF949Cb0d8978a448Eb1260B9e1",
+      "address": "0x3CFE41458b73853d602eCF46B87E66bFD6EF4aBa",
       "constructorCode": "6080604052612839806100136000396000f3fe",
-      "bodyBytecodeHash": "7202966ad44b0527f63e9f3674598eca9a7c16816d3d8319a81b3f10ce030e76",
-      "localBytecodeHash": "795b4fb4ab082788dfdbb929366030f4c84fbf04e0f476a3547b2edd0d9cfc32",
-      "deployedBytecodeHash": "795b4fb4ab082788dfdbb929366030f4c84fbf04e0f476a3547b2edd0d9cfc32",
+      "bodyBytecodeHash": "69fa5f3d8a5e25cda0b87e048e743fe5f7fd74724cbf561505d1a4e667be2cb0",
+      "localBytecodeHash": "fca5e9e74fa9074f2713086c95327307294284e7c319ea8f001fbe74d57e8d02",
+      "deployedBytecodeHash": "fca5e9e74fa9074f2713086c95327307294284e7c319ea8f001fbe74d57e8d02",
       "types": {
         "t_bool": {
           "id": "t_bool",
@@ -411,17 +411,17 @@
           "contract": "Factory",
           "path": "contracts/Factory.sol",
           "label": "isInstantiation",
-          "astId": 799,
+          "astId": 802,
           "type": "t_mapping<t_bool>",
-          "src": "234:47:8"
+          "src": "272:47:8"
         },
         {
           "contract": "Factory",
           "path": "contracts/Factory.sol",
           "label": "instantiations",
-          "astId": 804,
+          "astId": 807,
           "type": "t_mapping<t_array:dyn<t_address>>",
-          "src": "287:51:8"
+          "src": "325:51:8"
         },
         {
           "contract": "Initializable",
@@ -467,9 +467,9 @@
           "contract": "MultiSigFundWalletFactory",
           "path": "contracts/MultiSigFundWalletFactory.sol",
           "label": "manager",
-          "astId": 2171,
+          "astId": 2399,
           "type": "t_address",
-          "src": "366:22:10"
+          "src": "438:22:15"
         }
       ],
       "warnings": {
@@ -716,7 +716,7 @@
       {
         "address": "0x4Df4dEb2774491FB07f2857E1f418832f29B0dEC",
         "version": "1.0.0",
-        "implementation": "0x686E8D671D7eFBF949Cb0d8978a448Eb1260B9e1",
+        "implementation": "0x3CFE41458b73853d602eCF46B87E66bFD6EF4aBa",
         "admin": "0xA3243a1890a1b4C5143106aBdb736C90e0Bd852B",
         "kind": "Upgradeable"
       }

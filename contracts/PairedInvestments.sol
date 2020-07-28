@@ -5,7 +5,9 @@ import "@openzeppelin/contracts-ethereum-package/contracts/math/SafeMath.sol";
 import "@openzeppelin/upgrades/contracts/Initializable.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol";
 
-contract PairedInvestments is Initializable, Ownable {
+import "./IPairedInvestments.sol";
+
+contract PairedInvestments is Initializable, Ownable, IPairedInvestments {
 	using SafeMath for uint256;
 
     /*
