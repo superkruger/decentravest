@@ -83,6 +83,13 @@ export function walletLoaded(investor, contract) {
 	}
 }
 
+export function mainWalletBalanceLoaded(balance) {
+	return {
+		type: 'MAIN_WALLET_BALANCE_LOADED',
+		balance
+	}
+}
+
 export function tokensLoaded(tokens) {
 	return {
 		type: 'TOKENS_LOADED',

@@ -131,7 +131,7 @@ function investHandler (tokenAddress, inputId, props) {
   const token = tokens.find(t => t.contract.options.address === tokenAddress)
 
   const amount = document.getElementById(inputId).value
-  invest(account, trader.user, tokenAddress, token, amount, wallet, dispatch)
+  invest(account, trader.user, tokenAddress, token, amount, wallet.contract, dispatch)
 }
 
 function mapStateToProps(state, props) {

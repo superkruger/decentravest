@@ -206,6 +206,7 @@ function web3 (state = {}, action ) {
 					]
 				}
 			}
+
 		case 'INVESTMENT_LOADED':
 			{
 				// prevent duplicates
@@ -302,7 +303,34 @@ function investor (state = {}, action ) {
 		case 'WALLET_CREATING':
 			return { ...state, wallet: {creating: true} }
 		case 'MAIN_WALLET_LOADED':
-			return { ...state, wallet: {creating: false, contract: action.contract} }
+			return { ...state, wallet: {creating: false, balances: [], contract: action.contract} }
+		case 'MAIN_WALLET_BALANCE_LOADED':
+			{
+				let index, data
+
+				if (!state.wallet.balances) {
+					state.wallet.balances = []
+				}
+				index = state.wallet.balances.findIndex(balance => balance.symbol === action.balance.symbol)
+				if (index === -1) {
+					data = [...state.wallet.balances, action.balance]
+				} else {
+					state.wallet.balances[index] = {
+						...state.wallet.balances[index],
+						...action.balance
+					}
+					data = state.wallet.balances
+				}
+				return { 
+					...state,
+					wallet: {
+						...state.wallet,
+						balances: [
+							...data
+						]
+					}
+				} 
+			}
 		default:
 			return state
 	}

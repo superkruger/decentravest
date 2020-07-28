@@ -104,7 +104,7 @@ function stopHandler (props) {
   const { investor, wallet, dispatch } = props.props
   const { investment } = props
 
-  stopInvestment(investor.user, investment, wallet, dispatch)
+  stopInvestment(investor.user, investment, wallet.contract, dispatch)
 }
 
 function DisburseButton (props) {
@@ -123,7 +123,7 @@ function disburseHandler (props) {
 
   const token = tokens.find(t => t.contract.options.address === investment.token)
 
-  disburseInvestment(investor.user, investment, wallet, token, pairedInvestments, dispatch)
+  disburseInvestment(investor.user, investment, wallet.contract, token, pairedInvestments, dispatch)
 }
 
 function ApproveButton (props) {
@@ -169,7 +169,7 @@ function approveHandler (props) {
 
   const token = tokens.find(t => t.contract.options.address === investment.token)
 
-  approveDisbursement(investor.user, investment, wallet, token, pairedInvestments, dispatch)
+  approveDisbursement(investor.user, investment, wallet.contract, token, pairedInvestments, dispatch)
 }
 
 function rejectHandler (props) {
@@ -178,7 +178,7 @@ function rejectHandler (props) {
 
   log("--investment reject--", investment)
 
-  rejectDisbursement(investor.user, investment, wallet, pairedInvestments, dispatch)
+  rejectDisbursement(investor.user, investment, wallet.contract, pairedInvestments, dispatch)
 }
 
 function mapStateToProps(state) {

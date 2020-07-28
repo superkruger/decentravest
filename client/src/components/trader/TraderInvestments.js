@@ -64,10 +64,10 @@ function showInvestments(investments, props) {
                     <span>Amount: {investment.formattedAmount}</span>
                   </Col>
                   <Col sm={3}>
-                    <span className={`text-${investment.profitClass}`}>Value: {investment.formattedGrossValue}</span>
+                    <span className={`text-${investment.profitClass}`}>Gross Value: {investment.formattedGrossValue}</span>
                   </Col>
                   <Col sm={3}>
-                    <span className={`text-${investment.profitClass}`}>Value: {investment.formattedNettValue}</span>
+                    <span className={`text-${investment.profitClass}`}>Nett Value: {investment.formattedNettValue}</span>
                   </Col>
                 </Row>
               </h6>

@@ -27,6 +27,7 @@ import {
 	walletFactoryLoaded,
 	walletCreating,
 	mainWalletLoaded,
+	mainWalletBalanceLoaded,
 	investmentLoaded,
 	investmentChanging,
 	disbursementCreated
@@ -82,6 +83,18 @@ export const loadBalances = async (account, traderPaired, tokens, web3, dispatch
 	tokens.forEach(async (token) => {
 		const tokenBalance = await token.contract.methods.balanceOf(account).call()
 		dispatch(balanceLoaded({amount: new BigNumber(tokenBalance), symbol: token.symbol}))
+	})
+}
+
+
+export const loadMainWalletBalances = async (wallet, tokens, dispatch) => {
+
+	const etherBalance = await wallet.methods.etherBalance().call()
+	dispatch(mainWalletBalanceLoaded({amount: new BigNumber(etherBalance), symbol: "ETH"}))
+
+	tokens.forEach(async (token) => {
+		const tokenBalance = await wallet.methods.tokenBalance(token.contract.options.address).call()
+		dispatch(mainWalletBalanceLoaded({amount: new BigNumber(tokenBalance), symbol: token.symbol}))
 	})
 }
 
@@ -907,6 +920,10 @@ export const loadInvestmentValues = (investments, traderPaired, dispatch) => {
 
 		const allocations = await getTraderAllocations(investment.trader, investment.token, traderPaired)
 
+
+		console.log("A", allocations)
+
+
 		const traderInvestments = await getTraderInvestments(investment.trader, investment.token, traderPaired)
 
 		log("traderInvestments", traderInvestments)
@@ -918,10 +935,14 @@ export const loadInvestmentValues = (investments, traderPaired, dispatch) => {
 
 			// find the allocation just before the start of this position
 			let allocation = allocations.find(allocation => allocation.date.isBefore(position.start))
-			// TODO: test code, remove this
+
+			// Fallback to the last allocation made, but there should be an allocation made before the position started
+			// TODO: maybe remove?
 			if (!allocation) {
 				allocation = allocations[0]
 			}
+
+			console.log("allocation total", allocation.total.toString())
 
 			log("position.profit", position.nettProfit.toString())
 			let totalAmount = await getPositionInvestmentsAmount(position, traderInvestments)
@@ -965,8 +986,9 @@ const getTraderAllocations = async (account, token, traderPaired) => {
 			fromBlock: 0
 		}
 	)
+	// sort descending
 	let allocations = stream.map(event => mapAllocation(event.returnValues))
-						.sort((a, b) => a.date.isBefore(b.date))
+						.sort((a, b) => b.date.unix() - a.date.unix())
 
 	return allocations
 }

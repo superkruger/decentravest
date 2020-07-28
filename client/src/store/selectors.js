@@ -32,8 +32,12 @@ export const walletFactorySelector = createSelector(walletFactory, e => e)
 const tokens = state => get(state, 'web3.tokens', [])
 export const tokensSelector = createSelector(tokens, t => t)
 
-const wallet = state => get(state, 'investor.wallet.contract')
-export const walletSelector = createSelector(wallet, e => e)
+const wallet = state => get(state, 'investor.wallet')
+export const walletSelector = createSelector(wallet, (wallet) => {
+
+	wallet.balances = decorateBalances(wallet.balances)
+	return wallet
+})
 
 const walletCreating = state => get(state, 'investor.wallet.creating', false)
 export const walletCreatingSelector = createSelector(walletCreating, e => e)

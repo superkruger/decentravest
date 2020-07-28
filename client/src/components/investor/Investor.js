@@ -1,9 +1,10 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import { Button } from 'react-bootstrap'
+import { Container, Row, Col, Button, Alert } from 'react-bootstrap'
 import Spinner from '../Spinner'
 import {
-  createWallet
+  createWallet,
+  loadMainWalletBalances
 } from '../../store/interactions'
 import { 
   web3Selector,
@@ -12,10 +13,17 @@ import {
   traderPairedSelector,
   walletFactorySelector,
   walletSelector,
-  walletCreatingSelector
+  walletCreatingSelector,
+  tokensSelector
 } from '../../store/selectors'
 
 class Investor extends Component {
+  componentDidMount() {
+    const { wallet, tokens, dispatch } = this.props
+    if (wallet) {
+      loadMainWalletBalances(wallet.contract, tokens, dispatch)
+    }
+  }
 
   render() {
     const { wallet } = this.props
@@ -26,7 +34,6 @@ class Investor extends Component {
           wallet ?
             <Wallet props={this.props}/> :
             <CreateWallet props={this.props}/>
-            
         }
       </div>
     )
@@ -41,12 +48,18 @@ function CreateWallet(props) {
     walletCreating ?
     <Spinner />
     :
-    <Button
-      variant="primary"
-      onClick={handleClick}
-      >
-      Create Wallet
-    </Button>
+    <div>
+      <Alert variant="info">
+        In order to invest, you need to create a private multisignature wallet first.<br/>
+        This ensures that your funds are safe and cannot be stolen by any party, including us!
+      </Alert>
+      <Button
+        variant="primary"
+        onClick={handleClick}
+        >
+        Create Wallet
+      </Button>
+    </div>
   )
 
 }
@@ -55,7 +68,48 @@ function Wallet(props) {
   const { wallet } = props.props
 
   return (
-    <span>Wallet: <a href={`http://etherscan.io/address/${wallet.options.address}`} target="_blank" rel="noopener">{wallet.options.address}</a></span>
+    <div className="card shadow mb-4">
+      <a href={`#wallet_${wallet.contract.options.address}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`wallet_${wallet.contract.options.address}`}>
+        <h6 className="m-0 font-weight-bold text-primary">
+          Your personal multisig wallet
+        </h6>
+      </a>
+      <div className="collapse" id={`wallet_${wallet.contract.options.address}`}>
+        <div className="card-body">
+          <Container>
+          <Row>
+            <Col sm={12}>
+              <span>Wallet: <a href={`http://etherscan.io/address/${wallet.contract.options.address}`} target="_blank" rel="noopener">{wallet.contract.options.address}</a></span>
+            </Col>
+          </Row>
+          </Container>
+          { 
+            wallet.balances.map((balance) => {
+              return (
+                <Balance balance={balance} key={balance.symbol} />
+              )
+            })
+          }
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Balance(props) {
+  const {balance} = props
+
+  return (
+    <Container>
+    <Row>
+      <Col sm={8}>
+        Wallet {balance.symbol} Balance:
+      </Col>
+      <Col sm={4}>
+        {balance.formatted}
+      </Col>
+    </Row>
+    </Container>
   )
 }
 
@@ -68,7 +122,8 @@ function mapStateToProps(state) {
     traderPaired: traderPairedSelector(state),
     walletFactory: walletFactorySelector(state),
     wallet: walletSelector(state),
-    walletCreating: walletCreatingSelector(state)
+    walletCreating: walletCreatingSelector(state),
+    tokens: tokensSelector(state)
   }
 }
 
