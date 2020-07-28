@@ -1,7 +1,7 @@
 {
   "contracts": {
     "TraderPaired": {
-      "address": "0x71F275Cf4Eb49C02b7f6b6Ab10193F1FadBBebc4",
+      "address": "0x445DE81a5eAaB00F28280C4a844557B9A25E17c5",
       "constructorCode": "60806040526128b6806100136000396000f3fe",
       "bodyBytecodeHash": "27947840c373bff58e6733b504c1a33a8f0b47d10bf71b7aa52930aba5e4b22e",
       "localBytecodeHash": "911c206f4636236abb9b05c0d3b914d9c179ede0b7e8c6e60d1c4d7697fd3d32",
@@ -358,7 +358,7 @@
       }
     },
     "MultiSigFundWalletFactory": {
-      "address": "0x5C883817bAF35bE068305A172Ba87A0f7090a077",
+      "address": "0x686E8D671D7eFBF949Cb0d8978a448Eb1260B9e1",
       "constructorCode": "6080604052612839806100136000396000f3fe",
       "bodyBytecodeHash": "7202966ad44b0527f63e9f3674598eca9a7c16816d3d8319a81b3f10ce030e76",
       "localBytecodeHash": "795b4fb4ab082788dfdbb929366030f4c84fbf04e0f476a3547b2edd0d9cfc32",
@@ -707,7 +707,7 @@
       {
         "address": "0x68873efB00efDF35F0a2d1B737FE42112645F6D7",
         "version": "1.0.0",
-        "implementation": "0x71F275Cf4Eb49C02b7f6b6Ab10193F1FadBBebc4",
+        "implementation": "0x445DE81a5eAaB00F28280C4a844557B9A25E17c5",
         "admin": "0xA3243a1890a1b4C5143106aBdb736C90e0Bd852B",
         "kind": "Upgradeable"
       }
@@ -716,7 +716,7 @@
       {
         "address": "0x4Df4dEb2774491FB07f2857E1f418832f29B0dEC",
         "version": "1.0.0",
-        "implementation": "0x5C883817bAF35bE068305A172Ba87A0f7090a077",
+        "implementation": "0x686E8D671D7eFBF949Cb0d8978a448Eb1260B9e1",
         "admin": "0xA3243a1890a1b4C5143106aBdb736C90e0Bd852B",
         "kind": "Upgradeable"
       }

@@ -79,8 +79,14 @@ export const getTokenSymbol = (address) => {
 }
 
 export const info = (title, message, hash) => {
+	let id
+	if (hash) {
+		id = hash
+	} else {
+		id = uuid.v4()
+	}
 	return {
-		id: uuid.v4(),
+		id: id,
 		variant: 'info',
 		title: title,
 		message: message,
@@ -88,12 +94,11 @@ export const info = (title, message, hash) => {
 	}
 }
 
-export const fail = (title, message, hash) => {
+export const fail = (title, message) => {
 	return {
 		id: uuid.v4(),
 		variant: 'danger',
 		title: title,
-		message: message,
-		hash: hash
+		message: message
 	}
 }

@@ -3,6 +3,7 @@ import { createLogger } from 'redux-logger'
 import rootReducer from './reducers'
 
 const loggerMiddleware = process.env.NODE_ENV === 'development' ? createLogger() : null
+// const loggerMiddleware = createLogger()
 const middleware = []
 
 // for reduc devtools

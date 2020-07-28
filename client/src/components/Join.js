@@ -64,13 +64,16 @@ class Join extends Component {
                     <div className="card-footer">
                       {
                         positionsCount > 0 ? 
-                        <p>Good, you've made some trades on dydx. That qualifies you to join as a Trader</p>
+                        <p>
+                          Good, you've made some trades on dydx. That qualifies you to join as a Trader<br/>
+                          You won't be immediately visible to investors, only once you've set allocations.
+                        </p>
                         :
                         <p>Before you can join as a Trader, you have to trade on <a href="https://trade.dydx.exchange/margin/" target="_blank" rel="noopener">dydx.exchange</a></p>
                       }
                       <br/>
 
-                      For now, we <strong>ONLY</strong> count Isolated Margin trades toward your score as a trader.
+                      For now, we <strong>ONLY</strong> count Isolated Margin trades toward your score as a trader.<br/><br/>
 
                       <b>Please use a DEDICATED wallet for this portal and trades, because all profits/losses will be split amongst investors</b>
                     </div>
@@ -84,7 +87,8 @@ class Join extends Component {
                       <InvestorButton props={this.props} />
                     </div>
                     <div className="card-footer">
-                      If you have ETH, DAI or USDC to invest, join here.
+                      If you have ETH, DAI or USDC to invest, join here.<br/>
+                      Once you've joined, you can find traders to invest in.
                     </div>
                   </div>
                 </Col>

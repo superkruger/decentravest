@@ -2,7 +2,7 @@ import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Container, Row, Col, Form, Button } from 'react-bootstrap'
 import AllocationChart from './AllocationChart'
-import { ZERO_ADDRESS, tokenDecimalsForAddress } from '../../helpers'
+import { log, ZERO_ADDRESS, tokenDecimalsForAddress } from '../../helpers'
 import { 
   web3Selector,
   accountSelector,
@@ -73,10 +73,10 @@ class TraderAllocations extends Component {
                                   <div>
                                     <Balance props={this.props} symbol={allocation.symbol}/>
                                     <Form>
-                                      <Form.Group controlId={`${allocation.symbol}${account}_Amount`}>
+                                      <Form.Group controlId={`${allocation.symbol}_Amount`}>
                                         <Form.Control type="number" placeholder={`Enter ${allocation.symbol} Amount`} />
                                       </Form.Group>
-                                      <Button variant="primary" onClick={(e) => {allocationSubmitHandler(allocation.token, allocation.symbol + account + "_Amount", this.props)}}>
+                                      <Button variant="primary" onClick={(e) => {allocationSubmitHandler(allocation.token, allocation.symbol + "_Amount", this.props)}}>
                                         Set {allocation.symbol} Allocation
                                       </Button>
                                     </Form>
@@ -122,6 +122,7 @@ function allocationSubmitHandler (tokenAddress, inputId, props) {
   const {account, traderPaired, dispatch} = props
 
   const amount = document.getElementById(inputId).value
+
   setTraderAllocation(account, tokenAddress, amount, tokenDecimalsForAddress(tokenAddress), traderPaired, dispatch)
 }
 

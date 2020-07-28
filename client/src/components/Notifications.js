@@ -12,10 +12,6 @@ class Notifications extends Component {
 
   render() {
     const { notifications } = this.props
-
-
-    console.log(notifications)
-
     return (
       <div
         aria-live="polite"
@@ -44,24 +40,36 @@ function Notification(props) {
     dispatch(notificationRemoved(id))
   }
 
+  if (notification.hash) {
+    return (
+      <Toast show={show}>
+        <Toast.Header closeButton={false}>
+          <strong className="mr-auto">{notification.title}&nbsp;</strong>
+          <small></small>
+        </Toast.Header>
+        <Toast.Body>
+          <Alert variant="warning">
+            Transaction in progress, please don't refresh.<br/>
+            Click on the link below to see details.
+          </Alert>
+          <Alert variant={notification.variant}>
+            {notification.message}<br/>
+            <a href={`https://etherscan.io/tx/${notification.hash}`} target="_blank" rel="noopener">Check transaction</a>
+          </Alert>
+        </Toast.Body>
+      </Toast>
+    )
+  }
+
   return (
     <Toast onClose={() => removeNotification(notification.id)} show={show} delay={5000} autohide>
       <Toast.Header>
-        <img
-          src="holder.js/20x20?text=%20"
-          className="rounded mr-2"
-          alt=""
-        />
         <strong className="mr-auto">{notification.title}&nbsp;</strong>
         <small></small>
       </Toast.Header>
       <Toast.Body>
         <Alert variant={notification.variant}>
           {notification.message}<br/>
-          {
-            notification.hash
-            && <a href={`https://etherscan.io/tx/${notification.hash}`} target="_blank" rel="noopener">Check transaction</a>
-          }
         </Alert>
       </Toast.Body>
     </Toast>

@@ -30,7 +30,8 @@ function app (state = {}, action ) {
 
 				index = state.notifications.findIndex(notification => notification.id === action.id)
 				if (index !== -1) {
-					data = state.notifications.splice(index, 1)
+					state.notifications.splice(index, 1)
+					data = state.notifications
 				} else {
 					data = state.notifications
 				}

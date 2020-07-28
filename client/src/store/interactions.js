@@ -10,6 +10,7 @@ import { log, ZERO_ADDRESS, toBN, etherToWei, tokenAddressForSymbol, tokenSymbol
 import { getTraderPositions } from './dydxInteractions'
 import {
 	notificationAdded,
+	notificationRemoved,
 	web3Loaded,
 	web3AccountLoaded,
 	traderPairedLoaded,
@@ -83,6 +84,10 @@ export const loadBalances = async (account, traderPaired, tokens, web3, dispatch
 		dispatch(balanceLoaded({amount: new BigNumber(tokenBalance), symbol: token.symbol}))
 	})
 }
+
+// export const showPendingTransactions = async (web3) => {
+// 	web3.eth.getPendingTransactions()
+// }
 
 export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 	try {
@@ -258,6 +263,7 @@ export const joinAsTrader = async (account, traderPaired, pairedInvestments, wal
 			dispatch(notificationAdded(info("Trader", "Joining as trader...", hash)))
 		})
 		.on('receipt', async (receipt) => {
+			dispatch(notificationRemoved(receipt.transactionHash))
 
 			const trader = await traderPaired.methods.traders(account).call()
 
@@ -285,6 +291,7 @@ export const joinAsInvestor = async (account, traderPaired, pairedInvestments, w
 			dispatch(notificationAdded(info("Investor", "Joining as investor...", hash)))
 		})
 		.on('receipt', async (receipt) => {
+			dispatch(notificationRemoved(receipt.transactionHash))
 
 			const investor = await traderPaired.methods.investors(account).call()
 
@@ -360,11 +367,13 @@ export const setTraderAllocation = async (account, tokenAddress, amount, decimal
 	try {
 		log("setTraderAllocation", tokenAddress, amount.toString(), decimals)
 
-		traderPaired.methods.allocate(tokenAddress, etherToWei(amount, decimals)).send({from: account})
+		traderPaired.methods.allocate(tokenAddress, toBN(etherToWei(amount, decimals))).send({from: account})
 		.on('transactionHash', async (hash) => {
 			dispatch(notificationAdded(info("Allocation", "Setting allocation...", hash)))
 		})
 		.on('receipt', async (receipt) => {
+			log("receipt", receipt)
+			dispatch(notificationRemoved(receipt.transactionHash))
 			dispatch(notificationAdded(info("Allocation", "Allocation set")))
 		})
 		.on('error', (err) => {
@@ -385,6 +394,7 @@ export const createWallet = async (account, traderPaired, walletFactory, web3, d
 			dispatch(notificationAdded(info("Wallet", "Creating wallet...", hash)))
 		})
 		.on('receipt', async (receipt) => {
+			dispatch(notificationRemoved(receipt.transactionHash))
 			loadMainWallet(account, walletFactory, web3, dispatch)
 			dispatch(notificationAdded(info("Wallet", "Wallet created")))
 		})
@@ -589,6 +599,7 @@ const investInTrader = async (account, trader, tokenAddress, token, amount, wall
 				dispatch(notificationAdded(info("Investment", "Investing ether...", hash)))
 			})
 			.on('receipt', async (receipt) => {
+				dispatch(notificationRemoved(receipt.transactionHash))
 				dispatch(notificationAdded(info("Investment", "Invested ether")))
 			})
 			.on('error', (err) => {
@@ -600,13 +611,16 @@ const investInTrader = async (account, trader, tokenAddress, token, amount, wall
 
 			token.contract.methods.approve(wallet.options.address, amount).send({from: account})
 			.on('transactionHash', async (hash) => {
+				dispatch(notificationAdded(info("Investment", "Aproving tokens...", hash)))
 			})
 			.on('receipt', async (receipt) => {
+				dispatch(notificationRemoved(receipt.transactionHash))
 				wallet.methods.fundToken(trader, token.contract.options.address, amount).send({from: account})
 				.on('transactionHash', async (hash) => {
 					dispatch(notificationAdded(info("Investment", "Investing tokens...", hash)))
 				})
 				.on('receipt', async (receipt) => {
+					dispatch(notificationRemoved(receipt.transactionHash))
 					dispatch(notificationAdded(info("Investment", "Invested tokens")))
 				})
 				.on('error', (err) => {
@@ -634,6 +648,7 @@ export const stopInvestment = (account, investment, wallet, dispatch) => {
 			dispatch(notificationAdded(info("Investment", "Stopping investment...", hash)))
 		})
 		.on('receipt', async (receipt) => {
+			dispatch(notificationRemoved(receipt.transactionHash))
 			dispatch(notificationAdded(info("Investment", "Stopped investment")))
 		})
 		.on('error', (err) => {
@@ -669,6 +684,7 @@ export const disburseInvestment = async (account, investment, wallet, token, pai
 				dispatch(notificationAdded(info("Investment", "Requesting disbursement...", hash)))
 			})
 			.on('receipt', async (receipt) => {
+				dispatch(notificationRemoved(receipt.transactionHash))
 				dispatch(notificationAdded(info("Investment", "Disbursement requested")))
 			})
 			.on('error', (err) => {
@@ -680,14 +696,17 @@ export const disburseInvestment = async (account, investment, wallet, token, pai
 
 			token.contract.methods.approve(wallet.options.address, amount).send({from: account})
 			.on('transactionHash', async (hash) => {
+				dispatch(notificationAdded(info("Investment", "Approving tokens...", hash)))
 			})
 			.on('receipt', async (receipt) => {
+				dispatch(notificationRemoved(receipt.transactionHash))
 				wallet.methods.disburseToken(investment.trader, investment.id, investment.token, toBN(investment.grossValue), amount).send({from: account})
 				.on('transactionHash', async (hash) => {
 					dispatch(notificationAdded(info("Investment", "Requesting disbursement...", hash)))
 				})
 				.on('receipt', async (receipt) => {
-				dispatch(notificationAdded(info("Investment", "Disbursement requested")))
+					dispatch(notificationRemoved(receipt.transactionHash))
+					dispatch(notificationAdded(info("Investment", "Disbursement requested")))
 				})
 				.on('error', (err) => {
 					log('Could not disburseInvestment', err)
@@ -699,7 +718,6 @@ export const disburseInvestment = async (account, investment, wallet, token, pai
 				log('Could not approve token', err)
 				dispatch(investmentChanging(investment, false))
 				dispatch(notificationAdded(fail("Investment", "Could not approve token amount")))
-
 			})
 		}
 		
@@ -733,6 +751,7 @@ export const approveDisbursement = async (account, investment, wallet, token, pa
 				dispatch(notificationAdded(info("Investment", "Approving disbursement...", hash)))
 			})
 			.on('receipt', async (receipt) => {
+				dispatch(notificationRemoved(receipt.transactionHash))
 				dispatch(notificationAdded(info("Investment", "Disbursement approved")))
 			})
 			.on('error', (err) => {
@@ -750,6 +769,7 @@ export const approveDisbursement = async (account, investment, wallet, token, pa
 					dispatch(notificationAdded(info("Investment", "Approving disbursement...", hash)))
 				})
 				.on('receipt', async (receipt) => {
+					dispatch(notificationRemoved(receipt.transactionHash))
 					dispatch(notificationAdded(info("Investment", "Disbursement approved")))
 				})
 				.on('error', (err) => {
@@ -781,6 +801,7 @@ export const rejectDisbursement = async (account, investment, wallet, pairedInve
 			dispatch(notificationAdded(info("Investment", "Rejecting disbursement...", hash)))
 		})
 		.on('receipt', async (receipt) => {
+			dispatch(notificationRemoved(receipt.transactionHash))
 			dispatch(notificationAdded(info("Investment", "Disbursement rejected")))
 		})
 		.on('error', (err) => {
