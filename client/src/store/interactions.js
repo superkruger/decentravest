@@ -61,12 +61,6 @@ export const loadWeb3 = async (dispatch) => {
 		dispatch(web3Loaded(web3))
 	}
 	return web3
-
-	// log("W3V", Web3)
-	// let web3 = new Web3(window['ethereum'] || Web3.givenProvider || 'http://127.0.0.1:8545')
-	// web3.eth.handleRevert = true
-	// dispatch(web3Loaded(web3))
-	// return web3
 }
 
 export const loadAccount = async (web3, dispatch) => {
@@ -98,10 +92,6 @@ export const loadMainWalletBalances = async (wallet, tokens, dispatch) => {
 	})
 }
 
-// export const showPendingTransactions = async (web3) => {
-// 	web3.eth.getPendingTransactions()
-// }
-
 export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 	try {
 		log("loadTraderPaired", TraderPaired)
@@ -130,6 +120,11 @@ export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 				decimals: 6
 			}
 			]))
+
+			const traderCount = await traderPaired.methods.traderCount().call()
+			const investorCount = await traderPaired.methods.investorCount().call()
+
+			console.log("TI", traderCount, investorCount)
 
 			loadTraders(traderPaired, dispatch)
 			dispatch(traderPairedLoaded(traderPaired))
@@ -175,16 +170,6 @@ const loadTraders = async (traderPaired, dispatch) => {
 		dispatch(traderLoaded(mapTrader(trader)))
 	}
 
-	// const stream = await traderPaired.getPastEvents(
-	// 	'Trader',
-	// 	{
-	// 		filter: {},
-	// 		fromBlock: 0
-	// 	}
-	// )
-	// const traders = stream.map(event => event.returnValues)
-	// traders.forEach(trader => dispatch(traderLoaded(mapTrader(trader))))
-
 	traderPaired.events.Trader({filter: {}}, (err, event) => {
 		dispatch(traderLoaded(mapTrader(event.returnValues)))
 	})
@@ -202,50 +187,6 @@ const loadTraderInvestments = async (trader, traderPaired, pairedInvestments, wa
 		dispatch(investmentLoaded(mapInvestment(investment)))
 		await registerWalletEvents(investment.walletContract, dispatch)
 	}
-
-	// let stream = await traderPaired.getPastEvents(
-	// 	'Invest',
-	// 	{
-	// 		filter: {trader: trader.user},
-	// 		fromBlock: 0
-	// 	}
-	// )
-	// let investments = stream.map(event => event.returnValues)
-	// investments.forEach(async (investment) => {
-	// 	investment.walletContract = await getInvestmentWallet(investment, web3, dispatch)
-	// 	dispatch(investmentLoaded(mapInvest(investment)))
-	// 	await registerWalletEvents(investment.walletContract, dispatch)
-	// })
-
-	// stream = await traderPaired.getPastEvents(
-	// 	'Stop',
-	// 	{
-	// 		filter: {trader: trader.user},
-	// 		fromBlock: 0
-	// 	}
-	// )
-	// investments = stream.map(event => event.returnValues)
-	// investments.forEach(investment => dispatch(investmentLoaded(mapStop(investment))))
-
-	// stream = await traderPaired.getPastEvents(
-	// 	'RequestExit',
-	// 	{
-	// 		filter: {trader: trader.user},
-	// 		fromBlock: 0
-	// 	}
-	// )
-	// investments = stream.map(event => event.returnValues)
-	// investments.forEach(investment => dispatch(investmentLoaded(mapRequestExit(investment))))
-
-	// stream = await traderPaired.getPastEvents(
-	// 	'ApproveExit',
-	// 	{
-	// 		filter: {trader: trader.user},
-	// 		fromBlock: 0
-	// 	}
-	// )
-	// investments = stream.map(event => event.returnValues)
-	// investments.forEach(investment => dispatch(investmentLoaded(mapApproveExit(investment))))
 
 	traderPaired.events.Invest({filter: {trader: trader.user}}, (err, event) => {
 		dispatch(investmentLoaded(mapInvest(event.returnValues)))
@@ -344,16 +285,6 @@ export const loadTraderAllocations = async (account, traderPaired, dispatch) => 
 		tokenAllocation.token = `${process.env.REACT_APP_USDC_ADDRESS}`
 		dispatch(traderAllocationLoaded(account, mapAllocation(tokenAllocation)))
 
-		// let stream = await traderPaired.getPastEvents(
-		// 	'Allocate',
-		// 	{
-		// 		filter: {trader: account},
-		// 		fromBlock: 0
-		// 	}
-		// )
-		// let allocations = stream.map(event => mapAllocation(event.returnValues))
-		// allocations.forEach(allocation => dispatch(traderAllocationLoaded(account, allocation)))
-
 		// New allocations
 		traderPaired.events.Allocate({filter: {trader: account}}, (err, event) => {
 			dispatch(traderAllocationLoaded(account, mapAllocation(event.returnValues)))
@@ -372,7 +303,7 @@ const mapAllocation = (allocation) => {
 		total: new BigNumber(allocation.total),
 		symbol: tokenSymbolForAddress(allocation.token),
 		token: allocation.token,
-		date: moment.unix(allocation.date)
+		date: moment.unix(allocation.date).utc()
 	}
 }
 
@@ -471,70 +402,6 @@ const loadInvestorInvestments = async (investor, traderPaired, pairedInvestments
 		// await registerWalletEvents(investment.walletContract, dispatch)
 	}
 
-	// let stream = await traderPaired.getPastEvents(
-	// 	'Invest',
-	// 	{
-	// 		filter: {investor: investor.user},
-	// 		fromBlock: 0
-	// 	}
-	// )
-	// let investments = stream.map(event => event.returnValues)
-	// investments.forEach((investment) => {
-	// 	dispatch(investmentLoaded(mapInvest(investment)))
-	// 	// // load allocation
-	// 	// dispatch(traderAllocationLoaded(
-	// 	// 	investment['trader'],
-	// 	// 	mapAllocation({
-	// 	// 		invested: investment['amountInvested'],
-	// 	// 		total: investment['totalInvested'],
-	// 	// 		token: investment['token'],
-	// 	// 		date: investment['date']
-	// 	// 	})
-	// 	// ))
-	// })
-
-	// stream = await traderPaired.getPastEvents(
-	// 	'Stop',
-	// 	{
-	// 		filter: {investor: investor.user},
-	// 		fromBlock: 0
-	// 	}
-	// )
-	// investments = stream.map(event => event.returnValues)
-	// investments.forEach(investment => dispatch(investmentLoaded(mapStop(investment))))
-
-	// stream = await traderPaired.getPastEvents(
-	// 	'RequestExit',
-	// 	{
-	// 		filter: {investor: investor.user},
-	// 		fromBlock: 0
-	// 	}
-	// )
-	// investments = stream.map(event => event.returnValues)
-	// investments.forEach(investment => dispatch(investmentLoaded(mapRequestExit(investment))))
-
-	// stream = await traderPaired.getPastEvents(
-	// 	'ApproveExit',
-	// 	{
-	// 		filter: {investor: investor.user},
-	// 		fromBlock: 0
-	// 	}
-	// )
-	// investments = stream.map(event => event.returnValues)
-	// investments.forEach((investment) => {
-	// 	dispatch(investmentLoaded(mapApproveExit(investment)))
-	// 	// // load allocation
-	// 	// dispatch(traderAllocationLoaded(
-	// 	// 	investment['trader'],
-	// 	// 	mapAllocation({
-	// 	// 		invested: investment['amountInvested'],
-	// 	// 		total: investment['totalInvested'],
-	// 	// 		token: investment['token'],
-	// 	// 		date: investment['date']
-	// 	// 	})
-	// 	// ))
-	// })
-
 	traderPaired.events.Invest({filter: {investor: investor.user}}, (err, event) => {
 		dispatch(investmentLoaded(mapInvest(event.returnValues)))
 
@@ -605,7 +472,6 @@ export const invest = async (account, trader, tokenAddress, token, amount, walle
 const investInTrader = async (account, trader, tokenAddress, token, amount, wallet, dispatch) => {
 	try {
 		if (tokenAddress === ZERO_ADDRESS) {
-			amount = etherToWei(amount, 18)
 
 			wallet.methods.fundEther(trader).send({from: account, value: amount})
 			.on('transactionHash', async (hash) => {
@@ -620,7 +486,6 @@ const investInTrader = async (account, trader, tokenAddress, token, amount, wall
 				dispatch(notificationAdded(fail("Investment", "Could not invest ether")))
 			})
 		} else {
-			amount = etherToWei(amount, token.decimals)
 
 			token.contract.methods.approve(wallet.options.address, amount).send({from: account})
 			.on('transactionHash', async (hash) => {
@@ -831,7 +696,7 @@ export const rejectDisbursement = async (account, investment, wallet, pairedInve
 const mapTrader = (event) => {
 	return {
 		... event,
-		date: moment.unix(event.date)
+		date: moment.unix(event.date).utc()
 	}
 }
 
@@ -842,8 +707,9 @@ const mapInvest = (event) => {
 		value: new BigNumber(0),
 		grossValue: new BigNumber(event.amount),
 		nettValue: new BigNumber(event.amount),
-		start: moment.unix(event.date),
-		date: moment.unix(event.date),
+		start: moment.unix(event.date).utc(),
+		end: moment.unix(0).utc(),
+		// date: moment.unix(event.date).utc(),
 		invested: new BigNumber(event.invested),
 		state: "0"
 	}
@@ -856,16 +722,18 @@ const mapInvestment = (investment) => {
 		value: new BigNumber(investment.value),
 		grossValue: new BigNumber(investment.amount),
 		nettValue: new BigNumber(investment.amount),
-		start: moment.unix(investment.start),
-		end: moment.unix(investment.end)
+		start: moment.unix(investment.start).utc(),
+		end: moment.unix(investment.end).utc(),
+		startUnix: investment.start,
+		endUnix: investment.end
 	}
 }
 
 const mapStop = (event) => {
 	return {
 		... event,
-		end: moment.unix(event.date),
-		date: moment.unix(event.date),
+		end: moment.unix(event.date).utc(),
+		date: moment.unix(event.date).utc(),
 		state: "1"
 	}
 }
@@ -880,7 +748,7 @@ const mapRequestExit = (event) => {
 	return {
 		... event,
 		value: new BigNumber(event.value),
-		date: moment.unix(event.date),
+		date: moment.unix(event.date).utc(),
 		state: state
 	}
 }
@@ -888,7 +756,7 @@ const mapRequestExit = (event) => {
 const mapApproveExit = (event) => {
 	return {
 		... event,
-		date: moment.unix(event.date),
+		date: moment.unix(event.date).utc(),
 		state: "4"
 	}
 }
@@ -897,7 +765,7 @@ const mapRejectExit = (event) => {
 	return {
 		... event,
 		value: new BigNumber(event.value),
-		date: moment.unix(event.date),
+		date: moment.unix(event.date).utc(),
 		state: "1"
 	}
 }
@@ -910,11 +778,16 @@ export const loadInvestmentValues = (investments, traderPaired, dispatch) => {
 		// get all positions for this investment
 		let positions = await getTraderPositions(investment.trader)
 		positions = positions.filter(
-			(position) => tokenAddressForSymbol(position.asset) === investment.token
-						&& position.start.isAfter(investment.start) 
-						&& ((position.end.isBefore(investment.end)
-							|| investment.state === "0"))
-		)
+			(position) => tokenAddressForSymbol(position.asset) === investment.token)
+
+		// if(process.env.NODE_ENV !== 'development') {
+			// filter by date
+			positions = positions.filter(position =>
+				position.start.isAfter(investment.start) 
+					&& (
+						(investment.end.unix() === 0 || investment.state === "0") 
+							|| position.end.isBefore(investment.end)))
+		// }
 
 		log("P", positions)
 
@@ -968,7 +841,7 @@ export const loadInvestmentValues = (investments, traderPaired, dispatch) => {
 
 		let nettProfit = grossProfit
 		if (nettProfit.isPositive()) {
-			nettProfit = nettProfit.multipliedBy(0.3)
+			nettProfit = nettProfit.multipliedBy(0.3).multipliedBy(0.99)
 		}
 		log("grossProfit", grossProfit.toString())
 		log("nettProfit", nettProfit.toString())
@@ -1031,12 +904,16 @@ const getTraderInvestments = async (account, token, traderPaired) => {
 }
 
 const getPositionInvestmentsAmount = async (position, traderInvestments) => {
-	const investments = traderInvestments.filter(
-		(investment) => tokenAddressForSymbol(position.asset) === investment.token
-					&& position.start.isAfter(investment.start) 
-						&& ((position.end.isBefore(investment.end)
-							|| investment.state === "0"))
-	)
+	let investments = traderInvestments.filter((investment) => tokenAddressForSymbol(position.asset) === investment.token)
+	
+	// if(process.env.NODE_ENV !== 'development') {
+		// filter by date
+		investments = investments.filter(investment =>
+			position.start.isAfter(investment.start) 
+				&& (
+					(investment.end.unix() === 0 || investment.state === "0") 
+						|| position.end.isBefore(investment.end)))
+	// }
 	
 	let totalAmount = investments.reduce((total, investment) => total.plus(investment.amount), new BigNumber(0))
 	return totalAmount

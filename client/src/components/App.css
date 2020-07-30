@@ -87,3 +87,15 @@ p + p, li + li, div + div {
   right: 0;
   z-index: 99999;
 }
+
+.align-right {
+  float: right;
+}
+
+.very-small {
+  font-size: 0.7rem;
+}
+
+.disbursed {
+  background-color: #d8d9dc;
+}

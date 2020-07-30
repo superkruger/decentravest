@@ -3,7 +3,7 @@ import Identicon from 'identicon.js'
 
 export default function ({ address }) {
     return(
-    	<a className="nav-link" title={`${address}`} href={`https://etherscan.io/address/${address}`} target="_blank" rel="noopener">
+    	<a className="nav-link" title={`${address}`} href={`https://${process.env.REACT_APP_ETHERSCAN_BASE}.etherscan.io/address/${address}`} target="_blank" rel="noopener">
         <img
           className="ml-2"
           width='25'

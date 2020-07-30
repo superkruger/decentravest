@@ -67,17 +67,6 @@ export const formatBalance = (balance, asset) => {
 	return formatted
 }
 
-export const getTokenSymbol = (address) => {
-	switch(address) {
-		case `${process.env.REACT_APP_DAI_ADDRESS}`:
-			return 'DAI'
-		case `${process.env.REACT_APP_USDC_ADDRESS}`:
-			return 'USDC'
-		default:
-			return 'ETH'
-	}
-}
-
 export const info = (title, message, hash) => {
 	let id
 	if (hash) {
@@ -101,4 +90,12 @@ export const fail = (title, message) => {
 		title: title,
 		message: message
 	}
+}
+
+export const uniqueByKey = (data, key) => {
+	return [
+		... new Map(
+				data.map(x => [key(x), x])
+			).values()
+	]
 }

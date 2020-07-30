@@ -45,9 +45,11 @@ function showInvestments(investments, props) {
   return (
     <div>
     { investments.map((investment) => {
+        const headerClass = investment.state === "4" ? "disbursed" : ""
+        
         return (
           <div className="card shadow mb-4" key={investment.id}>
-            <a href={`#investments_${investment.id}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`investments_${investment.id}`}>
+            <a href={`#investments_${investment.id}`} className={`d-block card-header py-3 collapsed ${headerClass}`} data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`investments_${investment.id}`}>
               <h6 className="m-0 font-weight-bold text-primary">
                 <Row>
                   <Col sm={1}>
@@ -57,7 +59,7 @@ function showInvestments(investments, props) {
                     }
                     <AddressImage address={investment.investor}/>
                   </Col>
-                  <Col sm={2}>
+                  <Col sm={1}>
                     <Token address={investment.token} />
                   </Col>
                   <Col sm={3}>
@@ -69,20 +71,48 @@ function showInvestments(investments, props) {
                   <Col sm={3}>
                     <span className={`text-${investment.profitClass}`}>Nett Value: {investment.formattedNettValue}</span>
                   </Col>
+                  <Col sm={1}>
+                    <span className="very-small text-right">
+                      {investment.start.format('D-M-Y')}
+                    </span>
+                  </Col>
                 </Row>
               </h6>
             </a>
             <div className="collapse" id={`investments_${investment.id}`}>
               <div className="card-body">
-                {
+                <Row>
+                  <Col sm={6}>
                   {
-                    0: <StopButton investment={investment} props={props} />,
-                    1: <DisburseButton investment={investment} props={props} />,
-                    2: <ApproveButton investment={investment} props={props} />,
-                    3: <ApproveButton investment={investment} props={props} />,
-                    4: <div>Divested</div>
-                  }[investment.state]
-                }
+                    {
+                      0: <StopButton investment={investment} props={props} />,
+                      1: <DisburseButton investment={investment} props={props} />,
+                      2: <ApproveButton investment={investment} props={props} />,
+                      3: <ApproveButton investment={investment} props={props} />,
+                      4: <div>Divested</div>
+                    }[investment.state]
+                  }
+                  </Col>
+                  <Col sm={6}>
+                    <span className="very-small align-right">
+                      <table>
+                        <tbody>
+                          <tr>
+                            <td>Start:</td>
+                            <td>{investment.formattedStart}</td>
+                          </tr>
+                          {
+                            investment.end.unix() > 0 &&
+                              <tr>
+                                <td>End:</td>
+                                <td>{investment.formattedEnd}</td>
+                              </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </span>
+                  </Col>
+                </Row>
               </div>
             </div>
           </div>

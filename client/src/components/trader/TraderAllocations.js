@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import { Container, Row, Col, Form, Button } from 'react-bootstrap'
+import { Container, Row, Col, Form, Button, Alert } from 'react-bootstrap'
 import AllocationChart from './AllocationChart'
 import { log, ZERO_ADDRESS, tokenDecimalsForAddress } from '../../helpers'
 import { 
@@ -44,7 +44,18 @@ class TraderAllocations extends Component {
     ]
 
     return (
-      <Container>
+        <Container>
+          <Row>
+            <Col sm={12}>
+              <Alert variant="info">
+                Investors will only see you when you have allocations greater than 0<br/><br/>
+                An allocation is an indication of how much you trade with.<br/>
+                Setting it too high will result in more investments, lower returns for investors, and fewer losses per investor in case of trading losses.<br/>
+                Setting it too low will result in fewer investments, higher returns for investors, and larger losses per investor in case of trading losses.<br/><br/>
+                Set it to 0 any time to stop receiving investments.
+              </Alert>
+            </Col>
+          </Row>
           <Row>
             <Col sm={12}>
               { 
@@ -54,33 +65,47 @@ class TraderAllocations extends Component {
                   return (
                     <div className="card shadow mb-4" key={`${allocation.symbol}_${account}`}>
                       <a href={`#${allocation.symbol}${account}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`${allocation.symbol}${account}`}>
-                        <h6 className="m-0 font-weight-bold text-primary">{allocation.symbol} Allocation</h6>
+                        <Container>
+                          <Row>
+                            <Col sm={4}>
+                              <h6 className="m-0 font-weight-bold text-primary">{allocation.symbol} Allocation</h6>
+                            </Col>
+                            <Col sm={8}>
+                              {
+                                traderAllocation && !traderAllocation.total.isZero()
+                                ? <AllocationChart trader={account} token={allocation.token}/>
+                                : <span>No allocation made</span>
+                              }
+                            </Col>
+                          </Row>
+                        </Container>
                       </a>
                       <div className="collapse" id={`${allocation.symbol}${account}`}>
                         <div className="card-body">
                           <Container>
                             <Row>
                               <Col sm={6}>
-                                  <div>
-                                    {
-                                      traderAllocation && !traderAllocation.total.isZero()
-                                      ? <AllocationChart data={traderAllocation}/>
-                                      : <span>No allocation made</span>
-                                    }
-                                  </div>
+                                {
+                                  traderAllocation && !traderAllocation.total.isZero()
+                                  ? <div>
+                                      <span>Allocated: {`${traderAllocation.formattedTotal}`}</span><br/>
+                                      <span>Invested: {`${traderAllocation.formattedInvested}`}</span>
+                                    </div>
+                                  : <span></span>
+                                }
                               </Col>
                               <Col sm={6}>
-                                  <div>
-                                    <Balance props={this.props} symbol={allocation.symbol}/>
-                                    <Form>
-                                      <Form.Group controlId={`${allocation.symbol}_Amount`}>
-                                        <Form.Control type="number" placeholder={`Enter ${allocation.symbol} Amount`} />
-                                      </Form.Group>
-                                      <Button variant="primary" onClick={(e) => {allocationSubmitHandler(allocation.token, allocation.symbol + "_Amount", this.props)}}>
-                                        Set {allocation.symbol} Allocation
-                                      </Button>
-                                    </Form>
-                                  </div>
+                                <div>
+                                  <Balance props={this.props} symbol={allocation.symbol}/>
+                                  <Form>
+                                    <Form.Group controlId={`${allocation.symbol}_Amount`}>
+                                      <Form.Control type="number" placeholder={`Enter ${allocation.symbol} Amount`} />
+                                    </Form.Group>
+                                    <Button variant="primary" onClick={(e) => {allocationSubmitHandler(allocation.token, allocation.symbol + "_Amount", this.props)}}>
+                                      Set {allocation.symbol} Allocation
+                                    </Button>
+                                  </Form>
+                                </div>
                               </Col>
                             </Row>
                           </Container>

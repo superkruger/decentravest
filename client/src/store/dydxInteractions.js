@@ -3,7 +3,6 @@ import moment from 'moment'
 import BigNumber from 'bignumber.js'
 import {
 	positionsCountLoaded,
-	traderPositionsLoaded,
 	traderPositionLoaded,
 	traderRatingsLoaded
 } from './dydxActions.js'
@@ -223,6 +222,7 @@ const mapTraderPosition = (position) => {
 		
 		const mappedPosition = {
 			uuid: position.uuid,
+			owner: position.owner,
 			type: position.type,
 			status: position.status,
 			asset: mappedStandardActions[0].asset,

@@ -54,7 +54,7 @@ function Notification(props) {
           </Alert>
           <Alert variant={notification.variant}>
             {notification.message}<br/>
-            <a href={`https://etherscan.io/tx/${notification.hash}`} target="_blank" rel="noopener">Check transaction</a>
+            <a href={`https://${process.env.REACT_APP_ETHERSCAN_BASE}.etherscan.io/tx/${notification.hash}`} target="_blank" rel="noopener">Check transaction</a>
           </Alert>
         </Toast.Body>
       </Toast>

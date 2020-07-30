@@ -264,15 +264,13 @@ function trader (state = {}, action ) {
 			return { ...state, joining: true }
 		case 'MAIN_TRADER_LOADED':
 			return { ...state, joining: false, trader: action.trader }
-		case 'TRADER_POSITIONS_LOADED':
-			return { ...state, positions: {...state.positions, loaded: true} } 
 		case 'TRADER_POSITION_LOADED':
 			{
 				// prevent duplicates
 				let index, data
 
 				if (state.positions === undefined) {
-					state.positions = {loaded: false, data: []}
+					state.positions = {data: []}
 				}
 				index = state.positions.data.findIndex(position => position.uuid === action.position.uuid)
 				if (index === -1) {
@@ -284,7 +282,6 @@ function trader (state = {}, action ) {
 					...state, 
 					positions: {
 						...state.positions,
-						loaded: false,
 						data
 					}}
 			}

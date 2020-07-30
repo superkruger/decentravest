@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
+import { Alert } from 'react-bootstrap'
 import Rating from '../Rating'
 import { 
   loadTraderPositions,
@@ -33,9 +34,12 @@ class Trader extends Component {
     return (
 
       <div>
+        <Alert variant="info">
+          Below are your completed trades on dydx and a rating relative to other traders on this platform.
+        </Alert>
         <div className="card shadow mb-4">
           <a href="#WETH_Trades" className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="WETH_Trades">
-            <h6 className="m-0 font-weight-bold text-primary">WETH Trades <Rating asset="WETH" rating={`${traderRatings["WETH"]}`}/></h6>
+            <h6 className="m-0 font-weight-bold text-primary">ETH Trades <Rating asset="WETH" rating={`${traderRatings["WETH"]}`}/></h6>
           </a>
           <div className="collapse" id="WETH_Trades">
             <div className="card-body">

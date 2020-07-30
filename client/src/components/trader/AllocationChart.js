@@ -4,15 +4,17 @@ import * as am4core from "@amcharts/amcharts4/core";
 import * as am4charts from "@amcharts/amcharts4/charts";
 import am4themes_animated from "@amcharts/amcharts4/themes/animated";
 import Spinner from '../Spinner'
+import { log, weiToEther, tokenDecimalsForAddress } from '../../helpers'
 import {
-  accountSelector
+  accountSelector,
+  traderAllocationsSelector
 } from '../../store/selectors'
 
 am4core.useTheme(am4themes_animated);
 
 class AllocationChart extends Component {
   componentDidMount() {
-      this.chartContainer = this.props.showChart ? buildChart(this.props) : null;
+      this.chartContainer = buildChart(this.props);
   }
 
   componentWillUnmount() {
@@ -22,9 +24,6 @@ class AllocationChart extends Component {
   }
 
   componentDidUpdate(oldProps) {
-    if (!this.props.showChart) {
-        return;
-    }
 
     if ((oldProps.account === null && this.props.account !== null)
         || ( oldProps.account !== null && this.props.account !== null && JSON.stringify(oldProps.account) !== JSON.stringify(this.props.account))) {
@@ -35,36 +34,35 @@ class AllocationChart extends Component {
         return;
     }
 
-    if(JSON.stringify(oldProps.data) !== JSON.stringify(this.props.data)) {
-        setChartData(this.chartContainer, this.props.data);
+    if(JSON.stringify(oldProps.traderAllocations) !== JSON.stringify(this.props.traderAllocations)) {
+        const allocation = getTraderAllocation(this.props.token, this.props.traderAllocations)
+        log("Refresh", allocation)
+        setChartData(this.chartContainer, convertAllocationToData(allocation));
         return;
     }
   }
 
   render() {
-    const {data} = this.props
+    const {traderAllocations, token} = this.props
+    const data = getTraderAllocation(token, traderAllocations)
 
     return (
-        
-        <div>
-            <span>Allocated: {`${data.formattedTotal}`}</span><br/>
-            <span>Invested: {`${data.formattedInvested}`}</span>
-            <div id={`${data.trader}-${data.symbol}-chartdiv`} style={{ width: "100%", height: "100px" }} />
-        </div>
-              
+        <div id={`${data.trader}-${data.symbol}-chartdiv`} style={{ width: "100%", height: "100px" }} />      
     )
   }
 }
 
 function buildChart(props) {
-    const {data} = props;
+    const {traderAllocations, trader, token} = props;
 
-    let container = am4core.create(data.trader + "-" + data.symbol + "-chartdiv", am4core.Container);
+    const allocation = getTraderAllocation(token, traderAllocations)
+
+    let container = am4core.create(allocation.trader + "-" + allocation.symbol + "-chartdiv", am4core.Container);
     container.width = am4core.percent(100);
     container.height = am4core.percent(100);
     container.layout = "vertical";
 
-    createBulletChart(container, [data]);
+    createBulletChart(container, allocation);
 
     return container;
 }
@@ -72,29 +70,48 @@ function buildChart(props) {
 function setChartData(parent, data) {
     let child = parent.children.values[0]
     if (child) {
-        child.data = [data]
+        log("setChartData", data)
+        child.data = data
+        child.invalidateData()
     }
 }
 
-function createBulletChart(parent, data) {
+function convertAllocationToData(allocation) {
+    log("allocation", allocation)
+
+    let total = weiToEther(allocation.total, tokenDecimalsForAddress(allocation.token)).toNumber()
+    let invested = weiToEther(allocation.invested, tokenDecimalsForAddress(allocation.token)).toNumber()
+
+    const data = [{
+        "symbol": allocation.symbol,
+        "total": total,
+        "invested": invested
+    }];
+
+    log("data", data)
+    return data
+}
+
+function createBulletChart(parent, allocation) {
     // let colors = ["#B1001C", "#004989"];
     let colors = ["#FFF", "#00dd00"];
 
     let chart = parent.createChild(am4charts.XYChart);
     chart.paddingRight = 25;
 
-    chart.data = data;
+    chart.data = convertAllocationToData(allocation)
 
-    let categoryAxis = chart.yAxes.push(new am4charts.CategoryAxis());
+    /* Create axes */
+    var categoryAxis = chart.yAxes.push(new am4charts.CategoryAxis());
     categoryAxis.dataFields.category = "symbol";
     categoryAxis.renderer.minGridDistance = 30;
     categoryAxis.renderer.grid.template.disabled = true;
 
-    let valueAxis = chart.xAxes.push(new am4charts.ValueAxis());
+    var valueAxis = chart.xAxes.push(new am4charts.ValueAxis());
     valueAxis.renderer.minGridDistance = 30;
     valueAxis.renderer.grid.template.disabled = true;
     valueAxis.min = 0;
-    valueAxis.max = 100;
+    valueAxis.max = chart.data[0].total;
     valueAxis.strictMinMax = true;
     valueAxis.renderer.baseGrid.disabled = true;
     valueAxis.renderer.labels.template.adapter.add("text", function(text, target) {
@@ -105,27 +122,29 @@ function createBulletChart(parent, data) {
     for (var i = 0; i < 2; ++i) {
       gradient.addColor(am4core.color(colors[i]));
     }
-    createRange(valueAxis, 0, 100, gradient);
+    createRange(valueAxis, 0, chart.data[0].total, gradient);
   
-    let series = chart.series.push(new am4charts.ColumnSeries());
-    series.dataFields.valueX = "investedPercentage";
+    /* Create series */
+    var series = chart.series.push(new am4charts.ColumnSeries());
+    series.dataFields.valueX = "invested";
     series.dataFields.categoryY = "symbol";
-    series.columns.template.fill = am4core.color("#fff");
-    series.columns.template.stroke = am4core.color("#000");
+    series.columns.template.fill = am4core.color("#000");
+    series.columns.template.stroke = am4core.color("#fff");
     series.columns.template.strokeWidth = 1;
     series.columns.template.strokeOpacity = 0.5;
     series.columns.template.height = am4core.percent(25);
-    series.tooltipText = "{investedPercentage}"
+    series.tooltipText = "{invested}"
 
-    let series2 = chart.series.push(new am4charts.StepLineSeries());
-    series2.dataFields.valueX = "investedPercentageTarget";
+
+    var series2 = chart.series.push(new am4charts.StepLineSeries());
+    series2.dataFields.valueX = "total";
     series2.dataFields.categoryY = "symbol";
     series2.strokeWidth = 3;
     series2.noRisers = true;
     series2.startLocation = 0.15;
     series2.endLocation = 0.85;
     series2.tooltipText = "{valueX}"
-    series2.stroke = am4core.color("#fff");
+    series2.stroke = am4core.color("#000");
 
     chart.cursor = new am4charts.XYCursor()
     chart.cursor.lineX.disabled = true;
@@ -145,13 +164,18 @@ function createRange(axis, from, to, color) {
     range.grid.disabled = true;
 }
 
-function mapStateToProps(state) {
+function getTraderAllocation(token, traderAllocations) {
+  return traderAllocations.find(allocation => allocation.token === token)
+}
+
+function mapStateToProps(state, props) {
     const account = accountSelector(state)
     const showChart = account !== null
 
   return {
     showChart: showChart,
-    account: account
+    account: account,
+    traderAllocations: traderAllocationsSelector(state, props.trader)
   }
 }
 

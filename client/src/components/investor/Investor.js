@@ -77,19 +77,27 @@ function Wallet(props) {
       <div className="collapse" id={`wallet_${wallet.contract.options.address}`}>
         <div className="card-body">
           <Container>
-          <Row>
-            <Col sm={12}>
-              <span>Wallet: <a href={`http://etherscan.io/address/${wallet.contract.options.address}`} target="_blank" rel="noopener">{wallet.contract.options.address}</a></span>
-            </Col>
-          </Row>
+            <Row>
+              <Col sm={12}>
+                <span>Wallet: <a href={`https://${process.env.REACT_APP_ETHERSCAN_BASE}.etherscan.io/address/${wallet.contract.options.address}`} target="_blank" rel="noopener">{wallet.contract.options.address}</a></span>
+              </Col>
+            </Row>
+            <Row>
+              <Col sm={12}>
+                <table className="table">
+                  <tbody>
+                    { 
+                      wallet.balances.map((balance) => {
+                        return (
+                          <Balance balance={balance} key={balance.symbol} />
+                        )
+                      })
+                    }
+                  </tbody>
+                </table>
+              </Col>
+            </Row>
           </Container>
-          { 
-            wallet.balances.map((balance) => {
-              return (
-                <Balance balance={balance} key={balance.symbol} />
-              )
-            })
-          }
         </div>
       </div>
     </div>
@@ -100,16 +108,14 @@ function Balance(props) {
   const {balance} = props
 
   return (
-    <Container>
-    <Row>
-      <Col sm={8}>
+    <tr>
+      <td>
         Wallet {balance.symbol} Balance:
-      </Col>
-      <Col sm={4}>
+      </td>
+      <td className="text-right">
         {balance.formatted}
-      </Col>
-    </Row>
-    </Container>
+      </td>
+    </tr>
   )
 }
 

@@ -1,6 +1,6 @@
 import { find, get, groupBy } from 'lodash'
 import { createSelector } from 'reselect'
-import { NEUTRAL, RED, GREEN, formatBalance, getTokenSymbol, log } from '../helpers'
+import { NEUTRAL, RED, GREEN, formatBalance, tokenSymbolForAddress, log } from '../helpers'
 
 const notifications = (state) => get(state, 'app.notifications', [])
 export const notificationsSelector = createSelector(notifications, a => a)
@@ -123,10 +123,10 @@ const decorateTraderAllocation = (allocation) => {
 
 	return ({
 		...allocation,
-		investedPercentage: investedPercentage,
 		formattedTotal: formatBalance(allocation.total, allocation.symbol),
 		formattedInvested: formatBalance(allocation.invested, allocation.symbol),
-		investedPercentageTarget: 100
+		available: allocation.total.minus(allocation.invested),
+		formattedAvailable: formatBalance(allocation.total.minus(allocation.invested), allocation.symbol)
 	})
 }
 
@@ -158,7 +158,7 @@ const decorateTraderPosition = (position) => {
 
 	return ({
 		...position,
-		formattedStart: position.start.format('hh:mm:ss D-M-Y'),
+		formattedStart: position.start.local().format('HH:mm:ss D-M-Y'),
 		profit: decoratePositionProfit(position)
 	})
 }
@@ -173,9 +173,38 @@ const decoratePositionProfit = (position) => {
 	})
 }
 
+const positionsForInvestment = (state, investment) => {
+	let tokenSymbol = tokenSymbolForAddress(investment.token)
+	if (tokenSymbol === 'ETH') {
+		tokenSymbol = 'WETH'
+	}
+	if (state.trader && state.trader.positions) {
+		let positions = state.trader.positions.data.filter(position => 
+			position.owner === investment.trader &&
+			position.asset === tokenSymbol)
+
+		positions = positions.sort((a, b) => b.start.diff(a.start))
+		positions = decorateTraderPositions(positions)
+
+		// if(process.env.NODE_ENV !== 'development') {
+			// filter by date
+			positions = positions.filter(position =>
+				position.start.isAfter(investment.start) 
+					&& (
+						(investment.end.unix() === 0 || investment.state === "0") 
+							|| position.end.isBefore(investment.end)))
+		// }
+
+		return positions
+	}
+	return []
+}
+export const positionsForInvestmentSelector = createSelector(positionsForInvestment, e => e)
+
 const investments = state => get(state, 'web3.investments', [])
 export const investmentsSelector = createSelector(investments, (investments) => {
 	if (investments !== undefined) {
+		investments = investments.sort((a, b) => b.start.diff(a.start))
 		investments = decorateInvestments(investments)
 	}
 	return investments
@@ -192,14 +221,23 @@ const decorateInvestment = (investment) => {
 	log("decorateInvestment", investment)
 	return ({
 		...investment,
-		formattedAmount: formatBalance(investment.amount, getTokenSymbol(investment.token)),
-		formattedValue: formatBalance(investment.value, getTokenSymbol(investment.token)),
-		formattedGrossValue: formatBalance(investment.grossValue, getTokenSymbol(investment.token)),
-		formattedNettValue: formatBalance(investment.nettValue, getTokenSymbol(investment.token)),
-		formattedInvestorProfit: formatBalance(investment.nettValue.minus(investment.amount), getTokenSymbol(investment.token)),
+		formattedStart: investment.start.local().format('HH:mm:ss D-M-Y'),
+		formattedEnd: investment.end.unix() ? investment.end.local().format('HH:mm:ss D-M-Y') : "",
+		formattedAmount: formatBalance(investment.amount, tokenSymbolForAddress(investment.token)),
+		formattedValue: formatBalance(investment.value, tokenSymbolForAddress(investment.token)),
+		formattedGrossValue: formatBalance(investment.grossValue, tokenSymbolForAddress(investment.token)),
+		formattedNettValue: formatBalance(investment.nettValue, tokenSymbolForAddress(investment.token)),
+		formattedInvestorProfit: formatBalance(investment.nettValue.minus(investment.amount), tokenSymbolForAddress(investment.token)),
 		profitClass: investment.grossValue.gt(investment.amount) ? GREEN : investment.grossValue.lt(investment.amount) ? RED : NEUTRAL
 	})
 }
+
+const investorInvestmentCountForTraderSelector = createSelector(investments, (investments) => {
+	if (investments !== undefined) {
+		investments = decorateInvestments(investments)
+	}
+	return investments
+})
 
 const investmentActionRequired = (state) => {
 	if (!state.web3.investments) {
