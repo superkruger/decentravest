@@ -31,7 +31,7 @@ class Investor extends Component {
     return (
       <div>
         {
-          wallet ?
+          wallet && wallet.contract ?
             <Wallet props={this.props}/> :
             <CreateWallet props={this.props}/>
         }

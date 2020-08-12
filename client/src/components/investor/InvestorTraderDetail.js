@@ -43,12 +43,6 @@ class InvestorTraderDetail extends Component {
   render() {
     const {trader, traderAllocations, traderRatings, investments } = this.props
 
-    if (!traderAllocations || traderAllocations.length === 0 || !traderAllocations.some(allocation => !allocation.total.isZero())) {
-      return (
-        <div />
-      )
-    }
-
     return (
       <div className="card shadow mb-4">
         <a href={`#trader_${trader.user}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`trader_${trader.user}`}>

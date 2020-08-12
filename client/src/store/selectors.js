@@ -32,10 +32,11 @@ export const walletFactorySelector = createSelector(walletFactory, e => e)
 const tokens = state => get(state, 'web3.tokens', [])
 export const tokensSelector = createSelector(tokens, t => t)
 
-const wallet = state => get(state, 'investor.wallet')
+const wallet = state => get(state, 'investor.wallet', null)
 export const walletSelector = createSelector(wallet, (wallet) => {
-
-	wallet.balances = decorateBalances(wallet.balances)
+	if (wallet && wallet.balances) {
+		wallet.balances = decorateBalances(wallet.balances)
+	}
 	return wallet
 })
 
@@ -44,8 +45,7 @@ export const walletCreatingSelector = createSelector(walletCreating, e => e)
 
 const balances = state => get(state, 'web3.balances', [])
 export const balancesSelector = createSelector(balances, (balances) => {
-	if (balances !== undefined) {
-
+	if (balances.length > 0) {
 		balances = decorateBalances(balances)
 	}
 	return balances
@@ -67,6 +67,12 @@ const decorateBalance = (balance) => {
 
 const traders = state => get(state, 'web3.traders', [])
 export const tradersSelector = createSelector(traders, e => e)
+
+export const investableTradersSelector = createSelector(traders, (traders) => {
+	return traders.filter((trader) => {
+		return (trader.allocations && trader.allocations.length !== 0 && trader.allocations.some(allocation => !allocation.total.isZero()))
+	})
+})
 
 const trader = state => get(state, 'trader.trader')
 export const traderSelector = createSelector(trader, e => e)
