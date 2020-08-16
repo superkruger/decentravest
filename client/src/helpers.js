@@ -2,6 +2,8 @@ import BigNumber from 'bignumber.js'
 const uuid = require("uuid")
 
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+export const INVESTMENT_COLLATERAL = 0
+export const INVESTMENT_DIRECT = 1
 
 export const GREEN = 'success'
 export const RED = 'danger'

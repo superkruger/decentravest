@@ -231,7 +231,7 @@ const mapTraderPosition = (position) => {
 			end: moment(transfers[0].confirmedAt),
 			profit: profit,
 			fee: fee,
-			nettProfit: profit.minus(fee),
+			nettProfit: profit,//.minus(fee),
 			standardActions: mappedStandardActions
 		}
 

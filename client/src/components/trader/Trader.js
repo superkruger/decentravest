@@ -49,8 +49,6 @@ class Trader extends Component {
                     <th>Date</th>
                     <th>Type</th>
                     <th>Profit</th>
-                    <th>Fee</th>
-                    <th>Nett Profit</th>
                   </tr>
                 </thead>
                 { showPositions(traderPositions["WETH"]) }
@@ -71,8 +69,6 @@ class Trader extends Component {
                     <th>Date</th>
                     <th>Type</th>
                     <th>Profit</th>
-                    <th>Fee</th>
-                    <th>Nett Profit</th>
                   </tr>
                 </thead>
                 { showPositions(traderPositions["DAI"]) }
@@ -93,8 +89,6 @@ class Trader extends Component {
                     <th>Date</th>
                     <th>Type</th>
                     <th>Profit</th>
-                    <th>Fee</th>
-                    <th>Nett Profit</th>
                   </tr>
                 </thead>
                 { showPositions(traderPositions["USDC"]) }
@@ -124,8 +118,6 @@ function showPositions(positions) {
               <td className="text-muted">{position.formattedStart}</td>
               <td>{position.type}</td>
               <td className={`text-${position.profit.profitClass}`}>{position.profit.formattedProfit}</td>
-              <td>{position.profit.formattedFeeAmount}</td>
-              <td className={`text-${position.profit.nettProfitClass}`}>{position.profit.formattedNettProfit}</td>
             </tr>
         )
       })

@@ -20,11 +20,15 @@ contract TraderPaired is Initializable, Ownable, Pausable, ITraderPaired {
      *  Constants
      */
     address constant ETHER = address(0); // allows storage of ether in blank address in token mapping
-    address public feeAccount; // account that will receive fees
+    uint16 constant DEFAULT_COLLATERAL_PERCENTAGE = 2000;
+    uint16 constant DEFAULT_DIRECT_PERCENTAGE = 8000;
 
     /*
      *  Storage
      */
+    address public feeAccount; // account that will receive fees
+
+
     mapping(address => _Trader) public traders;
     mapping(address => _Investor) public investors;
 
@@ -48,9 +52,10 @@ contract TraderPaired is Initializable, Ownable, Pausable, ITraderPaired {
      */
     event Trader(address indexed user, uint256 traderId, uint256 date);
     event Investor(address indexed user, uint256 investorId, uint256 date);
+    event ProfitPercentages(address indexed trader, uint16 investorCollateralProfitPercent, uint16 investorDirectProfitPercent);
     event Investment(address indexed wallet, address indexed investor, uint256 date);
     event Allocate(address indexed trader, address indexed token, uint256 total, uint256 invested, uint256 date);
-    event Invest(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address token, uint256 amount, uint256 allocationInvested, uint256 allocationTotal, uint256 date);
+    event Invest(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address token, uint256 amount, uint16 investorProfitPercent, uint8 investmentType, uint256 allocationInvested, uint256 allocationTotal, uint256 date);
     event Stop(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address from, uint256 date);
     event RequestExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address from, uint256 value, uint256 date);
     event ApproveExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, uint256 allocationInvested, uint256 allocationTotal, uint256 date);
@@ -62,6 +67,8 @@ contract TraderPaired is Initializable, Ownable, Pausable, ITraderPaired {
     struct _Trader {
         address user;
         uint256 investmentCount;
+        uint16 investorCollateralProfitPercent;
+        uint16 investorDirectProfitPercent;
     }
 
     struct _Allocation {
@@ -87,10 +94,10 @@ contract TraderPaired is Initializable, Ownable, Pausable, ITraderPaired {
         _;
     }
 
-    modifier notInvested(address trader, address investor) {
-        require(!isInvested(trader, investor));
-        _;
-    }
+    // modifier notInvested(address trader, address investor) {
+    //     require(!isInvested(trader, investor));
+    //     _;
+    // }
 
     modifier onlyWallet {
         require(IFactory(multiSigFundWalletFactory).isInstantiation(msg.sender));
@@ -151,7 +158,9 @@ contract TraderPaired is Initializable, Ownable, Pausable, ITraderPaired {
 
         traders[msg.sender] = _Trader({
             user: msg.sender, 
-            investmentCount: 0
+            investmentCount: 0,
+            investorCollateralProfitPercent: DEFAULT_COLLATERAL_PERCENTAGE,
+            investorDirectProfitPercent: DEFAULT_DIRECT_PERCENTAGE
         });
 
         traderCount = traderCount.add(1);
@@ -195,25 +204,42 @@ contract TraderPaired is Initializable, Ownable, Pausable, ITraderPaired {
         emit Allocate(msg.sender, _token, _amount, allocations[msg.sender][_token].invested, now);
     }
 
+    /// @dev Sets profit percentages
+    /// @param _investorCollateralProfitPercent investor profit for collateral investments
+    /// @param _investorDirectProfitPercent investor profit for direct investments
+    function setProfitPercentages(
+            uint16 _investorCollateralProfitPercent, 
+            uint16 _investorDirectProfitPercent)
+        external
+        whenNotPaused
+        isTrader(msg.sender)
+    {
+        _Trader storage _trader = traders[msg.sender];
+        _trader.investorCollateralProfitPercent = _investorCollateralProfitPercent;
+        _trader.investorDirectProfitPercent = _investorDirectProfitPercent;
+
+        emit ProfitPercentages(msg.sender, _investorCollateralProfitPercent, _investorDirectProfitPercent);
+    }
+
     /// @dev Checks if investor is invested with trader
     /// @param _traderAddress trader address
     /// @param _investorAddress investor address
     /// @return invested
-    function isInvested(address _traderAddress, address _investorAddress) 
-        internal
-        view
-        returns (bool) 
-    {
-        address[] memory wallets = IFactory(multiSigFundWalletFactory).getInstantiations(_investorAddress);
+    // function isInvested(address _traderAddress, address _investorAddress) 
+    //     internal
+    //     view
+    //     returns (bool) 
+    // {
+    //     address[] memory wallets = IFactory(multiSigFundWalletFactory).getInstantiations(_investorAddress);
         
-        for(uint256 i = 0; i < wallets.length; i++) {
-            if (IMultiSigFundWallet(wallets[i]).traders(_traderAddress)) {
-                return true;
-            }
-        }
+    //     for(uint256 i = 0; i < wallets.length; i++) {
+    //         if (IMultiSigFundWallet(wallets[i]).traders(_traderAddress)) {
+    //             return true;
+    //         }
+    //     }
 
-        return false;
-    }
+    //     return false;
+    // }
 
     /// @dev Checks if investor has a wallet
     /// @param _investorAddress investor address
@@ -242,8 +268,9 @@ contract TraderPaired is Initializable, Ownable, Pausable, ITraderPaired {
     /// @param _investorAddress investor address
     /// @param _token token address
     /// @param _amount amount to invest
+    /// @param _type investment type
     /// @return investment id
-    function invest(address _traderAddress, address _investorAddress, address _token, uint256 _amount) 
+    function invest(address _traderAddress, address _investorAddress, address _token, uint256 _amount, uint8 _type) 
         public 
         whenNotPaused 
         onlyWallet 
@@ -258,16 +285,25 @@ contract TraderPaired is Initializable, Ownable, Pausable, ITraderPaired {
 
         _Allocation storage allocation = allocations[_trader.user][_token];
 
-        // falls within trader allocations
-        require(allocation.total - allocation.invested >= _amount);
-        allocation.invested = allocation.invested.add(_amount);
+        if (_type == 0) {
+            // falls within trader allocations
+            require(allocation.total - allocation.invested >= _amount);
+            allocation.invested = allocation.invested.add(_amount);
+        }
+
+        uint16 _investorProfitPercent = _trader.investorCollateralProfitPercent;
+        if (_type == 1) {
+            _investorProfitPercent = _trader.investorDirectProfitPercent;
+        }
 
         uint256 starttime;
         (investmentCount, starttime) = IPairedInvestments(pairedInvestments).invest(
             _traderAddress, 
             _investorAddress, 
             _token, 
-            _amount
+            _amount,
+            _investorProfitPercent,
+            _type
         );
 
         _trader.investmentCount = _trader.investmentCount.add(1);
@@ -283,6 +319,8 @@ contract TraderPaired is Initializable, Ownable, Pausable, ITraderPaired {
             _investorAddress,
             _token,
             _amount,
+            _investorProfitPercent,
+            _type,
             allocation.invested,
             allocation.total,
             starttime
@@ -382,10 +420,11 @@ contract TraderPaired is Initializable, Ownable, Pausable, ITraderPaired {
     /// @dev Approve exit of investment
     /// @param _traderAddress trader address
     /// @param _investorAddress investor address
+    /// @param _signer Signer address
     /// @param _investmentId investment id
     /// @param _token token address
     /// @param _amount transaction amount
-    function approveExit(address _traderAddress, address _investorAddress, uint256 _investmentId, address _token, uint256 _amount) 
+    function approveExit(address _traderAddress, address _investorAddress, address _signer, uint256 _investmentId, address _token, uint256 _amount) 
         public 
         whenNotPaused
         onlyWallet
@@ -396,15 +435,18 @@ contract TraderPaired is Initializable, Ownable, Pausable, ITraderPaired {
         require(_trader.user == _traderAddress);
         require(_investor.user == _investorAddress);
 
-        uint256[4] memory _result = IPairedInvestments(pairedInvestments).approveExit(
+        uint256[5] memory _result = IPairedInvestments(pairedInvestments).approveExit(
             _traderAddress,
             _investorAddress, 
+            _signer,
             _investmentId, 
             _amount);
 
         _Allocation storage allocation = allocations[_traderAddress][_token];
 
-        allocation.invested = allocation.invested.sub(_result[3]);
+        if (_result[4] == 0) {
+            allocation.invested = allocation.invested.sub(_result[3]);
+        }
         
         payouts[0] = _result[0];
         payouts[1] = _result[1];

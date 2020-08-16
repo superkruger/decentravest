@@ -8,8 +8,11 @@ interface IPairedInvestments {
     /// @param _investorAddress investor address
     /// @param _token token address
     /// @param _amount amount to invest
+    /// @param _investorProfitPercent percentage profit for investor
+    /// @param _type type of investment
     /// @return investment id and start date
-    function invest(address _traderAddress, address _investorAddress, address _token, uint256 _amount) 
+    function invest(address _traderAddress, address _investorAddress, address _token, uint256 _amount, uint16 _investorProfitPercent,
+            uint8 _type) 
         external 
         returns(uint256, uint256);
 
@@ -42,12 +45,13 @@ interface IPairedInvestments {
     /// @dev Approve investment exit
     /// @param _traderAddress trader address
     /// @param _investorAddress investor address
+    /// @param _signer Signer address
     /// @param _investmentId investment id
     /// @param _amount transaction amount
     /// @return array with: trader payout, investor payout, fee payout, original investment amount
-    function approveExit(address _traderAddress, address _investorAddress, uint256 _investmentId, uint256 _amount) 
+    function approveExit(address _traderAddress, address _investorAddress, address _signer, uint256 _investmentId, uint256 _amount) 
         external  
-        returns (uint256[4] memory);
+        returns (uint256[5] memory);
 
     /// @dev Reject an exit request
     /// @param _traderAddress trader address

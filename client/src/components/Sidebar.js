@@ -2,10 +2,12 @@ import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import TraderSidebarMenu from './trader/TraderSidebarMenu'
 import InvestorSidebarMenu from './investor/InvestorSidebarMenu'
+import AdminSidebarMenu from './admin/AdminSidebarMenu'
 import {
   traderSelector,
   investorSelector,
-  sidebarClosedSelector
+  sidebarClosedSelector,
+  isAdminSelector
 } from '../store/selectors'
 import { 
   pageSelected,
@@ -15,7 +17,7 @@ import {
 class Sidebar extends Component {
 
   render() {
-    const { sidebarClosed } = this.props
+    const { isAdmin, joined, trader, sidebarClosed } = this.props
 
     return (
       <ul className={`navbar-nav bg-gradient-primary sidebar sidebar-dark accordion ${sidebarClosed ? "toggled" : ""}`} id="accordionSidebar">
@@ -30,19 +32,19 @@ class Sidebar extends Component {
         {/* Nav Item - Dashboard */}
 
         { 
-          this.props.joined ? 
-            <div>
-              {
-                this.props.trader ?
-                <TraderSidebarMenu /> :
-                <InvestorSidebarMenu />
-              }
-            
-            </div>
-          :
-
-          <div>
-          </div>
+          isAdmin ?
+            <AdminSidebarMenu />
+          : joined ? 
+              <div>
+                {
+                  trader ?
+                    <TraderSidebarMenu />
+                  : <InvestorSidebarMenu />
+                }
+              
+              </div>
+            : <div />
+          
         }
 
         {/* Divider */}
@@ -84,6 +86,7 @@ function mapStateToProps(state) {
   const trader = traderSelector(state)
   const investor = investorSelector(state)
   return {
+    isAdmin: isAdminSelector(state),
     joined: trader || investor,
     trader: trader,
     investor: investor,

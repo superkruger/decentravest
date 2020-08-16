@@ -15,6 +15,7 @@ contract MultiSigFundWallet is IMultiSigFundWallet {
      */
     address constant ETHER = address(0); // allows storage of ether in blank address in token mapping
     uint8 constant MAX_TOKENS = 20;
+    uint8 constant VERSION = 1;
 
     /*
      *  Storage
@@ -32,7 +33,7 @@ contract MultiSigFundWallet is IMultiSigFundWallet {
      *  Events
      */
     event SetTrader(address trader, bool active);
-    event Fund(address trader, address investor, uint256 investmentId, address token, uint256 amount, uint256 date);
+    event Fund(address trader, address investor, uint256 investmentId, address token, uint256 amount, uint8 investmentType, uint256 date);
     event Stopped(address trader, address initiator, uint256 investmentId, uint256 date);
     event DisbursementCreated(address trader, address initiator, uint256 investmentId, uint256 disbursementId, address token, uint256 value, uint256 amount, uint256 date);
     event DisbursementCompleted(address initiator, address signedBy, uint256 investmentId, uint256 disbursementId, uint256 date);
@@ -110,6 +111,14 @@ contract MultiSigFundWallet is IMultiSigFundWallet {
         admin = _admin;
     }
 
+    function version()
+        external
+        pure
+        returns (uint8)
+    {
+        return VERSION;
+    }
+
     /// @dev Add/Remove a trader
     /// @param _trader Trader address
     /// @param _active set active or not
@@ -136,50 +145,62 @@ contract MultiSigFundWallet is IMultiSigFundWallet {
 
     /// @dev Fund wallet with ether
     /// @param _trader Trader address
-    function fundEther(address _trader) 
+    function fundEther(address _trader, uint8 _type) 
         external 
         payable
     {
-        _fundEther(_trader, msg.value);
+        _fundEther(_trader, msg.value, _type);
     }
 
     /// @dev Fund wallet with token
     /// @param _trader Trader address
     /// @param _token Token address
     /// @param _amount Amount of tokens
-    function fundToken(address _trader, address _token, uint256 _amount)
+    function fundToken(address _trader, address _token, uint256 _amount, uint8 _type)
         external 
     {
-        _fundToken(_trader, _token, _amount);
+        _fundToken(_trader, _token, _amount, _type);
     }
 
     /// @dev Fund wallet with ether
     /// @param _trader Trader address
     /// @param _amount Amount of ether
-    function _fundEther(address _trader, uint256 _amount) 
+    function _fundEther(address _trader, uint256 _amount, uint8 _type) 
         internal
         isInvestor
         isTrader(_trader)
     {
-        uint256 investmentId = ITraderPaired(fund).invest(_trader, investor, ETHER, _amount);
-        balances[_trader][ETHER] = balances[_trader][ETHER].add(_amount);
-        emit Fund(_trader, msg.sender, investmentId, ETHER, _amount, now);
+        if (_type == 0) {
+            balances[_trader][ETHER] = balances[_trader][ETHER].add(_amount);
+        } else {
+            address payable _toAddress = address(uint160(_trader));
+            _toAddress.transfer(_amount);
+        }
+        
+        uint256 investmentId = ITraderPaired(fund).invest(_trader, investor, ETHER, _amount, _type);
+        emit Fund(_trader, msg.sender, investmentId, ETHER, _amount, _type, now);
     }
 
     /// @dev Fund wallet with token
     /// @param _trader Trader address
     /// @param _token Token address
     /// @param _amount Amount of tokens
-    function _fundToken(address _trader, address _token, uint256 _amount)
+    function _fundToken(address _trader, address _token, uint256 _amount, uint8 _type)
         internal 
         isInvestor
         isTrader(_trader)
     {
         require(_token != ETHER);
-        require(IERC20(_token).transferFrom(msg.sender, address(this), _amount));
-        uint256 investmentId = ITraderPaired(fund).invest(_trader, investor, _token, _amount);
-        balances[_trader][_token] = balances[_trader][_token].add(_amount);
-        emit Fund(_trader, msg.sender, investmentId, _token, _amount, now);
+
+        if (_type == 0) {
+            require(IERC20(_token).transferFrom(msg.sender, address(this), _amount));
+            balances[_trader][_token] = balances[_trader][_token].add(_amount);
+        } else {
+            require(IERC20(_token).transferFrom(msg.sender, _trader, _amount));
+        }
+        
+        uint256 investmentId = ITraderPaired(fund).invest(_trader, investor, _token, _amount, _type);
+        emit Fund(_trader, msg.sender, investmentId, _token, _amount, _type, now);
     }
 
     /// @dev Stop investment
@@ -304,7 +325,7 @@ contract MultiSigFundWallet is IMultiSigFundWallet {
       validSignature(_trader, _disbursementId)
     {
         Disbursement memory _disbursement = disbursements[_disbursementId];
-        _executeDisbursement(_trader, _disbursementId, _token, _amount);
+        _executeDisbursement(_trader, msg.sender, _disbursementId, _token, _amount);
         emit DisbursementCompleted(_disbursement.initiator, msg.sender, _disbursement.investmentId, _disbursementId, now);
         _deleteDisbursement(_disbursementId);
     }
@@ -334,14 +355,15 @@ contract MultiSigFundWallet is IMultiSigFundWallet {
 
     /// @dev Fulfill disbursement
     /// @param _trader Trader address
+    /// @param _signer Signer address
     /// @param _disbursementId disbursement id
     /// @param _token Token address
     /// @param _amount transaction amount
-    function _executeDisbursement(address _trader, uint256 _disbursementId, address _token, uint256 _amount) 
+    function _executeDisbursement(address _trader, address _signer, uint256 _disbursementId, address _token, uint256 _amount) 
         internal 
     {
         Disbursement storage _disbursement = disbursements[_disbursementId];
-        uint256[3] memory _payouts = ITraderPaired(fund).approveExit(_trader, investor, _disbursement.investmentId, _token, _amount);
+        uint256[3] memory _payouts = ITraderPaired(fund).approveExit(_trader, investor, _signer, _disbursement.investmentId, _token, _amount);
 
         if (_amount > 0) {
             balances[_trader][_token] = balances[_trader][_token].add(_amount);

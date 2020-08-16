@@ -29,6 +29,9 @@ export const pairedInvestmentsSelector = createSelector(pairedInvestments, e => 
 const walletFactory = state => get(state, 'web3.walletFactory.contract')
 export const walletFactorySelector = createSelector(walletFactory, e => e)
 
+const isAdmin = state => get(state, 'web3.isAdmin', false)
+export const isAdminSelector = createSelector(isAdmin, t => t)
+
 const tokens = state => get(state, 'web3.tokens', [])
 export const tokensSelector = createSelector(tokens, t => t)
 
@@ -69,9 +72,13 @@ const traders = state => get(state, 'web3.traders', [])
 export const tradersSelector = createSelector(traders, e => e)
 
 export const investableTradersSelector = createSelector(traders, (traders) => {
-	return traders.filter((trader) => {
+	const res = traders.filter((trader) => {
+		log('traders.filter', trader.allocations)
 		return (trader.allocations && trader.allocations.length !== 0 && trader.allocations.some(allocation => !allocation.total.isZero()))
 	})
+
+	log('investableTradersSelector', res)
+	return res
 })
 
 const trader = state => get(state, 'trader.trader')

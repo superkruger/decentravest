@@ -11,6 +11,12 @@ contract PairedInvestments is Initializable, Ownable, IPairedInvestments {
 	using SafeMath for uint256;
 
     /*
+     *  Constants
+     */
+    uint8 constant INVESTMENT_TYPE_COLLATERAL = 0;
+    uint8 constant INVESTMENT_TYPE_DIRECT = 1;
+
+    /*
      *  Storage
      */
 	address public manager;
@@ -42,6 +48,8 @@ contract PairedInvestments is Initializable, Ownable, IPairedInvestments {
         uint256 value;
         uint256 start;
         uint256 end;
+        uint16 investorProfitPercent;
+        uint8 investmentType;
         InvestmentState state;
     }
 
@@ -56,18 +64,15 @@ contract PairedInvestments is Initializable, Ownable, IPairedInvestments {
     /// @dev Initialize
     /// @param _traderFeePercent trader fee percentage in unit of 100, i.e. 100 == 1% and 5 == 0.05% and 10000 == 100%
     /// @param _investorFeePercent investor fee percentage
-    /// @param _investorProfitPercent investor profit percentage
     function initialize(
 	    	uint256 _traderFeePercent, 
-	        uint256 _investorFeePercent, 
-	        uint256 _investorProfitPercent) 
+	        uint256 _investorFeePercent) 
         public 
         initializer 
     {
     	Ownable.initialize(msg.sender);
     	traderFeePercent = _traderFeePercent;
         investorFeePercent = _investorFeePercent;
-        investorProfitPercent = _investorProfitPercent;
     }
 
     /// @dev Set manager
@@ -84,12 +89,22 @@ contract PairedInvestments is Initializable, Ownable, IPairedInvestments {
     /// @param _investorAddress investor address
     /// @param _token token address
     /// @param _amount amount to invest
+    /// @param _investorProfitPercent percentage profit for investor
+    /// @param _type type of investment
     /// @return investment id and start date
-    function invest(address _traderAddress, address _investorAddress, address _token, uint256 _amount) 
+    function invest(
+            address _traderAddress, 
+            address _investorAddress, 
+            address _token, 
+            uint256 _amount, 
+            uint16 _investorProfitPercent,
+            uint8 _type) 
         public 
         onlyManager 
         returns(uint256, uint256) 
     {
+        require(_investorProfitPercent > 0 && _investorProfitPercent < 10000);
+        require(_type == INVESTMENT_TYPE_COLLATERAL || _type == INVESTMENT_TYPE_DIRECT);
         
         uint256 start = now;
         investmentCount = investmentCount.add(1);
@@ -102,7 +117,9 @@ contract PairedInvestments is Initializable, Ownable, IPairedInvestments {
                 value: 0,
                 start: start,
                 end: 0,
-                state: InvestmentState.Invested
+                investorProfitPercent: _investorProfitPercent,
+                state: InvestmentState.Invested,
+                investmentType: _type
             });
 
         return (investmentCount, start);
@@ -153,6 +170,8 @@ contract PairedInvestments is Initializable, Ownable, IPairedInvestments {
     {
         _Investment memory _investment = investments[_investmentId];
 
+        uint256 _expected = 0;
+
         if (_value > _investment.amount) {
 
             (
@@ -165,16 +184,28 @@ contract PairedInvestments is Initializable, Ownable, IPairedInvestments {
                 _investment.amount, 
                 traderFeePercent, 
                 investorFeePercent, 
-                investorProfitPercent
+                _investment.investorProfitPercent
             );
 
-            require(_investorProfit.add(_traderFee).add(_investorFee) == _amount);
+            _expected = _investorProfit.add(_traderFee).add(_investorFee);
+
+            if (_investment.investmentType == INVESTMENT_TYPE_DIRECT) {
+                _expected = _expected.add(_investment.amount);
+            }
+
+            require(_expected == _amount);
             
         } else {
 
             uint256 _traderFee = (_investment.amount.sub(_value)).mul(traderFeePercent).div(10000);
 
-            require(_traderFee == _amount);
+            _expected =_traderFee;
+
+            if (_investment.investmentType == INVESTMENT_TYPE_DIRECT) {
+                _expected = _expected.add(_value);
+            }
+
+            require(_expected == _amount);
         }
 
         _requestExit(_traderAddress, _investorAddress, _investmentId, _value, InvestmentState.ExitRequestedTrader);
@@ -203,13 +234,14 @@ contract PairedInvestments is Initializable, Ownable, IPairedInvestments {
     /// @dev Approve investment exit
     /// @param _traderAddress trader address
     /// @param _investorAddress investor address
+    /// @param _signer Signer address
     /// @param _investmentId investment id
     /// @param _amount transaction amount
     /// @return array with: trader payout, investor payout, fee payout, original investment amount
-    function approveExit(address _traderAddress, address _investorAddress, uint256 _investmentId, uint256 _amount) 
+    function approveExit(address _traderAddress, address _investorAddress, address _signer, uint256 _investmentId, uint256 _amount) 
         public 
         onlyManager 
-        returns (uint256[4] memory result) 
+        returns (uint256[5] memory result) 
     {
         _Investment storage _investment = investments[_investmentId];
         require(_investment.trader == _traderAddress);
@@ -231,49 +263,102 @@ contract PairedInvestments is Initializable, Ownable, IPairedInvestments {
             	_investment.amount, 
             	traderFeePercent, 
             	investorFeePercent, 
-            	investorProfitPercent
+            	_investment.investorProfitPercent
             );
 
-            // if the investor requested the exit, the trader will have to pay the amount
-            // if the trader requested the exit, they've already paid the amount
-            if (_investment.state == InvestmentState.ExitRequestedInvestor) {
-                _expected = _investorProfit.add(_traderFee).add(_investorFee);   
+            if (_signer != _traderAddress && _signer != _investorAddress) {
+                // signed by admin
+                require(0 == _amount);
+
+                if (_investment.investmentType == INVESTMENT_TYPE_COLLATERAL) {
+                    if (_investment.state == InvestmentState.ExitRequestedTrader) {
+                        result[1] = _investment.amount.add(_investorProfit);
+                        result[2] = _traderFee.add(_investorFee);
+                    } else {
+                        result[1] = _investment.amount.sub(_investorFee);
+                        result[2] = _investorFee;
+                    }
+                } else {
+                    if (_investment.state == InvestmentState.ExitRequestedTrader) {
+                        result[1] = _investment.amount.add(_investorProfit);
+                        result[2] = _traderFee.add(_investorFee);
+                    }
+                }
+
+            } else {
+                // if the investor requested the exit, the trader will have to pay the amount
+                // if the trader requested the exit, they've already paid the amount
+                if (_investment.state == InvestmentState.ExitRequestedInvestor) {
+                    _expected = _investorProfit.add(_traderFee).add(_investorFee);
+
+                    if (_investment.investmentType == INVESTMENT_TYPE_DIRECT) {
+                        _expected = _expected.add(_investment.amount);
+                    }
+                }
+
+                require(_expected == _amount);
+
+                // investment amount plus profit (minus fee)
+                result[1] = _investment.amount.add(_investorProfit);
+
+                // pay trader and investor fee
+                result[2] = _traderFee.add(_investorFee);
             }
-
-            require(_expected == _amount);
-
-            // investment amount plus profit (minus fee)
-            result[1] = _investment.amount.add(_investorProfit);
-
-            // pay trader and investor fee
-            result[2] = _traderFee.add(_investorFee);
-            
             
         } else {
 
         	uint256 _traderFee = (_investment.amount.sub(_investment.value)).mul(traderFeePercent).div(10000);
 
-            // if the investor requested the exit, the trader will have to pay the amount
-            // if the trader requested the exit, they've already paid the amount
-            if (_investment.state == InvestmentState.ExitRequestedInvestor) {
-        	   _expected =_traderFee;
+            if (_signer != _traderAddress && _signer != _investorAddress) {
+                // signed by admin
+                require(0 == _amount);
+
+                if (_investment.investmentType == INVESTMENT_TYPE_COLLATERAL) {
+                    if (_investment.state == InvestmentState.ExitRequestedTrader) {
+                        result[0] = _investment.amount.sub(_investment.value);
+                        result[1] = _investment.value;
+                        result[2] = _traderFee;
+                    } else {
+                        result[0] = _investment.amount.sub(_investment.value);
+                        result[1] = _investment.value;
+                    }
+                } else {
+                    if (_investment.state == InvestmentState.ExitRequestedTrader) {
+                        result[1] = _investment.value;
+                        result[2] = _traderFee;
+                    }
+                }
+
+            } else {
+                // if the investor requested the exit, the trader will have to pay the amount
+                // if the trader requested the exit, they've already paid the amount
+                if (_investment.state == InvestmentState.ExitRequestedInvestor) {
+                    _expected = _traderFee;
+
+                    if (_investment.investmentType == INVESTMENT_TYPE_DIRECT) {
+                        _expected = _expected.add(_investment.value);
+                    }
+                }
+
+                require(_expected == _amount);
+
+                // take losses away from investor
+                result[1] = _investment.value;
+                
+                if (_investment.investmentType == INVESTMENT_TYPE_COLLATERAL) {
+                    // add losses to trader balance
+                    result[0] = _investment.amount.sub(_investment.value);
+                }
+                
+                // trader fee
+                result[2] = _traderFee;
             }
-
-            require(_expected == _amount);
-
-            // take losses away from investor
-            result[1] = _investment.value;
-            
-            // add losses to trader balance
-            result[0] = _investment.amount.sub(_investment.value);
-            
-            // trader fee
-            result[2] = _traderFee;
         }
 
         _investment.state = InvestmentState.Divested;
 
         result[3] = _investment.amount;
+        result[4] = _investment.investmentType;
     }
 
     /// @dev Reject an exit request
@@ -302,7 +387,7 @@ contract PairedInvestments is Initializable, Ownable, IPairedInvestments {
     /// @param _investorFeePercent investor fee percent
     /// @param _investorProfitPercent investor profit percent
     /// @return array with: trader fee, investor fee, trader profit, investor profit
-    function calculateProfitsAndFees(
+    function calculateProfitsAndFees (
 		uint256 _value,
 		uint256 _amount,
 		uint256 _traderFeePercent,

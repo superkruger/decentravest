@@ -61,6 +61,12 @@ export function walletFactoryLoaded(contract) {
 	}
 }
 
+export function adminLoaded() {
+	return {
+		type: 'ADMIN_LOADED'
+	}
+}
+
 export function walletCreating(creating) {
 	return {
 		type: 'WALLET_CREATING',

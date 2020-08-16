@@ -6,7 +6,8 @@ import {
   traderPairedSelector,
   traderPairedLoadedSelector,
   traderSelector,
-  investorSelector
+  investorSelector,
+  isAdminSelector
 } from '../store/selectors'
 import { 
   pageSelected,
@@ -16,6 +17,7 @@ import {
 class Intro extends Component {
 
   render() {
+    const {isAdmin, traderPairedLoaded, joined} = this.props
     return (
       <div>
         <Container>
@@ -33,7 +35,7 @@ class Intro extends Component {
           <Row>
             <Col sm={12}>
               <div>
-                { !this.props.traderPairedLoaded ? 
+                { !traderPairedLoaded ? 
                   <div>
                     <div>
                     {
@@ -44,7 +46,7 @@ class Intro extends Component {
                     </div>
                   </div> : 
                   
-                    !this.props.joined ?
+                    !joined && !isAdmin ?
                     
                     <JoinButton props={this.props} /> :
 
@@ -107,6 +109,7 @@ function mapStateToProps(state) {
   const investor = investorSelector(state)
 
   return {
+    isAdmin: isAdminSelector(state),
     traderPaired: traderPairedSelector(state),
     traderPairedLoaded: traderPairedLoadedSelector(state),
     joined: trader || investor,

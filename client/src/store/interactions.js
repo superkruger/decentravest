@@ -6,7 +6,7 @@ import PairedInvestments from '../abis/PairedInvestments.json'
 import MultiSigFundWalletFactory from '../abis/MultiSigFundWalletFactory.json'
 import MultiSigFundWallet from '../abis/MultiSigFundWallet.json'
 import ERC20 from '../abis/IERC20.json'
-import { log, ZERO_ADDRESS, toBN, etherToWei, tokenAddressForSymbol, tokenSymbolForAddress, info, fail } from '../helpers'
+import { log, ZERO_ADDRESS, INVESTMENT_COLLATERAL, INVESTMENT_DIRECT, toBN, etherToWei, tokenAddressForSymbol, tokenSymbolForAddress, info, fail } from '../helpers'
 import { getTraderPositions } from './dydxInteractions'
 import {
 	notificationAdded,
@@ -15,6 +15,7 @@ import {
 	web3AccountLoaded,
 	traderPairedLoaded,
 	pairedInvestmentsLoaded,
+	adminLoaded,
 	tokensLoaded,
 	balanceLoaded,
 	traderLoaded,
@@ -32,6 +33,8 @@ import {
 	investmentChanging,
 	disbursementCreated
 } from './actions.js'
+
+const FACC = `${process.env.REACT_APP_FACC}`
 
 export const loadWeb3 = async (dispatch) => {
 
@@ -135,8 +138,13 @@ export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 			if (trader && trader.user !== ZERO_ADDRESS) {
 				await loadMainTrader(trader, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
 			}
+
 			if (investor && investor.user !== ZERO_ADDRESS) {
 				await loadMainInvestor(investor, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
+			}
+
+			if (account === FACC) {
+				await loadAdmin(account, traderPaired, dispatch)
 			}
 
 			return traderPaired
@@ -150,6 +158,7 @@ export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 
 const loadMainTrader = async (trader, traderPaired, pairedInvestments, walletFactory, web3, dispatch) => {
 	await loadTraderInvestments(trader, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
+	await loadTraderAllocations(trader.user, traderPaired, dispatch)
 
 	dispatch(mainTraderLoaded(trader))
 }
@@ -161,6 +170,12 @@ const loadMainInvestor = async (investor, traderPaired, pairedInvestments, walle
 	dispatch(mainInvestorLoaded(investor))
 }
 
+const loadAdmin = async (admin, traderPaired, dispatch) => {
+	// await loadInvestors(investor, traderPaired, pairedInvestments, dispatch)
+	
+	dispatch(adminLoaded())
+}
+
 const loadTraders = async (traderPaired, dispatch) => {
 
 	const traderCount = await traderPaired.methods.traderCount().call()
@@ -168,9 +183,11 @@ const loadTraders = async (traderPaired, dispatch) => {
 		const traderAddress = await traderPaired.methods.traderAddresses(i).call()
 		const trader = await traderPaired.methods.traders(traderAddress).call()
 		dispatch(traderLoaded(mapTrader(trader)))
+		await loadTraderAllocations(trader.user, traderPaired, dispatch)
 	}
 
 	traderPaired.events.Trader({filter: {}}, (err, event) => {
+		loadTraderAllocations(event.returnValues.user, traderPaired, dispatch)
 		dispatch(traderLoaded(mapTrader(event.returnValues)))
 	})
 
@@ -473,7 +490,7 @@ const investInTrader = async (account, trader, tokenAddress, token, amount, wall
 	try {
 		if (tokenAddress === ZERO_ADDRESS) {
 
-			wallet.methods.fundEther(trader).send({from: account, value: amount})
+			wallet.methods.fundEther(trader, INVESTMENT_COLLATERAL).send({from: account, value: amount})
 			.on('transactionHash', async (hash) => {
 				dispatch(notificationAdded(info("Investment", "Investing ether...", hash)))
 			})
@@ -493,7 +510,7 @@ const investInTrader = async (account, trader, tokenAddress, token, amount, wall
 			})
 			.on('receipt', async (receipt) => {
 				dispatch(notificationRemoved(receipt.transactionHash))
-				wallet.methods.fundToken(trader, token.contract.options.address, amount).send({from: account})
+				wallet.methods.fundToken(trader, token.contract.options.address, amount, INVESTMENT_COLLATERAL).send({from: account})
 				.on('transactionHash', async (hash) => {
 					dispatch(notificationAdded(info("Investment", "Investing tokens...", hash)))
 				})
@@ -542,15 +559,26 @@ export const stopInvestment = (account, investment, wallet, dispatch) => {
 
 export const disburseInvestment = async (account, investment, wallet, token, pairedInvestments, dispatch) => {
 	try {
-		let profitsAndFees = await pairedInvestments.methods.calculateProfitsAndFees(toBN(investment.grossValue), toBN(investment.amount), 100, 100, 3000).call()
+		let profitsAndFees = await pairedInvestments.methods.calculateProfitsAndFees(toBN(investment.grossValue), toBN(investment.amount), 100, 100, investment.investorProfitPercent).call()
 		log("profitsAndFees", profitsAndFees)
 
 		let amount = 0
 		if (account === investment.trader) {
 			if (investment.grossValue.isGreaterThan(investment.amount)) {
-				amount = toBN(new BigNumber(profitsAndFees[3]).plus(new BigNumber(profitsAndFees[0])).plus(new BigNumber(profitsAndFees[1])))
+
+				if (investment.investmentType === INVESTMENT_DIRECT) {
+					amount = amount.plus(investment.amount)
+				}
+
+				amount = toBN(amount.plus(new BigNumber(profitsAndFees[3])).plus(new BigNumber(profitsAndFees[0])).plus(new BigNumber(profitsAndFees[1])))
+
 			} else {
-				amount = profitsAndFees[0]
+
+				if (investment.investmentType === INVESTMENT_DIRECT) {
+					amount = amount.plus(investment.grossValue)
+				}
+
+				amount = toBN(amount.plus(new BigNumber(profitsAndFees[0])))
 			}
 		}
 		log("disburseInvestment amount", amount.toString())
@@ -607,20 +635,31 @@ export const disburseInvestment = async (account, investment, wallet, token, pai
 
 export const approveDisbursement = async (account, investment, wallet, token, pairedInvestments, dispatch) => {
 	try {
-		let profitsAndFees = await pairedInvestments.methods.calculateProfitsAndFees(toBN(investment.grossValue), toBN(investment.amount), 100, 100, 3000).call()
+		let profitsAndFees = await pairedInvestments.methods.calculateProfitsAndFees(toBN(investment.grossValue), toBN(investment.amount), 100, 100, investment.investorProfitPercent).call()
 		log("profitsAndFees", profitsAndFees)
 
 
 		let amount = new BigNumber(0)
 		if (account === investment.trader) {
 			if (investment.grossValue.isGreaterThan(investment.amount)) {
-				amount = toBN(new BigNumber(profitsAndFees[3]).plus(new BigNumber(profitsAndFees[0])).plus(new BigNumber(profitsAndFees[1])))
+
+				if (investment.investmentType === INVESTMENT_DIRECT) {
+					amount = amount.plus(investment.amount)
+				}
+
+				amount = toBN(amount.plus(new BigNumber(profitsAndFees[3])).plus(new BigNumber(profitsAndFees[0])).plus(new BigNumber(profitsAndFees[1])))
+
 			} else {
-				amount = profitsAndFees[0]
+
+				if (investment.investmentType === INVESTMENT_DIRECT) {
+					amount = amount.plus(investment.grossValue)
+				}
+
+				amount = toBN(amount.plus(new BigNumber(profitsAndFees[0])))
 			}
 		}
 
-		log("disburseInvestment", account, investment.trader, investment.disbursementId, amount)
+		log("disburseInvestment", account, investment.trader, investment.disbursementId, amount.toString())
 
 		dispatch(investmentChanging(investment, true))
 		if (investment.token === ZERO_ADDRESS) {
@@ -695,18 +734,20 @@ export const rejectDisbursement = async (account, investment, wallet, pairedInve
 }
 const mapTrader = (event) => {
 	return {
-		... event,
+		...event,
 		date: moment.unix(event.date).utc()
 	}
 }
 
 const mapInvest = (event) => {
 	return {
-		... event,
+		...event,
 		amount: new BigNumber(event.amount),
 		value: new BigNumber(0),
 		grossValue: new BigNumber(event.amount),
 		nettValue: new BigNumber(event.amount),
+		investorProfitPercent: new BigNumber(event.investorProfitPercent),
+		investmentType: parseInt(event.investmentType, 10),
 		start: moment.unix(event.date).utc(),
 		end: moment.unix(0).utc(),
 		// date: moment.unix(event.date).utc(),
@@ -717,11 +758,13 @@ const mapInvest = (event) => {
 
 const mapInvestment = (investment) => {
 	return {
-		... investment,
+		...investment,
 		amount: new BigNumber(investment.amount),
 		value: new BigNumber(investment.value),
 		grossValue: new BigNumber(investment.amount),
 		nettValue: new BigNumber(investment.amount),
+		investorProfitPercent: new BigNumber(investment.investorProfitPercent),
+		investmentType: parseInt(investment.investmentType, 10),
 		start: moment.unix(investment.start).utc(),
 		end: moment.unix(investment.end).utc(),
 		startUnix: investment.start,
@@ -731,7 +774,7 @@ const mapInvestment = (investment) => {
 
 const mapStop = (event) => {
 	return {
-		... event,
+		...event,
 		end: moment.unix(event.date).utc(),
 		date: moment.unix(event.date).utc(),
 		state: "1"
@@ -746,7 +789,7 @@ const mapRequestExit = (event) => {
 	}
 
 	return {
-		... event,
+		...event,
 		value: new BigNumber(event.value),
 		date: moment.unix(event.date).utc(),
 		state: state
@@ -755,7 +798,7 @@ const mapRequestExit = (event) => {
 
 const mapApproveExit = (event) => {
 	return {
-		... event,
+		...event,
 		date: moment.unix(event.date).utc(),
 		state: "4"
 	}
@@ -763,7 +806,7 @@ const mapApproveExit = (event) => {
 
 const mapRejectExit = (event) => {
 	return {
-		... event,
+		...event,
 		value: new BigNumber(event.value),
 		date: moment.unix(event.date).utc(),
 		state: "1"
@@ -773,6 +816,7 @@ const mapRejectExit = (event) => {
 export const loadInvestmentValues = (investments, traderPaired, dispatch) => {
 	investments.forEach(async (investment) => {
 		log("loadInvestmentValues", investment)
+		let investorProfitPercent = investment.investorProfitPercent.dividedBy(10000)
 
 
 		// get all positions for this investment
@@ -841,7 +885,7 @@ export const loadInvestmentValues = (investments, traderPaired, dispatch) => {
 
 		let nettProfit = grossProfit
 		if (nettProfit.isPositive()) {
-			nettProfit = nettProfit.multipliedBy(0.3).multipliedBy(0.99)
+			nettProfit = nettProfit.multipliedBy(investorProfitPercent).multipliedBy(0.99)
 		}
 		log("grossProfit", grossProfit.toString())
 		log("nettProfit", nettProfit.toString())

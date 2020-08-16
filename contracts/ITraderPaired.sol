@@ -8,8 +8,9 @@ interface ITraderPaired {
     /// @param _investorAddress investor address
     /// @param _token token address
     /// @param _amount amount to invest
+    /// @param _type investment type
     /// @return investment id
-    function invest(address _traderAddress, address _investorAddress, address _token, uint256 _amount) 
+    function invest(address _traderAddress, address _investorAddress, address _token, uint256 _amount, uint8 _type) 
         external
         returns (uint256);
 
@@ -41,10 +42,11 @@ interface ITraderPaired {
     /// @dev Approve exit of investment
     /// @param _traderAddress trader address
     /// @param _investorAddress investor address
+    /// @param _signer Signer address
     /// @param _investmentId investment id
     /// @param _token token address
     /// @param _amount transaction amount
-    function approveExit(address _traderAddress, address _investorAddress, uint256 _investmentId, address _token, uint256 _amount) 
+    function approveExit(address _traderAddress, address _investorAddress, address _signer, uint256 _investmentId, address _token, uint256 _amount) 
         external
         returns (uint256[3] memory);
 

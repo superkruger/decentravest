@@ -65,6 +65,8 @@ function web3 (state = {}, action ) {
 			return { ...state, pairedInvestments: {loaded: true, contract: action.contract} }
 		case 'WALLETFACTORY_LOADED':
 			return { ...state, walletFactory: {loaded: true, contract: action.contract} }
+		case 'ADMIN_LOADED':
+			return { ...state, isAdmin: true }
 		case 'TOKENS_LOADED':
 			return { ...state, tokens: action.tokens }
 		case 'BALANCE_LOADED':
