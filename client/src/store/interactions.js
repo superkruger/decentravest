@@ -838,7 +838,7 @@ export const loadInvestmentValues = (investments, traderPaired, dispatch) => {
 		const allocations = await getTraderAllocations(investment.trader, investment.token, traderPaired)
 
 
-		console.log("A", allocations)
+		log("A", allocations)
 
 
 		const traderInvestments = await getTraderInvestments(investment.trader, investment.token, traderPaired)
@@ -859,7 +859,7 @@ export const loadInvestmentValues = (investments, traderPaired, dispatch) => {
 				allocation = allocations[0]
 			}
 
-			console.log("allocation total", allocation.total.toString())
+			log("allocation total", allocation.total.toString())
 
 			log("position.profit", position.nettProfit.toString())
 			let totalAmount = await getPositionInvestmentsAmount(position, traderInvestments)

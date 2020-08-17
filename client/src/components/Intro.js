@@ -19,7 +19,6 @@ class Intro extends Component {
   render() {
     const {isAdmin, traderPairedLoaded, joined} = this.props
     return (
-      <div>
         <Container>
           <Row>
             <Col sm={12}>
@@ -27,7 +26,6 @@ class Intro extends Component {
                 
                 <div className="card-body">
                   <h3>Welcome to the Decentravest portal for traders and investors</h3>
-                  <p>You'll need to have a Metamask wallet extension in your browser connected to the mainnet</p>
                 </div>
               </div>
             </Col>
@@ -41,14 +39,16 @@ class Intro extends Component {
                     {
                       (typeof window.ethereum !== 'undefined') ?
                         <ConnectButton props={this.props} /> :
-                      <span>Please install <a href="https://metamask.io" target="_blank" rel="noopener">Metamask</a></span>
+                      <span>
+                        Please install <a href="https://metamask.io" target="_blank" rel="noopener">Metamask</a> first.
+                      </span>
                     }
                     </div>
                   </div> : 
                   
                     !joined && !isAdmin ?
                     
-                    <JoinButton props={this.props} /> :
+                    <JoinSelection props={this.props} /> :
 
                     <div/>
                 }
@@ -60,9 +60,7 @@ class Intro extends Component {
               <p></p>
             </Col>
           </Row>
-
         </Container>
-      </div>
     )
   }
 }
@@ -89,8 +87,40 @@ function ConnectButton(props) {
   );
 }
 
-function JoinButton(props) {
-  const handleClick = () => props.props.dispatch(pageSelected('join'));
+function JoinSelection(props) {
+  return (
+    <Container>
+      <Row>
+        <Col sm={5} className="text-align-center">
+          <div className="card bg-light text-dark">
+            <div className="card-header">
+              Are you an experienced trader?
+            </div>
+            <div className="card-body">
+              <JoinTraderButton props={props.props} />
+            </div>
+          </div>
+        </Col>
+        <Col sm={2} className="text-align-center">
+          <h1>OR</h1>
+        </Col>
+        <Col sm={5} className="text-align-center">
+          <div className="card bg-light text-dark">
+            <div className="card-header">
+              Would you just like to invest?
+            </div>
+            <div className="card-body">
+              <JoinInvestorButton props={props.props} />
+            </div>
+          </div>
+        </Col>
+      </Row>
+    </Container>
+  )
+}
+
+function JoinTraderButton(props) {
+  const handleClick = () => props.props.dispatch(pageSelected('jointrader'));
 
   return (
     <div>
@@ -98,7 +128,22 @@ function JoinButton(props) {
         variant="primary"
         onClick={handleClick}
         >
-        Join Now!
+        Join Now as a Trader!
+      </Button>
+    </div>
+  );
+}
+
+function JoinInvestorButton(props) {
+  const handleClick = () => props.props.dispatch(pageSelected('joininvestor'));
+
+  return (
+    <div>
+      <Button
+        variant="primary"
+        onClick={handleClick}
+        >
+        Join Now as an Investor!
       </Button>
     </div>
   );

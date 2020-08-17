@@ -92,6 +92,11 @@ p + p, li + li, div + div {
   float: right;
 }
 
+.text-align-center {
+  text-align: center;
+  margin-top: 10px;
+}
+
 .very-small {
   font-size: 0.7rem;
 }

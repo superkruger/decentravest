@@ -1,11 +1,11 @@
 {
   "contracts": {
     "MultiSigFundWalletFactory": {
-      "address": "0xE25745AaE09dF7B4e815462e07E39Aa4bb36908c",
-      "constructorCode": "6080604052612839806100136000396000f3fe",
-      "bodyBytecodeHash": "69fa5f3d8a5e25cda0b87e048e743fe5f7fd74724cbf561505d1a4e667be2cb0",
-      "localBytecodeHash": "fca5e9e74fa9074f2713086c95327307294284e7c319ea8f001fbe74d57e8d02",
-      "deployedBytecodeHash": "fca5e9e74fa9074f2713086c95327307294284e7c319ea8f001fbe74d57e8d02",
+      "address": "0xaA8b108Ef3353E113fE61e1e49937F030E680149",
+      "constructorCode": "60806040526129b0806100136000396000f3fe",
+      "bodyBytecodeHash": "47144ac8f3671cd4e79d2da8fdde5a452a121b749e683fb4cf93ba4dd91b6bc2",
+      "localBytecodeHash": "2b33cee0b70b0ca53608d7a42a6289d1bdd02b2231b7b1dcb161e74b83a70c6a",
+      "deployedBytecodeHash": "2b33cee0b70b0ca53608d7a42a6289d1bdd02b2231b7b1dcb161e74b83a70c6a",
       "types": {
         "t_bool": {
           "id": "t_bool",
@@ -110,7 +110,7 @@
           "contract": "MultiSigFundWalletFactory",
           "path": "contracts/MultiSigFundWalletFactory.sol",
           "label": "manager",
-          "astId": 2399,
+          "astId": 2479,
           "type": "t_address",
           "src": "438:22:15"
         }
@@ -126,11 +126,11 @@
       }
     },
     "PairedInvestments": {
-      "address": "0xa0c384e0D89048cd23288dcB25E1A0dDFC06F85B",
-      "constructorCode": "60806040526114df806100136000396000f3fe",
-      "bodyBytecodeHash": "2fe8e8f94b523ebd1e883a35a72fbdbc547bacc7b56e3fe94ca61e9ef3820699",
-      "localBytecodeHash": "7ef0d27300ee7c29a1d10f22231470733f509c841b41cf8afa1b5cc69e67f6ae",
-      "deployedBytecodeHash": "7ef0d27300ee7c29a1d10f22231470733f509c841b41cf8afa1b5cc69e67f6ae",
+      "address": "0x0490d838017E69dB3fd678E2787704d599c188aD",
+      "constructorCode": "6080604052611903806100136000396000f3fe",
+      "bodyBytecodeHash": "ae23aa0bdad4315488d7a837cde7677b709b6cad1194b7a6958b097f0b99b6f8",
+      "localBytecodeHash": "e53b22b06805b5737380234b322789f09e92c53db2659efcc65e849bda236585",
+      "deployedBytecodeHash": "e53b22b06805b5737380234b322789f09e92c53db2659efcc65e849bda236585",
       "types": {
         "t_bool": {
           "id": "t_bool",
@@ -161,59 +161,81 @@
           "members": [
             {
               "label": "id",
-              "astId": 2276,
+              "astId": 2593,
               "type": "t_uint256",
-              "src": "1037:10:11"
+              "src": "1225:10:16"
             },
             {
               "label": "trader",
-              "astId": 2278,
+              "astId": 2595,
               "type": "t_address",
-              "src": "1057:14:11"
+              "src": "1245:14:16"
             },
             {
               "label": "investor",
-              "astId": 2280,
+              "astId": 2597,
               "type": "t_address",
-              "src": "1081:16:11"
+              "src": "1269:16:16"
             },
             {
               "label": "token",
-              "astId": 2282,
+              "astId": 2599,
               "type": "t_address",
-              "src": "1107:13:11"
+              "src": "1295:13:16"
             },
             {
               "label": "amount",
-              "astId": 2284,
+              "astId": 2601,
               "type": "t_uint256",
-              "src": "1130:14:11"
+              "src": "1318:14:16"
             },
             {
               "label": "value",
-              "astId": 2286,
+              "astId": 2603,
               "type": "t_uint256",
-              "src": "1154:13:11"
+              "src": "1342:13:16"
             },
             {
               "label": "start",
-              "astId": 2288,
+              "astId": 2605,
               "type": "t_uint256",
-              "src": "1177:13:11"
+              "src": "1365:13:16"
             },
             {
               "label": "end",
-              "astId": 2290,
+              "astId": 2607,
               "type": "t_uint256",
-              "src": "1200:11:11"
+              "src": "1388:11:16"
+            },
+            {
+              "label": "investorProfitPercent",
+              "astId": 2609,
+              "type": "t_uint16",
+              "src": "1409:28:16"
+            },
+            {
+              "label": "investmentType",
+              "astId": 2611,
+              "type": "t_uint8",
+              "src": "1447:20:16"
             },
             {
               "label": "state",
-              "astId": 2292,
+              "astId": 2613,
               "type": "t_enum<PairedInvestments.InvestmentState>",
-              "src": "1221:21:11"
+              "src": "1477:21:16"
             }
           ]
+        },
+        "t_uint16": {
+          "id": "t_uint16",
+          "kind": "elementary",
+          "label": "uint16"
+        },
+        "t_uint8": {
+          "id": "t_uint8",
+          "kind": "elementary",
+          "label": "uint8"
         },
         "t_enum<PairedInvestments.InvestmentState>": {
           "id": "t_enum<PairedInvestments.InvestmentState>",
@@ -279,49 +301,49 @@
           "contract": "PairedInvestments",
           "path": "contracts/PairedInvestments.sol",
           "label": "manager",
-          "astId": 2256,
+          "astId": 2573,
           "type": "t_address",
-          "src": "416:22:11"
+          "src": "604:22:16"
         },
         {
           "contract": "PairedInvestments",
           "path": "contracts/PairedInvestments.sol",
           "label": "traderFeePercent",
-          "astId": 2258,
+          "astId": 2575,
           "type": "t_uint256",
-          "src": "442:31:11"
+          "src": "630:31:16"
         },
         {
           "contract": "PairedInvestments",
           "path": "contracts/PairedInvestments.sol",
           "label": "investorFeePercent",
-          "astId": 2260,
+          "astId": 2577,
           "type": "t_uint256",
-          "src": "568:33:11"
+          "src": "756:33:16"
         },
         {
           "contract": "PairedInvestments",
           "path": "contracts/PairedInvestments.sol",
           "label": "investorProfitPercent",
-          "astId": 2262,
+          "astId": 2579,
           "type": "t_uint256",
-          "src": "698:36:11"
+          "src": "886:36:16"
         },
         {
           "contract": "PairedInvestments",
           "path": "contracts/PairedInvestments.sol",
           "label": "investments",
-          "astId": 2266,
+          "astId": 2583,
           "type": "t_mapping<t_struct<PairedInvestments._Investment>>",
-          "src": "738:50:11"
+          "src": "926:50:16"
         },
         {
           "contract": "PairedInvestments",
           "path": "contracts/PairedInvestments.sol",
           "label": "investmentCount",
-          "astId": 2268,
+          "astId": 2585,
           "type": "t_uint256",
-          "src": "794:30:11"
+          "src": "982:30:16"
         }
       ],
       "warnings": {
@@ -329,15 +351,26 @@
         "hasSelfDestruct": false,
         "hasDelegateCall": false,
         "hasInitialValuesInDeclarations": false,
-        "uninitializedBaseContracts": []
+        "uninitializedBaseContracts": [],
+        "storageUncheckedVars": [
+          {
+            "contract": "PairedInvestments",
+            "path": "contracts/PairedInvestments.sol",
+            "label": "investments",
+            "astId": 2583,
+            "type": "t_mapping<t_struct<PairedInvestments._Investment>>",
+            "src": "926:50:16"
+          }
+        ],
+        "storageDiff": []
       }
     },
     "TraderPaired": {
-      "address": "0xC8A39de8992A2d3a394fBe7C0968367E82Cf92Eb",
-      "constructorCode": "60806040526128b6806100136000396000f3fe",
-      "bodyBytecodeHash": "27947840c373bff58e6733b504c1a33a8f0b47d10bf71b7aa52930aba5e4b22e",
-      "localBytecodeHash": "911c206f4636236abb9b05c0d3b914d9c179ede0b7e8c6e60d1c4d7697fd3d32",
-      "deployedBytecodeHash": "911c206f4636236abb9b05c0d3b914d9c179ede0b7e8c6e60d1c4d7697fd3d32",
+      "address": "0xDF2fD1B4f1Bae3dE55dfA6e5ab65a77d9736b322",
+      "constructorCode": "6080604052612ba4806100136000396000f3fe",
+      "bodyBytecodeHash": "344cfa6d75286c48ebdb83ad6a718b396e99df8a87ce9ba3ad99fdd39b040947",
+      "localBytecodeHash": "2537c3cc487fea6c6f2e4a61572cd66f84bcc105a3b5b6249b54a20db75f3943",
+      "deployedBytecodeHash": "2537c3cc487fea6c6f2e4a61572cd66f84bcc105a3b5b6249b54a20db75f3943",
       "types": {
         "t_bool": {
           "id": "t_bool",
@@ -387,17 +420,34 @@
           "members": [
             {
               "label": "user",
-              "astId": 3169,
+              "astId": 3801,
               "type": "t_address",
-              "src": "2773:12:12"
+              "src": "3141:12:17"
             },
             {
               "label": "investmentCount",
-              "astId": 3171,
+              "astId": 3803,
               "type": "t_uint256",
-              "src": "2795:23:12"
+              "src": "3163:23:17"
+            },
+            {
+              "label": "investorCollateralProfitPercent",
+              "astId": 3805,
+              "type": "t_uint16",
+              "src": "3196:38:17"
+            },
+            {
+              "label": "investorDirectProfitPercent",
+              "astId": 3807,
+              "type": "t_uint16",
+              "src": "3244:34:17"
             }
           ]
+        },
+        "t_uint16": {
+          "id": "t_uint16",
+          "kind": "elementary",
+          "label": "uint16"
         },
         "t_mapping<t_struct<TraderPaired._Trader>>": {
           "id": "t_mapping<t_struct<TraderPaired._Trader>>",
@@ -412,15 +462,15 @@
           "members": [
             {
               "label": "user",
-              "astId": 3179,
+              "astId": 3815,
               "type": "t_address",
-              "src": "2939:12:12"
+              "src": "3399:12:17"
             },
             {
               "label": "investmentCount",
-              "astId": 3181,
+              "astId": 3817,
               "type": "t_uint256",
-              "src": "2961:23:12"
+              "src": "3421:23:17"
             }
           ]
         },
@@ -443,15 +493,15 @@
           "members": [
             {
               "label": "total",
-              "astId": 3174,
+              "astId": 3810,
               "type": "t_uint256",
-              "src": "2860:13:12"
+              "src": "3320:13:17"
             },
             {
               "label": "invested",
-              "astId": 3176,
+              "astId": 3812,
               "type": "t_uint256",
-              "src": "2883:16:12"
+              "src": "3343:16:17"
             }
           ]
         },
@@ -545,105 +595,105 @@
           "contract": "TraderPaired",
           "path": "contracts/TraderPaired.sol",
           "label": "feeAccount",
-          "astId": 3005,
+          "astId": 3625,
           "type": "t_address",
-          "src": "808:25:12"
+          "src": "1025:25:17"
         },
         {
           "contract": "TraderPaired",
           "path": "contracts/TraderPaired.sol",
           "label": "traders",
-          "astId": 3009,
+          "astId": 3629,
           "type": "t_mapping<t_struct<TraderPaired._Trader>>",
-          "src": "905:42:12"
+          "src": "1092:42:17"
         },
         {
           "contract": "TraderPaired",
           "path": "contracts/TraderPaired.sol",
           "label": "investors",
-          "astId": 3013,
+          "astId": 3633,
           "type": "t_mapping<t_struct<TraderPaired._Investor>>",
-          "src": "953:46:12"
+          "src": "1140:46:17"
         },
         {
           "contract": "TraderPaired",
           "path": "contracts/TraderPaired.sol",
           "label": "multiSigFundWalletFactory",
-          "astId": 3015,
+          "astId": 3635,
           "type": "t_address",
-          "src": "1006:40:12"
+          "src": "1193:40:17"
         },
         {
           "contract": "TraderPaired",
           "path": "contracts/TraderPaired.sol",
           "label": "pairedInvestments",
-          "astId": 3017,
+          "astId": 3637,
           "type": "t_address",
-          "src": "1052:32:12"
+          "src": "1239:32:17"
         },
         {
           "contract": "TraderPaired",
           "path": "contracts/TraderPaired.sol",
           "label": "tokens",
-          "astId": 3021,
+          "astId": 3641,
           "type": "t_mapping<t_bool>",
-          "src": "1091:38:12"
+          "src": "1278:38:17"
         },
         {
           "contract": "TraderPaired",
           "path": "contracts/TraderPaired.sol",
           "label": "traderInvestments",
-          "astId": 3027,
+          "astId": 3647,
           "type": "t_mapping<t_uint256>",
-          "src": "1136:72:12"
+          "src": "1323:72:17"
         },
         {
           "contract": "TraderPaired",
           "path": "contracts/TraderPaired.sol",
           "label": "investorInvestments",
-          "astId": 3033,
+          "astId": 3653,
           "type": "t_mapping<t_uint256>",
-          "src": "1214:74:12"
+          "src": "1401:74:17"
         },
         {
           "contract": "TraderPaired",
           "path": "contracts/TraderPaired.sol",
           "label": "allocations",
-          "astId": 3039,
+          "astId": 3659,
           "type": "t_mapping<t_struct<TraderPaired._Allocation>>",
-          "src": "1294:70:12"
+          "src": "1481:70:17"
         },
         {
           "contract": "TraderPaired",
           "path": "contracts/TraderPaired.sol",
           "label": "traderAddresses",
-          "astId": 3043,
+          "astId": 3663,
           "type": "t_mapping<t_address>",
-          "src": "1371:50:12"
+          "src": "1558:50:17"
         },
         {
           "contract": "TraderPaired",
           "path": "contracts/TraderPaired.sol",
           "label": "investorAddresses",
-          "astId": 3047,
+          "astId": 3667,
           "type": "t_mapping<t_address>",
-          "src": "1427:52:12"
+          "src": "1614:52:17"
         },
         {
           "contract": "TraderPaired",
           "path": "contracts/TraderPaired.sol",
           "label": "traderCount",
-          "astId": 3049,
+          "astId": 3669,
           "type": "t_uint256",
-          "src": "1486:26:12"
+          "src": "1673:26:17"
         },
         {
           "contract": "TraderPaired",
           "path": "contracts/TraderPaired.sol",
           "label": "investorCount",
-          "astId": 3051,
+          "astId": 3671,
           "type": "t_uint256",
-          "src": "1518:28:12"
+          "src": "1705:28:17"
         }
       ],
       "warnings": {
@@ -651,7 +701,42 @@
         "hasSelfDestruct": false,
         "hasDelegateCall": false,
         "hasInitialValuesInDeclarations": false,
-        "uninitializedBaseContracts": []
+        "uninitializedBaseContracts": [],
+        "storageUncheckedVars": [
+          {
+            "contract": "PauserRole",
+            "path": "@openzeppelin/contracts-ethereum-package/contracts/access/roles/PauserRole.sol",
+            "label": "_pausers",
+            "astId": 132,
+            "type": "t_struct<Roles.Role>",
+            "src": "327:27:2"
+          },
+          {
+            "contract": "TraderPaired",
+            "path": "contracts/TraderPaired.sol",
+            "label": "traders",
+            "astId": 3629,
+            "type": "t_mapping<t_struct<TraderPaired._Trader>>",
+            "src": "1092:42:17"
+          },
+          {
+            "contract": "TraderPaired",
+            "path": "contracts/TraderPaired.sol",
+            "label": "investors",
+            "astId": 3633,
+            "type": "t_mapping<t_struct<TraderPaired._Investor>>",
+            "src": "1140:46:17"
+          },
+          {
+            "contract": "TraderPaired",
+            "path": "contracts/TraderPaired.sol",
+            "label": "allocations",
+            "astId": 3659,
+            "type": "t_mapping<t_struct<TraderPaired._Allocation>>",
+            "src": "1481:70:17"
+          }
+        ],
+        "storageDiff": []
       }
     }
   },
@@ -661,7 +746,7 @@
       {
         "address": "0x655f7c7df92977013249E9c6956eF17A46C42f0D",
         "version": "1.0.0",
-        "implementation": "0xE25745AaE09dF7B4e815462e07E39Aa4bb36908c",
+        "implementation": "0xaA8b108Ef3353E113fE61e1e49937F030E680149",
         "admin": "0x6a30c12EFA42BF6f06dE2150CE19bB3b2228E2a2",
         "kind": "Upgradeable"
       }
@@ -670,7 +755,7 @@
       {
         "address": "0x6954470799590Cc86f969ad75eA2ba6598440529",
         "version": "1.0.0",
-        "implementation": "0xa0c384e0D89048cd23288dcB25E1A0dDFC06F85B",
+        "implementation": "0x0490d838017E69dB3fd678E2787704d599c188aD",
         "admin": "0x6a30c12EFA42BF6f06dE2150CE19bB3b2228E2a2",
         "kind": "Upgradeable"
       }
@@ -679,7 +764,7 @@
       {
         "address": "0xcECf06f0E5d683bbC86EC713cFc89009403243cd",
         "version": "1.0.0",
-        "implementation": "0xC8A39de8992A2d3a394fBe7C0968367E82Cf92Eb",
+        "implementation": "0xDF2fD1B4f1Bae3dE55dfA6e5ab65a77d9736b322",
         "admin": "0x6a30c12EFA42BF6f06dE2150CE19bB3b2228E2a2",
         "kind": "Upgradeable"
       }

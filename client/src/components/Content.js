@@ -3,7 +3,8 @@ import { connect } from 'react-redux'
 import Topbar from './Topbar'
 import Footer from './Footer'
 import Intro from './Intro'
-import Join from './Join'
+import JoinTrader from './JoinTrader'
+import JoinInvestor from './JoinInvestor'
 import Trader from './trader/Trader'
 import Investor from './investor/Investor'
 
@@ -44,7 +45,8 @@ class Content extends Component {
               {
                 {
                   'home': <Intro />,
-                  'join': <Join />,
+                  'jointrader': <JoinTrader />,
+                  'joininvestor': <JoinInvestor />,
                   'trader_dashboard': <Trader />,
                   'trader_allocations': <TraderAllocations />,
                   'trader_investments': <TraderInvestments />,
