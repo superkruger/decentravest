@@ -1,5 +1,5 @@
 /* spacers */
-p + p, li + li, div + div { 
+p + p, li + li { 
     margin-top: 10px;
 }
 
@@ -94,7 +94,6 @@ p + p, li + li, div + div {
 
 .text-align-center {
   text-align: center;
-  margin-top: 10px;
 }
 
 .very-small {

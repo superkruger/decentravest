@@ -1,4 +1,5 @@
 import { find, get, groupBy } from 'lodash'
+import BigNumber from 'bignumber.js'
 import { createSelector } from 'reselect'
 import { NEUTRAL, RED, GREEN, formatBalance, tokenSymbolForAddress, log } from '../helpers'
 
@@ -81,8 +82,16 @@ export const investableTradersSelector = createSelector(traders, (traders) => {
 	return res
 })
 
-const trader = state => get(state, 'trader.trader')
+// const trader = state => get(state, 'trader.trader')
+// export const traderSelector = createSelector(trader, e => e)
+
+
+const trader = (state, account) => {
+	const traderObj = find(state.web3.traders, {user: account})
+	return traderObj
+}
 export const traderSelector = createSelector(trader, e => e)
+
 
 const traderJoining = state => get(state, 'trader.joining', false)
 export const traderJoiningSelector = createSelector(traderJoining, e => e)
@@ -133,13 +142,17 @@ const decorateTraderAllocation = (allocation) => {
 	if (allocation.total.isGreaterThan(0)) {
 		investedPercentage = allocation.invested.dividedBy(allocation.total).multipliedBy(100).toNumber()
 	}
+	const directAvailable = allocation.directLimit ? allocation.directLimit.minus(allocation.directInvested) : BigNumber(0)
 
 	return ({
 		...allocation,
 		formattedTotal: formatBalance(allocation.total, allocation.symbol),
 		formattedInvested: formatBalance(allocation.invested, allocation.symbol),
 		available: allocation.total.minus(allocation.invested),
-		formattedAvailable: formatBalance(allocation.total.minus(allocation.invested), allocation.symbol)
+		formattedAvailable: formatBalance(allocation.total.minus(allocation.invested), allocation.symbol),
+		directAvailable: directAvailable,
+		formattedDirectLimit: allocation.directLimit ? formatBalance(allocation.directLimit, allocation.symbol) : '',
+		formattedDirectAvailable: allocation.directLimit ? formatBalance(directAvailable, allocation.symbol) : ''
 	})
 }
 

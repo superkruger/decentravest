@@ -6,7 +6,7 @@ import PairedInvestments from '../abis/PairedInvestments.json'
 import MultiSigFundWalletFactory from '../abis/MultiSigFundWalletFactory.json'
 import MultiSigFundWallet from '../abis/MultiSigFundWallet.json'
 import ERC20 from '../abis/IERC20.json'
-import { log, ZERO_ADDRESS, INVESTMENT_COLLATERAL, INVESTMENT_DIRECT, toBN, etherToWei, tokenAddressForSymbol, tokenSymbolForAddress, info, fail } from '../helpers'
+import { log, ZERO_ADDRESS, INVESTMENT_COLLATERAL, INVESTMENT_DIRECT, userTokens, toBN, etherToWei, tokenAddressForSymbol, tokenSymbolForAddress, info, fail } from '../helpers'
 import { getTraderPositions } from './dydxInteractions'
 import {
 	notificationAdded,
@@ -19,6 +19,9 @@ import {
 	tokensLoaded,
 	balanceLoaded,
 	traderLoaded,
+	traderTrustRatingLoaded,
+	directLimitLoaded,
+	profitPercentagesLoaded,
 	mainTraderLoaded,
 	mainInvestorLoaded,
 	traderJoining,
@@ -191,6 +194,39 @@ const loadTraders = async (traderPaired, dispatch) => {
 		dispatch(traderLoaded(mapTrader(event.returnValues)))
 	})
 
+	traderPaired.events.ProfitPercentages({filter: {}}, (err, event) => {
+		dispatch(profitPercentagesLoaded(mapProfitPercentages(event.returnValues)))
+	})
+}
+
+export const setProfitPercentages = async (account, collateralPercentage, directPercentage, traderPaired, dispatch) => {
+	try {
+		log("setProfitPercentages", account, collateralPercentage, directPercentage)
+
+		let collateralNum = new Number(collateralPercentage)
+		let directNum = new Number(directPercentage)
+
+		if (collateralNum < 1 || collateralNum > 99 || directNum < 1 || directNum > 99) {
+			dispatch(notificationAdded(fail("Profit", "Percentages must be between 1 and 99")))
+			return
+		}
+
+		traderPaired.methods.setProfitPercentages(collateralNum * 100, directNum * 100).send({from: account})
+		.on('transactionHash', async (hash) => {
+			dispatch(notificationAdded(info("Profit", "Setting profit percentages...", hash)))
+		})
+		.on('receipt', async (receipt) => {
+			log("receipt", receipt)
+			dispatch(notificationRemoved(receipt.transactionHash))
+			dispatch(notificationAdded(info("Profit", "Profit percentages set")))
+		})
+		.on('error', (err) => {
+			log('Could not setProfitPercentages', err)
+			dispatch(notificationAdded(fail("Profit", "Could not profit percentages")))
+		})
+	} catch (err) {
+		log('Could not setProfitPercentages', err)
+	}
 }
 
 const loadTraderInvestments = async (trader, traderPaired, pairedInvestments, walletFactory, web3, dispatch) => {
@@ -463,7 +499,7 @@ const loadInvestorInvestments = async (investor, traderPaired, pairedInvestments
 
 }
 
-export const invest = async (account, trader, tokenAddress, token, amount, wallet, dispatch) => {
+export const invest = async (account, trader, tokenAddress, token, amount, wallet, investmentType, dispatch) => {
 	try {
 		const isTrader = await wallet.methods.traders(trader).call()
 		if (!isTrader) {
@@ -471,13 +507,13 @@ export const invest = async (account, trader, tokenAddress, token, amount, walle
 			.on('transactionHash', async (hash) => {
 			})
 			.on('receipt', async (receipt) => {
-				await investInTrader(account, trader, tokenAddress, token, amount, wallet, dispatch)
+				await investInTrader(account, trader, tokenAddress, token, amount, wallet, investmentType, dispatch)
 			})
 			.on('error', (err) => {
 				log('Could not invest', err)
 			})
 		} else {
-			await investInTrader(account, trader, tokenAddress, token, amount, wallet, dispatch)
+			await investInTrader(account, trader, tokenAddress, token, amount, wallet, investmentType, dispatch)
 		}
 		
 	} catch (err) {
@@ -486,11 +522,11 @@ export const invest = async (account, trader, tokenAddress, token, amount, walle
 	}
 }
 
-const investInTrader = async (account, trader, tokenAddress, token, amount, wallet, dispatch) => {
+const investInTrader = async (account, trader, tokenAddress, token, amount, wallet, investmentType, dispatch) => {
 	try {
 		if (tokenAddress === ZERO_ADDRESS) {
 
-			wallet.methods.fundEther(trader, INVESTMENT_COLLATERAL).send({from: account, value: amount})
+			wallet.methods.fundEther(trader, investmentType).send({from: account, value: amount})
 			.on('transactionHash', async (hash) => {
 				dispatch(notificationAdded(info("Investment", "Investing ether...", hash)))
 			})
@@ -510,7 +546,7 @@ const investInTrader = async (account, trader, tokenAddress, token, amount, wall
 			})
 			.on('receipt', async (receipt) => {
 				dispatch(notificationRemoved(receipt.transactionHash))
-				wallet.methods.fundToken(trader, token.contract.options.address, amount, INVESTMENT_COLLATERAL).send({from: account})
+				wallet.methods.fundToken(trader, token.contract.options.address, amount, investmentType).send({from: account})
 				.on('transactionHash', async (hash) => {
 					dispatch(notificationAdded(info("Investment", "Investing tokens...", hash)))
 				})
@@ -562,7 +598,7 @@ export const disburseInvestment = async (account, investment, wallet, token, pai
 		let profitsAndFees = await pairedInvestments.methods.calculateProfitsAndFees(toBN(investment.grossValue), toBN(investment.amount), 100, 100, investment.investorProfitPercent).call()
 		log("profitsAndFees", profitsAndFees)
 
-		let amount = 0
+		let amount = new BigNumber(0)
 		if (account === investment.trader) {
 			if (investment.grossValue.isGreaterThan(investment.amount)) {
 
@@ -735,7 +771,17 @@ export const rejectDisbursement = async (account, investment, wallet, pairedInve
 const mapTrader = (event) => {
 	return {
 		...event,
+		investorCollateralProfitPercent: new BigNumber(event.investorCollateralProfitPercent).dividedBy(100),
+		investorDirectProfitPercent: new BigNumber(event.investorDirectProfitPercent).dividedBy(100),
 		date: moment.unix(event.date).utc()
+	}
+}
+
+const mapProfitPercentages = (event) => {
+	return {
+		...event,
+		investorCollateralProfitPercent: new BigNumber(event.investorCollateralProfitPercent).dividedBy(100),
+		investorDirectProfitPercent: new BigNumber(event.investorDirectProfitPercent).dividedBy(100)
 	}
 }
 
@@ -791,7 +837,8 @@ const mapRequestExit = (event) => {
 	return {
 		...event,
 		value: new BigNumber(event.value),
-		date: moment.unix(event.date).utc(),
+		requestFrom: event.from,
+		requestExitDate: moment.unix(event.date).utc(),
 		state: state
 	}
 }
@@ -799,7 +846,8 @@ const mapRequestExit = (event) => {
 const mapApproveExit = (event) => {
 	return {
 		...event,
-		date: moment.unix(event.date).utc(),
+		approveFrom: event.from,
+		approveExitDate: moment.unix(event.date).utc(),
 		state: "4"
 	}
 }
@@ -807,92 +855,97 @@ const mapApproveExit = (event) => {
 const mapRejectExit = (event) => {
 	return {
 		...event,
-		value: new BigNumber(event.value),
-		date: moment.unix(event.date).utc(),
+		rejectValue: new BigNumber(event.value),
+		rejectFrom: event.from,
+		rejectExitDate: moment.unix(event.date).utc(),
 		state: "1"
 	}
 }
 
 export const loadInvestmentValues = (investments, traderPaired, dispatch) => {
 	investments.forEach(async (investment) => {
-		log("loadInvestmentValues", investment)
-		let investorProfitPercent = investment.investorProfitPercent.dividedBy(10000)
-
-
-		// get all positions for this investment
-		let positions = await getTraderPositions(investment.trader)
-		positions = positions.filter(
-			(position) => tokenAddressForSymbol(position.asset) === investment.token)
-
-		// if(process.env.NODE_ENV !== 'development') {
-			// filter by date
-			positions = positions.filter(position =>
-				position.start.isAfter(investment.start) 
-					&& (
-						(investment.end.unix() === 0 || investment.state === "0") 
-							|| position.end.isBefore(investment.end)))
-		// }
-
-		log("P", positions)
-
-		const allocations = await getTraderAllocations(investment.trader, investment.token, traderPaired)
-
-
-		log("A", allocations)
-
-
-		const traderInvestments = await getTraderInvestments(investment.trader, investment.token, traderPaired)
-
-		log("traderInvestments", traderInvestments)
-
-		// for each position get all investments that it should be split over
-		// and calculate profit/loss
-		let grossProfit = new BigNumber(0)
-		await positions.forEach(async (position) => {
-
-			// find the allocation just before the start of this position
-			let allocation = allocations.find(allocation => allocation.date.isBefore(position.start))
-
-			// Fallback to the last allocation made, but there should be an allocation made before the position started
-			// TODO: maybe remove?
-			if (!allocation) {
-				allocation = allocations[0]
-			}
-
-			log("allocation total", allocation.total.toString())
-
-			log("position.profit", position.nettProfit.toString())
-			let totalAmount = await getPositionInvestmentsAmount(position, traderInvestments)
-			log("totalAmount", totalAmount.toString())
-
-			let investorsShare = totalAmount.dividedBy(allocation.total)
-			log("investorsShare", investorsShare.toString())
-
-			// split profit according to share of total amount
-			let sharePercentage = investment.amount.dividedBy(totalAmount)
-			log("sharePercentage", sharePercentage.toString())
-
-			let positionProfit = position.nettProfit.multipliedBy(sharePercentage).multipliedBy(investorsShare)
-			log("positionProfit", positionProfit.toString())
-
-			grossProfit = grossProfit.plus(positionProfit)
-		})
-
-		if (investment.amount.plus(grossProfit).isNegative()) {
-			// if losses would amount to a negative valuation, just make the loss equal to the investment amount
-			grossProfit = investment.amount.negated()
-		}
-
-		let nettProfit = grossProfit
-		if (nettProfit.isPositive()) {
-			nettProfit = nettProfit.multipliedBy(investorProfitPercent).multipliedBy(0.99)
-		}
-		log("grossProfit", grossProfit.toString())
-		log("nettProfit", nettProfit.toString())
-		investment.grossValue = investment.amount.plus(grossProfit)
-		investment.nettValue = investment.amount.plus(nettProfit)
+		investment = await getInvestmentValue(investment, traderPaired)
 		dispatch(investmentLoaded(investment))
 	})
+}
+
+const getInvestmentValue = async (investment, traderPaired) => {
+	log("getInvestmentValue", investment)
+	let investorProfitPercent = investment.investorProfitPercent.dividedBy(10000)
+
+	// get all positions for this investment
+	let positions = await getTraderPositions(investment.trader)
+	positions = positions.filter(
+		(position) => tokenAddressForSymbol(position.asset) === investment.token)
+
+	// if(process.env.NODE_ENV !== 'development') {
+		// filter by date
+		positions = positions.filter(position =>
+			position.start.isAfter(investment.start) 
+				&& (
+					(investment.end.unix() === 0 || investment.state === "0") 
+						|| position.end.isBefore(investment.end)))
+	// }
+
+	log("P", positions)
+
+	const allocations = await getTraderAllocations(investment.trader, investment.token, traderPaired)
+
+
+	log("A", allocations)
+
+
+	const traderInvestments = await getTraderInvestments(investment.trader, investment.token, traderPaired)
+
+	log("traderInvestments", traderInvestments)
+
+	// for each position get all investments that it should be split over
+	// and calculate profit/loss
+	let grossProfit = new BigNumber(0)
+	await positions.forEach(async (position) => {
+
+		// find the allocation just before the start of this position
+		let allocation = allocations.find(allocation => allocation.date.isBefore(position.start))
+
+		// Fallback to the last allocation made, but there should be an allocation made before the position started
+		// TODO: maybe remove?
+		if (!allocation) {
+			allocation = allocations[0]
+		}
+
+		log("allocation total", allocation.total.toString())
+
+		log("position.profit", position.nettProfit.toString())
+		let totalAmount = await getPositionInvestmentsAmount(position, traderInvestments)
+		log("totalAmount", totalAmount.toString())
+
+		let investorsShare = totalAmount.dividedBy(allocation.total)
+		log("investorsShare", investorsShare.toString())
+
+		// split profit according to share of total amount
+		let sharePercentage = investment.amount.dividedBy(totalAmount)
+		log("sharePercentage", sharePercentage.toString())
+
+		let positionProfit = position.nettProfit.multipliedBy(sharePercentage).multipliedBy(investorsShare)
+		log("positionProfit", positionProfit.toString())
+
+		grossProfit = grossProfit.plus(positionProfit)
+	})
+
+	if (investment.amount.plus(grossProfit).isNegative()) {
+		// if losses would amount to a negative valuation, just make the loss equal to the investment amount
+		grossProfit = investment.amount.negated()
+	}
+
+	let nettProfit = grossProfit
+	if (nettProfit.isPositive()) {
+		nettProfit = nettProfit.multipliedBy(investorProfitPercent).multipliedBy(0.99)
+	}
+	log("grossProfit", grossProfit.toString())
+	log("nettProfit", nettProfit.toString())
+	investment.grossValue = investment.amount.plus(grossProfit)
+	investment.nettValue = investment.amount.plus(nettProfit)
+	return investment
 }
 
 const getTraderAllocations = async (account, token, traderPaired) => {
@@ -961,6 +1014,185 @@ const getPositionInvestmentsAmount = async (position, traderInvestments) => {
 	
 	let totalAmount = investments.reduce((total, investment) => total.plus(investment.amount), new BigNumber(0))
 	return totalAmount
+}
+
+export const loadTraderTrustRating = async (trader, traderPaired, dispatch) => {
+
+	let stream = await traderPaired.getPastEvents(
+		'Invest', 
+		{
+			filter: {trader: trader.user},
+			fromBlock: 0
+		}
+	)
+	let investments = stream.map((event) => mapInvest(event.returnValues))
+	
+	log("loadTraderTrustRating - Invest", investments)
+
+	stream = await traderPaired.getPastEvents(
+		'RequestExit', 
+		{
+			filter: {trader: trader.user},
+			fromBlock: 0
+		}
+	)
+	stream.forEach((event) => {
+		log("RequestExit", event.returnValues)
+		let index = investments.findIndex(investment => investment.id === event.returnValues.id)
+		log ("index", index)
+		if (index !== -1) {
+			let investment = mapRequestExit(event.returnValues)
+			log("mapRequestExit", investment)
+			investments[index] = {
+				...investments[index],
+				...investment
+			}
+		}
+	})
+
+	log("loadTraderTrustRating - RequestExit", investments)
+
+	stream = await traderPaired.getPastEvents(
+		'ApproveExit', 
+		{
+			filter: {trader: trader.user},
+			fromBlock: 0
+		}
+	)
+	stream.forEach((event) => {
+		let index = investments.findIndex(investment => investment.id === event.returnValues.id)
+		if (index !== -1) {
+			let investment = mapApproveExit(event.returnValues)
+			investments[index] = {
+				...investments[index],
+				...investment
+			}
+		}
+	})
+
+	log("loadTraderTrustRating - ApproveExit", investments)
+
+	stream = await traderPaired.getPastEvents(
+		'RejectExit', 
+		{
+			filter: {trader: trader.user},
+			fromBlock: 0
+		}
+	)
+	stream.forEach((event) => {
+		let index = investments.findIndex(investment => investment.id === event.returnValues.id)
+		if (index !== -1) {
+			let investment = mapRejectExit(event.returnValues)
+			investments[index] = {
+				...investments[index],
+				...investment
+			}
+		}
+	})
+
+	log("loadTraderTrustRating - RejectExit", investments)
+
+	let total = 0
+	let bad = 0
+	let latestApproval = null
+	let collateralApprovalCount = 0
+	let directApprovalCount = 0
+	let investmentDirectTotals = []
+
+	log("investments.forEach BEFORE")
+	investments.forEach(async (investment) => {
+		if (!investment.approveFrom) {
+			if (investmentDirectTotals[investment.token]) {
+				investmentDirectTotals[investment.token] = investmentDirectTotals[investment.token].plus(investment.amount)
+			} else {
+				investmentDirectTotals[investment.token] = investment.amount
+			}
+		}
+
+		if (investment.requestFrom) {
+			total = total + 1
+
+			if (investment.approveFrom) {
+				if (!latestApproval || investment.start.isAfter(latestApproval)) {
+					latestApproval = investment.start
+				}
+
+				if (investment.investmentType === INVESTMENT_DIRECT) {
+					directApprovalCount = directApprovalCount + 1
+				} else {
+					collateralApprovalCount = collateralApprovalCount + 1
+				}
+			}
+
+			log("Total", total)
+			if (investment.requestFrom === trader.user) {
+				// trader requested exit, check value
+				investment = await getInvestmentValue(investment, traderPaired)
+				log("Investment Value", investment)
+				if (investment.grossValue.lt(investment.value)) {
+					// trader requested wrong value
+					log("trader requested wrong value", investment.grossValue.toString(), investment.value.toString())
+					bad = bad + 1
+				}
+
+			} else {
+				// investor requested exit
+				let now = moment()
+				if (investment.approveFrom) {
+					if (investment.approveExitDate.diff(investment.requestExitDate) > 48 * 60 * 60 * 1000) {
+						bad = bad + 1
+					}
+
+				} else if (investment.rejectFrom) {
+					investment = await getInvestmentValue(investment, traderPaired)
+					if (investment.grossValue.lt(investment.rejectValue)) {
+						// trader rejected wrong value
+						log("trader rejected with wrong value", investment.grossValue.toString(), investment.value.toString(), investment.rejectValue.toString())
+						bad = bad + 1
+					}
+				} else {
+					// still waiting
+					if (now.diff(investment.requestExitDate) > 48 * 60 * 60 * 1000) {
+						bad = bad + 1
+					}
+				}
+			}
+		}
+	})
+
+	const trustRating = new BigNumber(total - bad).dividedBy(total).multipliedBy(10)
+
+	if (latestApproval && trustRating.gt(8)) {
+		// get allocations just before this
+		userTokens.forEach(async (token) => {
+			const allocations = await getTraderAllocations(trader.user, token.address, traderPaired)
+
+			// find the allocation just before the start of this investment
+			const allocation = allocations.find(allocation => allocation.date.isBefore(latestApproval))
+
+			if (allocation) {
+				// calculate direct investment limit
+				let directLimit = allocation.total.multipliedBy(collateralApprovalCount / 10)
+				if (directApprovalCount > 0) {
+					directLimit = directLimit.plus(allocation.total.multipliedBy(directApprovalCount / 5))
+				}
+
+				let directInvested = investmentDirectTotals[token.address]
+				if (!directInvested) {
+					directInvested = new BigNumber(0)
+				}
+				log("directLimitLoaded", trader.user, allocation.token, directLimit.toString(), directInvested.toString())
+				dispatch(directLimitLoaded(trader.user, allocation.token, directLimit, directInvested))
+			}
+		})
+	}
+
+	log("investments.forEach AFTER")
+
+	log("loadTraderTrustRating", total, bad)
+	if (total > 0) {
+		dispatch(traderTrustRatingLoaded(trader.user, trustRating))
+	}
 }
 
 function sleep(ms) {

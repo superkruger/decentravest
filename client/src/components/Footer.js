@@ -18,7 +18,7 @@ class Footer extends Component {
                   <span>Copyright &copy; 2020 Decentravest - All Rights Reserved</span>
                 </div>
               </Col>
-              <Col sm={3}/>
+              <Col sm={2}/>
               <Col sm={1}>
                 <a href="https://t.me/decentravest" target="_blank" rel="noopener">
                   <i className="fa fa-telegram"></i>
@@ -32,6 +32,11 @@ class Footer extends Component {
               <Col sm={1}>
                 <a href="https://www.youtube.com/channel/UCMcIEi_OZr5GWhtrzH3_uhQ" target="_blank" rel="noopener">
                   <i className="fa fa-youtube"></i>
+                </a>
+              </Col>
+              <Col sm={1}>
+                <a href="https://medium.com/@decentravest" target="_blank" rel="noopener">
+                  <i className="fa fa-medium"></i>
                 </a>
               </Col>
             </Row>

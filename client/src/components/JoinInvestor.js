@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import { Jumbotron, Button, Container, Row, Col } from 'react-bootstrap'
+import { Button, Container, Row, Col, Alert } from 'react-bootstrap'
 import Spinner from './Spinner'
 import {
   web3Selector,
@@ -35,11 +35,11 @@ class JoinInvestor extends Component {
         ready ?
         <div className="vertical-split">
           <h1>Investor registration</h1>
-          <p>
+          <Alert variant="info">
             Investors enjoy the benefit of choice between traders, based of performance and reputation<br/><br/>
             You can choose between <b>collateral</b> and <b>direct</b> investments.<br/><br/>
             The only fees you pay are a 1% fee on any profits made.
-          </p>
+          </Alert>
           <div className="card bg-light text-dark">
       
             <div className="card-body">

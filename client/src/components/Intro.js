@@ -5,6 +5,7 @@ import { info } from '../helpers'
 import {
   traderPairedSelector,
   traderPairedLoadedSelector,
+  accountSelector,
   traderSelector,
   investorSelector,
   isAdminSelector
@@ -150,10 +151,12 @@ function JoinInvestorButton(props) {
 }
 
 function mapStateToProps(state) {
-  const trader = traderSelector(state)
+  const account = accountSelector(state)
+  const trader = traderSelector(state, account)
   const investor = investorSelector(state)
 
   return {
+    account: account,
     isAdmin: isAdminSelector(state),
     traderPaired: traderPairedSelector(state),
     traderPairedLoaded: traderPairedLoadedSelector(state),

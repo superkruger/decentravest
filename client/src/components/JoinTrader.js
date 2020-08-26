@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import { Jumbotron, Button, Container, Row, Col, ListGroup, Tab } from 'react-bootstrap'
+import { Button, Container, Row, Col, ListGroup, Tab, Alert } from 'react-bootstrap'
 import Spinner from './Spinner'
 import {
   web3Selector,
@@ -35,14 +35,14 @@ class JoinTrader extends Component {
         ready ?
         <div className="vertical-split">
           <h1>Trader registration</h1>
-          <p>
+          <Alert variant="info">
             Traders enjoy the benefit of trading relatively risk-free, as long as your investment allocation is fully invested in, and you're not trading with more funds than you've specified.<br/>
             Any trading losses are covered by investors.<br/><br/>
 
             Initially, you'll only be able to receive <b>collateral</b> investments. Meaning you trade with your own funds and give a small portion (default 20%) of the profit back to investors.<br/><br/>
             Once you've built up a good trust reputation, the system will automatically allow <b>direct</b> investments. Meaning investors will pay directly into your wallet for trading purposes, of wich they get a different portion (default 80%).<br/><br/>
             The only fees you pay are a 1% fee on any profits made or collateral losses recouped.
-          </p>
+          </Alert>
           <Tab.Container id="trader-steps" defaultActiveKey="#step1">
             <Row>
               <Col sm={4}>
@@ -77,18 +77,17 @@ class JoinTrader extends Component {
                     </p>
                   </Tab.Pane>
                   <Tab.Pane eventKey="#step3">
-                    <p>
+                    
                       <div className="card bg-light text-dark">
                   
                         <div className="card-body">
                           <TraderButton props={this.props} />
                         </div>
                         <div className="card-footer">
-                          Once you've won't be immediately visible to investors.<br/>
-                          You'll first need to allocate investment capacity.
+                          Register for free, and start getting investments!
                         </div>
                       </div>
-                    </p>
+                    
                   </Tab.Pane>
                 </Tab.Content>
               </Col>

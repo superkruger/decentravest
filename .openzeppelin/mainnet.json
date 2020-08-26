@@ -366,11 +366,11 @@
       }
     },
     "TraderPaired": {
-      "address": "0xDF2fD1B4f1Bae3dE55dfA6e5ab65a77d9736b322",
-      "constructorCode": "6080604052612ba4806100136000396000f3fe",
-      "bodyBytecodeHash": "344cfa6d75286c48ebdb83ad6a718b396e99df8a87ce9ba3ad99fdd39b040947",
-      "localBytecodeHash": "2537c3cc487fea6c6f2e4a61572cd66f84bcc105a3b5b6249b54a20db75f3943",
-      "deployedBytecodeHash": "2537c3cc487fea6c6f2e4a61572cd66f84bcc105a3b5b6249b54a20db75f3943",
+      "address": "0x740392312D99A4eCEE6549AEB8fa6Eb0a579e8F8",
+      "constructorCode": "6080604052612bdf806100136000396000f3fe",
+      "bodyBytecodeHash": "d7cf88912e4598db0b000e4d245c85a19af1b5514a73308625c3c2e6ad63ba78",
+      "localBytecodeHash": "05d62e8f2306da545a308fa4ee99426ca8fc3356fdaf824adcd395aa44a5fe12",
+      "deployedBytecodeHash": "05d62e8f2306da545a308fa4ee99426ca8fc3356fdaf824adcd395aa44a5fe12",
       "types": {
         "t_bool": {
           "id": "t_bool",
@@ -420,27 +420,27 @@
           "members": [
             {
               "label": "user",
-              "astId": 3801,
+              "astId": 3807,
               "type": "t_address",
-              "src": "3141:12:17"
+              "src": "3183:12:17"
             },
             {
               "label": "investmentCount",
-              "astId": 3803,
+              "astId": 3809,
               "type": "t_uint256",
-              "src": "3163:23:17"
+              "src": "3205:23:17"
             },
             {
               "label": "investorCollateralProfitPercent",
-              "astId": 3805,
+              "astId": 3811,
               "type": "t_uint16",
-              "src": "3196:38:17"
+              "src": "3238:38:17"
             },
             {
               "label": "investorDirectProfitPercent",
-              "astId": 3807,
+              "astId": 3813,
               "type": "t_uint16",
-              "src": "3244:34:17"
+              "src": "3286:34:17"
             }
           ]
         },
@@ -462,15 +462,15 @@
           "members": [
             {
               "label": "user",
-              "astId": 3815,
+              "astId": 3821,
               "type": "t_address",
-              "src": "3399:12:17"
+              "src": "3441:12:17"
             },
             {
               "label": "investmentCount",
-              "astId": 3817,
+              "astId": 3823,
               "type": "t_uint256",
-              "src": "3421:23:17"
+              "src": "3463:23:17"
             }
           ]
         },
@@ -493,15 +493,15 @@
           "members": [
             {
               "label": "total",
-              "astId": 3810,
+              "astId": 3816,
               "type": "t_uint256",
-              "src": "3320:13:17"
+              "src": "3362:13:17"
             },
             {
               "label": "invested",
-              "astId": 3812,
+              "astId": 3818,
               "type": "t_uint256",
-              "src": "3343:16:17"
+              "src": "3385:16:17"
             }
           ]
         },
@@ -764,7 +764,7 @@
       {
         "address": "0xcECf06f0E5d683bbC86EC713cFc89009403243cd",
         "version": "1.0.0",
-        "implementation": "0xDF2fD1B4f1Bae3dE55dfA6e5ab65a77d9736b322",
+        "implementation": "0x740392312D99A4eCEE6549AEB8fa6Eb0a579e8F8",
         "admin": "0x6a30c12EFA42BF6f06dE2150CE19bB3b2228E2a2",
         "kind": "Upgradeable"
       }

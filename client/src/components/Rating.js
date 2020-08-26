@@ -14,18 +14,18 @@ class Rating extends Component {
 }
 
 function RatingStars(props) {
-  const {asset, rating} = props.props
+  const {ratingKey, rating} = props.props
   return (
     <OverlayTrigger
       placement="right"
-      key={`rating-${asset}`}
+      key={`rating-${ratingKey}`}
       overlay={
-        <Tooltip id={`rating-${asset}`}>
+        <Tooltip id={`rating-${ratingKey}`}>
           {`${rating}`}
         </Tooltip>
       }
     >
-      <span key={`rating-${asset}`}>
+      <span key={`rating-${ratingKey}`}>
         <Stars props={props.props}/>
       </span>
     </OverlayTrigger>
@@ -33,15 +33,15 @@ function RatingStars(props) {
 }
 
 function Stars(props) {
-  const {asset, rating} = props.props
+  const {ratingKey, rating} = props.props
   let numStars = Number.parseInt(rating)
 
   let stars = [];
   for (var i = 0; i < 10; i++) {
     if (i <= numStars) {
-      stars.push(<span className="fas fa-star" key={`rating-${asset}-${i}`}></span>)
+      stars.push(<span className="fas fa-star" key={`rating-${ratingKey}-${i}`}></span>)
     } else {
-      stars.push(<span className="far fa-star" key={`rating-${asset}-${i}`}></span>)
+      stars.push(<span className="far fa-star" key={`rating-${ratingKey}-${i}`}></span>)
     }
   }
 

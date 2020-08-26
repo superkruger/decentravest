@@ -17,8 +17,6 @@ import {
   accountSelector, 
   traderPairedSelector,
   traderPairedLoadedSelector,
-  traderSelector,
-  investorSelector,
   sidebarClosedSelector
 } from '../store/selectors'
 
@@ -66,17 +64,12 @@ const loadWebApp = async(web3, dispatch) => {
 }
 
 function mapStateToProps(state) {
-  const trader = traderSelector(state)
-  const investor = investorSelector(state)
   return {
     page: pageSelector(state),
     web3: web3Selector(state),
     account: accountSelector(state),
     traderPaired: traderPairedSelector(state),
     traderPairedLoaded: traderPairedLoadedSelector(state),
-    joined: trader || investor,
-    trader: trader,
-    investor: investor,
     sidebarClosed: sidebarClosedSelector(state)
   }
 }

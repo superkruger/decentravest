@@ -50,7 +50,7 @@ module.exports = {
         )
       },
       gas: 4200000,
-      gasPrice: 78000000000,
+      gasPrice: 70000000000,
       network_id: 1
     }
   }

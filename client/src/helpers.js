@@ -9,12 +9,16 @@ export const GREEN = 'success'
 export const RED = 'danger'
 export const NEUTRAL = 'info'
 
-const tokens = [
-    { symbol: 'ETH', decimals: 18, address: ZERO_ADDRESS },
-    { symbol: 'WETH', decimals: 18, address: ZERO_ADDRESS },
+export const userTokens = [
+	{ symbol: 'ETH', decimals: 18, address: ZERO_ADDRESS },
     { symbol: 'DAI', decimals: 18, address: `${process.env.REACT_APP_DAI_ADDRESS}` },
-    { symbol: 'SAI', decimals: 18, address: `${process.env.REACT_APP_SAI_ADDRESS}` },
     { symbol: 'USDC', decimals: 6, address: `${process.env.REACT_APP_USDC_ADDRESS}` }
+]
+
+const tokens = [
+    ...userTokens,
+    { symbol: 'WETH', decimals: 18, address: ZERO_ADDRESS },
+    { symbol: 'SAI', decimals: 18, address: `${process.env.REACT_APP_SAI_ADDRESS}` }
 ]
 
 export const log = (...logs) => {

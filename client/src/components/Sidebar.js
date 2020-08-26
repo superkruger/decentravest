@@ -4,6 +4,7 @@ import TraderSidebarMenu from './trader/TraderSidebarMenu'
 import InvestorSidebarMenu from './investor/InvestorSidebarMenu'
 import AdminSidebarMenu from './admin/AdminSidebarMenu'
 import {
+  accountSelector,
   traderSelector,
   investorSelector,
   sidebarClosedSelector,
@@ -83,9 +84,11 @@ function SidebarToggle(props) {
 }
 
 function mapStateToProps(state) {
-  const trader = traderSelector(state)
+  const account = accountSelector(state)
+  const trader = traderSelector(state, account)
   const investor = investorSelector(state)
   return {
+    account: account,
     isAdmin: isAdminSelector(state),
     joined: trader || investor,
     trader: trader,

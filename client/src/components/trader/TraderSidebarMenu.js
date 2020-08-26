@@ -73,10 +73,11 @@ function InvestmentsButton(props) {
 }
 
 function mapStateToProps(state) {
+  const account = accountSelector(state)
   return {
-    account: accountSelector(state),
+    account: account,
     traderPaired: traderPairedSelector(state),
-    trader: traderSelector(state),
+    trader: traderSelector(state, account),
     investmentActionRequired: investmentActionRequiredSelector(state)
   }
 }

@@ -18,9 +18,6 @@ import {
   accountSelector, 
   traderPairedSelector,
   traderPairedLoadedSelector,
-  traderSelector,
-  investorSelector,
-  traderJoiningSelector,
   pageSelector
 } from '../store/selectors'
 
@@ -77,16 +74,10 @@ class Content extends Component {
 
 
 function mapStateToProps(state) {
-  const trader = traderSelector(state)
-  const investor = investorSelector(state)
   return {
     account: accountSelector(state),
     traderPaired: traderPairedSelector(state),
     traderPairedLoaded: traderPairedLoadedSelector(state),
-    joined: trader || investor,
-    trader: trader,
-    investor: investor,
-    traderJoining: traderJoiningSelector(state),
     page: pageSelector(state)
   }
 }

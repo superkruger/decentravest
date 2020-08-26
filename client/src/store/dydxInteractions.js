@@ -88,7 +88,9 @@ export const loadTraderRatings = async (account, allTraders, dispatch) => {
 		for (let positionIndex=0; positionIndex<positions.length; positionIndex++) {
 			let position = positions[positionIndex]
 
-			traderTotal[position.asset] = traderTotal[position.asset].plus(position.nettProfit)
+			const relativeProfit = position.nettProfit.dividedBy(position.initialAmount)
+
+			traderTotal[position.asset] = traderTotal[position.asset].plus(relativeProfit)
 			traderCnt[position.asset] = traderCnt[position.asset] + 1
 			// traderAvg[position.asset] = traderTotal[position.asset].dividedBy(traderCnt[position.asset])
 
@@ -98,10 +100,9 @@ export const loadTraderRatings = async (account, allTraders, dispatch) => {
 			}
 			
 			if (positionIndex === (positions.length - 1)) {
+				// done with trader
 
 				assets.forEach((asset, assetIndex) => {
-					
-					// done with trader
 					if (traderCnt[asset] > 0) {
 						traderAvg[asset] = traderTotal[asset].dividedBy(traderCnt[asset])
 					}
@@ -117,9 +118,8 @@ export const loadTraderRatings = async (account, allTraders, dispatch) => {
 
 				if (traderIndex === (allTraders.length - 1)) {
 					// done with all
-					assets.forEach((asset, assetIndex) => {
-						
 
+					assets.forEach((asset, assetIndex) => {
 						if (accountCnt[asset] > 0) {
 							accountAvg[asset] = accountTotal[asset].dividedBy(accountCnt[asset])
 						}
@@ -229,6 +229,7 @@ const mapTraderPosition = (position) => {
 			market: position.market,
 			start: moment(transfers[transfers.length - 1].confirmedAt),
 			end: moment(transfers[0].confirmedAt),
+			initialAmount: transfers[transfers.length - 1].transferAmount,
 			profit: profit,
 			fee: fee,
 			nettProfit: profit,//.minus(fee),

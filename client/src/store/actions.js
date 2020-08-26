@@ -124,6 +124,31 @@ export function traderLoaded(trader) {
 	}
 }
 
+export function traderTrustRatingLoaded(trader, rating) {
+	return {
+		type: 'TRADER_TRUSTRATING_LOADED',
+		trader,
+		rating
+	}
+}
+
+export function directLimitLoaded(trader, token, limit, invested) {
+	return {
+		type: 'DIRECT_LIMIT_LOADED',
+		trader,
+		token,
+		limit,
+		invested
+	}
+}
+
+export function profitPercentagesLoaded(profitPercentages) {
+	return {
+		type: 'PROFIT_PERCENTAGES_LOADED',
+		profitPercentages
+	}
+}
+
 export function mainTraderLoaded(trader) {
 	return {
 		type: 'MAIN_TRADER_LOADED',
@@ -175,6 +200,7 @@ export function investmentLoaded(investment) {
 }
 
 export function investmentChanging(investment, changing) {
+
 	investment.changing = changing
 	return investmentLoaded(investment)
 }

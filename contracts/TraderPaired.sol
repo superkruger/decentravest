@@ -50,16 +50,16 @@ contract TraderPaired is Initializable, Ownable, Pausable, ITraderPaired {
     /*
      *  Events
      */
-    event Trader(address indexed user, uint256 traderId, uint256 date);
+    event Trader(address indexed user, uint256 traderId, uint16 investorCollateralProfitPercent, uint16 investorDirectProfitPercent, uint256 date);
     event Investor(address indexed user, uint256 investorId, uint256 date);
     event ProfitPercentages(address indexed trader, uint16 investorCollateralProfitPercent, uint16 investorDirectProfitPercent);
-    event Investment(address indexed wallet, address indexed investor, uint256 date);
+    event Investment(address wallet, address indexed investor, uint256 date);
     event Allocate(address indexed trader, address indexed token, uint256 total, uint256 invested, uint256 date);
-    event Invest(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address token, uint256 amount, uint16 investorProfitPercent, uint8 investmentType, uint256 allocationInvested, uint256 allocationTotal, uint256 date);
-    event Stop(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address from, uint256 date);
-    event RequestExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, address from, uint256 value, uint256 date);
-    event ApproveExit(uint256 id, address indexed wallet, address indexed trader, address indexed investor, uint256 allocationInvested, uint256 allocationTotal, uint256 date);
-    event RejectExit(uint256 id, address indexed wallet, address indexed trader, uint256 value, address from, uint256 date);
+    event Invest(uint256 id, address wallet, address indexed trader, address indexed investor, address token, uint256 amount, uint16 investorProfitPercent, uint8 investmentType, uint256 allocationInvested, uint256 allocationTotal, uint256 date);
+    event Stop(uint256 id, address wallet, address indexed trader, address indexed investor, address from, uint256 date);
+    event RequestExit(uint256 id, address wallet, address indexed trader, address indexed investor, address from, uint256 value, uint256 date);
+    event ApproveExit(uint256 id, address wallet, address indexed trader, address indexed investor, address from, uint256 allocationInvested, uint256 allocationTotal, uint256 date);
+    event RejectExit(uint256 id, address wallet, address indexed trader, uint256 value, address from, uint256 date);
 
     /*
      *  Structs
@@ -166,7 +166,7 @@ contract TraderPaired is Initializable, Ownable, Pausable, ITraderPaired {
         traderCount = traderCount.add(1);
         traderAddresses[traderCount] = msg.sender;
 
-        emit Trader(msg.sender, traderCount, now);
+        emit Trader(msg.sender, traderCount, DEFAULT_COLLATERAL_PERCENTAGE, DEFAULT_DIRECT_PERCENTAGE, now);
     }
 
     /// @dev Join as investor
@@ -457,6 +457,7 @@ contract TraderPaired is Initializable, Ownable, Pausable, ITraderPaired {
             msg.sender,
             _traderAddress,
             _investorAddress,
+            _signer,
             allocation.invested,
             allocation.total,
             now

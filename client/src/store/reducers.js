@@ -111,6 +111,26 @@ function web3 (state = {}, action ) {
 					]
 				}
 			}
+		case 'PROFIT_PERCENTAGES_LOADED':
+			{
+				let index, data
+
+				index = state.traders.findIndex(trader => trader.user === action.profitPercentages.trader)
+				if (index !== -1) {
+					state.traders[index] = {
+						...state.traders[index],
+						investorCollateralProfitPercent: action.profitPercentages.investorCollateralProfitPercent,
+						investorDirectProfitPercent: action.profitPercentages.investorDirectProfitPercent
+					}
+				}
+				data = state.traders
+				return { 
+					...state, 
+					traders: [
+						...data
+					]
+				}
+			}
 		case 'TRADER_ALLOCATION_LOADED':
 			{
 				let index, data
@@ -158,6 +178,63 @@ function web3 (state = {}, action ) {
 					state.traders[index] = {
 						...state.traders[index],
 						ratings: action.ratings
+					}
+				}
+				data = state.traders
+				return { 
+					...state, 
+					traders: [
+						...data
+					]
+				}
+			}
+		case 'TRADER_TRUSTRATING_LOADED':
+			{
+				let index, data
+
+				index = state.traders.findIndex(trader => trader.user === action.trader)
+				if (index !== -1) {
+					state.traders[index] = {
+						...state.traders[index],
+						trustRating: action.rating
+					}
+				}
+				data = state.traders
+				return { 
+					...state, 
+					traders: [
+						...data
+					]
+				}
+			}
+		case 'DIRECT_LIMIT_LOADED':
+			{
+				let index, data
+
+				index = state.traders.findIndex(trader => trader.user === action.trader)
+				if (index !== -1) {
+
+					let allocationData
+					let trader = state.traders[index]
+					let allocationIndex = trader.allocations.findIndex(allocation => allocation.token === action.token)
+					if (allocationIndex === -1) {
+						allocationData = [...trader.allocations, action.allocation]
+					} else {
+						let allocation = trader.allocations[allocationIndex]
+						allocation.directLimit = action.limit
+						allocation.directInvested = action.invested
+
+						trader.allocations[allocationIndex] = {
+							...allocation
+						}
+						allocationData = trader.allocations
+					}
+
+					state.traders[index] = {
+						...state.traders[index],
+						allocations: [
+							...allocationData
+						]
 					}
 				}
 				data = state.traders

@@ -1,9 +1,9 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import { Container, Row, Col, Button, Badge } from 'react-bootstrap'
+import { Container, Row, Col, Button, Badge, Alert } from 'react-bootstrap'
 import AddressImage from '../AddressImage'
 import Token from '../Token'
-import { log, toBN } from '../../helpers'
+import { log, toBN, INVESTMENT_COLLATERAL } from '../../helpers'
 import { 
   accountSelector,
   traderSelector,
@@ -80,9 +80,16 @@ function showInvestments(investments, props) {
               </h6>
             </a>
             <div className="collapse" id={`investments_${investment.id}`}>
+              <div className="card-header">
+              {
+                investment.investmentType === INVESTMENT_COLLATERAL
+                ? <h4>Collateral Investment</h4>
+                : <h4>Direct Investment</h4>
+              }
+              </div>
               <div className="card-body">
                 <Row>
-                  <Col sm={6}>
+                  <Col sm={8}>
                   {
                     {
                       0: <StopButton investment={investment} props={props} />,
@@ -93,7 +100,7 @@ function showInvestments(investments, props) {
                     }[investment.state]
                   }
                   </Col>
-                  <Col sm={6}>
+                  <Col sm={4}>
                     <span className="very-small align-right">
                       <table>
                         <tbody>
@@ -125,9 +132,18 @@ function showInvestments(investments, props) {
 
 function StopButton (props) {
   return (
-    <Button variant="primary" onClick={(e) => {stopHandler(props)}}>
-      Stop
-    </Button>
+    <Row>
+      <Col sm={2}>
+        <Button variant="primary" onClick={(e) => {stopHandler(props)}}>
+          Stop
+        </Button>
+      </Col>
+      <Col sm={10}>
+        <Alert variant="warning">
+          Stopping an investment is irreversable. This would lock in the investment value until settlement is completed. Usually the investor would do this, but you can too in the event you want to cease trading.
+        </Alert>
+      </Col>
+    </Row>
   )
 }
 
@@ -140,9 +156,18 @@ function stopHandler (props) {
 
 function DisburseButton (props) {
   return (
-    <Button variant="primary" onClick={(e) => {disburseHandler(props)}}>
-      Disburse
-    </Button>
+    <Row>
+      <Col sm={2}>
+        <Button variant="primary" onClick={(e) => {disburseHandler(props)}}>
+          Disburse
+        </Button>
+      </Col>
+      <Col sm={10}>
+        <Alert variant="info">
+          To initiate settlement, you have to request a disbursal. The investor will have to approve the request.
+        </Alert>
+      </Col>
+    </Row>
   )
 }
 
@@ -169,10 +194,15 @@ function ApproveButton (props) {
   if (toBN(investment.value) === toBN(investment.grossValue)) {
     return (
       <Row>
-        <Col sm={12}>
+        <Col sm={2}>
           <Button variant="primary" onClick={(e) => {approveHandler(props)}}>
             Approve
           </Button>
+        </Col>
+        <Col sm={10}>
+          <Alert variant="info">
+            The investor has requested a disbursal. If you see this, then the value requested is correct. You have to approve it for the settlement to complete.
+          </Alert>
         </Col>
       </Row>
     )
@@ -180,13 +210,15 @@ function ApproveButton (props) {
 
   return (
     <Row>
-      <Col sm={6}>
-        <span>A disbursement value of {investment.formattedValue} has been requested</span>
+      <Col sm={2}>
+        <Button variant="primary" onClick={(e) => {rejectHandler(props)}}>
+          Reject
+        </Button>
       </Col>
-      <Col sm={6}>
-          <Button variant="primary" onClick={(e) => {rejectHandler(props)}}>
-            Reject
-          </Button>
+      <Col sm={10}>
+        <Alert variant="warning">
+          The investor has requested a disbursal with the wrong value ({investment.formattedValue}). This might indicate fraudulent action. It will be automatically investigated. The best course of action is to reject and issue a disbursal yourself.
+        </Alert>
       </Col>
     </Row>
   )
@@ -213,10 +245,11 @@ function rejectHandler (props) {
 }
 
 function mapStateToProps(state) {
+  const account = accountSelector(state)
 
   return {
-    account: accountSelector(state),
-    trader: traderSelector(state),
+    account: account,
+    trader: traderSelector(state, account),
     traderPaired: traderPairedSelector(state),
     pairedInvestments: pairedInvestmentsSelector(state),
     investments: investmentsSelector(state),
