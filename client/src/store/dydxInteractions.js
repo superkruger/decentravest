@@ -8,9 +8,10 @@ import {
 } from './dydxActions.js'
 import { log, etherToWei } from '../helpers'
 
-export const loadPositionsCount = async (account, dispatch) => {
+export const loadPositionsCount = async (network, account, dispatch) => {
 	try {
-		let url = `${process.env.REACT_APP_DYDX_CLOSED_URL}`
+		let url = process.env['REACT_APP_' + network + '_DYDX_CLOSED_URL']
+		log('loadPositionsCount', network, url)
 		axios.get(url.replace('$1', account))
 		  .then(function (response) {
 		    // handle success
@@ -26,7 +27,7 @@ export const loadPositionsCount = async (account, dispatch) => {
 	}
 }
 
-export const loadTraderRatings = async (account, allTraders, dispatch) => {
+export const loadTraderRatings = async (network, account, allTraders, dispatch) => {
 
 	let allLow = {
 		WETH: null,
@@ -83,7 +84,7 @@ export const loadTraderRatings = async (account, allTraders, dispatch) => {
 			USDC: 0
 		}
 
-		let positions = await getTraderPositions(trader.user)
+		let positions = await getTraderPositions(network, trader.user)
 
 		for (let positionIndex=0; positionIndex<positions.length; positionIndex++) {
 			let position = positions[positionIndex]
@@ -149,9 +150,9 @@ export const loadTraderRatings = async (account, allTraders, dispatch) => {
 	}
 }
 
-export const loadTraderPositions = async (account, dispatch) => {
+export const loadTraderPositions = async (network, account, dispatch) => {
 	try {
-		let positions = await getTraderPositions(account)
+		let positions = await getTraderPositions(network, account)
 
 		positions.forEach((position, index) => dispatch(traderPositionLoaded(position)))
 
@@ -161,14 +162,14 @@ export const loadTraderPositions = async (account, dispatch) => {
 	}
 }
 
-export const getTraderPositions = async (account) => {
+export const getTraderPositions = async (network, account) => {
 	try {
-		let positions = await getTraderAndMarketPositions(account, 'WETH-DAI')
-		let p = await getTraderAndMarketPositions(account, 'WETH-USDC')
+		let positions = await getTraderAndMarketPositions(network, account, 'WETH-DAI')
+		let p = await getTraderAndMarketPositions(network, account, 'WETH-USDC')
 		if (p.length > 0) {
 			positions = positions.concat(p)
 		}
-		p = await getTraderAndMarketPositions(account, 'DAI-USDC')
+		p = await getTraderAndMarketPositions(network, account, 'DAI-USDC')
 		if (p.length > 0) {
 			positions = positions.concat(p)
 		}
@@ -179,9 +180,9 @@ export const getTraderPositions = async (account) => {
 	return []
 }
 
-const getTraderAndMarketPositions = async (account, market) => {
+const getTraderAndMarketPositions = async (network, account, market) => {
 	try {
-		let url = `${process.env.REACT_APP_DYDX_CLOSED_MARKET_URL}`
+		let url = process.env['REACT_APP_'+network+'_DYDX_CLOSED_MARKET_URL']
 		let response = await axios.get(url.replace('$1', market).replace('$2', account))
 		
 	    // handle success

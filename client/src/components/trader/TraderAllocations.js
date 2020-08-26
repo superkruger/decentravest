@@ -5,6 +5,7 @@ import AllocationChart from './AllocationChart'
 import { log, ZERO_ADDRESS, tokenDecimalsForAddress } from '../../helpers'
 import { 
   web3Selector,
+  networkSelector,
   accountSelector,
   traderSelector,
   traderPairedSelector,
@@ -22,17 +23,17 @@ import {
 class TraderAllocations extends Component {
 
   componentDidMount() {
-    const { account, trader, traderPaired, tokens, web3, dispatch } = this.props
-    loadTraderAllocations(account, traderPaired, dispatch)
+    const { network, account, trader, traderPaired, tokens, web3, dispatch } = this.props
+    loadTraderAllocations(network, account, traderPaired, dispatch)
     loadBalances(account, traderPaired, tokens, web3, dispatch)
 
     if (!trader.trustRating) {
-      loadTraderTrustRating(trader, traderPaired, dispatch)
+      loadTraderTrustRating(network, trader, traderPaired, dispatch)
     }
   }
 
   render() {
-    const {account, trader, traderAllocations} = this.props
+    const {network, account, trader, traderAllocations} = this.props
 
     const allocationList = [
       {
@@ -41,11 +42,11 @@ class TraderAllocations extends Component {
       },
       {
         symbol: 'DAI',
-        token: `${process.env.REACT_APP_DAI_ADDRESS}`
+        token: process.env['REACT_APP_'+network+'_DAI_ADDRESS']
       },
       {
         symbol: 'USDC',
-        token: `${process.env.REACT_APP_USDC_ADDRESS}`
+        token: process.env['REACT_APP_'+network+'_USDC_ADDRESS']
       }
     ]
 
@@ -192,6 +193,7 @@ function mapStateToProps(state) {
   const account = accountSelector(state)
   return {
     web3: web3Selector(state),
+    network: networkSelector(state),
     account: account,
     trader: traderSelector(state, account),
     traderPaired: traderPairedSelector(state),

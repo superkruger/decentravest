@@ -6,6 +6,7 @@ import Token from '../Token'
 import InvestorInvestment from './InvestorInvestment'
 import { log, toBN, uniqueByKey } from '../../helpers'
 import { 
+  networkSelector,
   accountSelector,
   investorSelector,
   traderPairedSelector,
@@ -28,15 +29,15 @@ import {
 
 class InvestorInvestments extends Component {
   componentDidMount() {
-    const { investments, traderPaired, dispatch } = this.props
-    loadInvestmentValues(investments, traderPaired, dispatch)
+    const { network, investments, traderPaired, dispatch } = this.props
+    loadInvestmentValues(network, investments, traderPaired, dispatch)
 
     const traderInvestments = uniqueByKey(investments, it => it.trader)
 
     console.log("traderInvestments", traderInvestments)
 
     traderInvestments.forEach(async (investment) => {
-      await loadTraderPositions(investment.trader, dispatch)
+      await loadTraderPositions(network, investment.trader, dispatch)
     })
   }
 
@@ -63,6 +64,7 @@ class InvestorInvestments extends Component {
 function mapStateToProps(state) {
 
   return {
+    network: networkSelector(state),
     account: accountSelector(state),
     investor: investorSelector(state),
     traderPaired: traderPairedSelector(state),

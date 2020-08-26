@@ -1,9 +1,18 @@
-import React from 'react'
+import React, { Component } from 'react'
+import { connect } from 'react-redux'
 import Identicon from 'identicon.js'
 
-export default function ({ address }) {
-    return(
-    	<a className="nav-link" title={`${address}`} href={`https://${process.env.REACT_APP_ETHERSCAN_BASE}.etherscan.io/address/${address}`} target="_blank" rel="noopener">
+import {
+  networkSelector
+} from '../store/selectors'
+
+class AddressLink extends Component {
+
+  render() {
+    const { network, address } = this.props
+
+    return (
+      <a className="nav-link" title={`${address}`} href={`https://` + process.env['REACT_APP_'+network+'_ETHERSCAN_BASE'] + `.etherscan.io/address/${address}`} target="_blank" rel="noopener">
         <img
           className="ml-2"
           width='25'
@@ -13,5 +22,13 @@ export default function ({ address }) {
         />
       </a>
     )
-  
+  }
 }
+
+function mapStateToProps(state) {
+  return {
+    network: networkSelector(state)
+  }
+}
+
+export default connect(mapStateToProps)(AddressLink)

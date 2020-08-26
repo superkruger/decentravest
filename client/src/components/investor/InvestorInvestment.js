@@ -5,6 +5,7 @@ import AddressImage from '../AddressImage'
 import Token from '../Token'
 import { log, toBN, INVESTMENT_COLLATERAL } from '../../helpers'
 import { 
+  networkSelector,
   accountSelector,
   investorSelector,
   traderPairedSelector,
@@ -23,10 +24,10 @@ import {
 class InvestorInvestment extends Component {
 
   render() {
-    const { investment, positionsForInvestment } = this.props
+    const { network, investment, positionsForInvestment } = this.props
     const headerClass = investment.state === "4" ? "disbursed" : ""
 
-    const dydxUrl = `${process.env.REACT_APP_DYDX_CLOSED_URL}`.replace('$1', investment.trader)
+    const dydxUrl = process.env['REACT_APP_'+network+'_DYDX_CLOSED_URL'].replace('$1', investment.trader)
 
     return (
       <div className="card shadow mb-4">
@@ -255,6 +256,7 @@ function rejectHandler (props) {
 function mapStateToProps(state, props) {
 
   return {
+    network: networkSelector(state),
     account: accountSelector(state),
     investor: investorSelector(state),
     traderPaired: traderPairedSelector(state),

@@ -33,6 +33,13 @@ export function web3Loaded(connection) {
 	}
 }
 
+export function networkJoined(name) {
+	return {
+		type: 'NETWORK_JOINED',
+		name
+	}
+}
+
 export function web3AccountLoaded(account) {
 	return {
 		type: 'WEB3_ACCOUNT_LOADED',

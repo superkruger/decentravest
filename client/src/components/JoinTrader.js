@@ -4,6 +4,7 @@ import { Button, Container, Row, Col, ListGroup, Tab, Alert } from 'react-bootst
 import Spinner from './Spinner'
 import {
   web3Selector,
+  networkSelector,
   accountSelector, 
   traderPairedSelector,
   pairedInvestmentsSelector,
@@ -23,8 +24,8 @@ import {
 class JoinTrader extends Component {
 
   componentDidMount() {
-    const { account, dispatch } = this.props
-    loadPositionsCount(account, dispatch)
+    const { account, network, dispatch } = this.props
+    loadPositionsCount(network, account, dispatch)
   }
 
   render() {
@@ -134,9 +135,9 @@ function TraderButton(props) {
 }
 
 const traderJoin = async (props) => {
-  const { account, traderPaired, pairedInvestments, walletFactory, web3, dispatch } = props
+  const { network, account, traderPaired, pairedInvestments, walletFactory, web3, dispatch } = props
 
-  await joinAsTrader(account, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
+  await joinAsTrader(network, account, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
 
 }
 
@@ -146,6 +147,7 @@ function mapStateToProps(state) {
 
   return {
     web3: web3Selector(state),
+    network: networkSelector(state),
     account: account,
     traderPaired: traderPaired,
     pairedInvestments: pairedInvestmentsSelector(state),

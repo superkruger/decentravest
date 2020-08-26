@@ -7,9 +7,7 @@ import Notifications from './Notifications'
 import { log } from '../helpers'
 import './App.css'
 import { 
-  loadWeb3, 
-  loadAccount,
-  loadTraderPaired
+  loadWebApp,
 } from '../store/interactions'
 import {
   pageSelector,
@@ -26,10 +24,7 @@ class App extends Component {
   }
 
   async loadBlockchainData(dispatch) {
-    const web3 = await loadWeb3(dispatch)
-    if (web3) {
-      await loadWebApp(web3, dispatch)
-    }
+    await loadWebApp(dispatch)
   }
 
   render() {
@@ -47,19 +42,6 @@ class App extends Component {
         </a>
       </div>
     )
-  }
-}
-
-const loadWebApp = async(web3, dispatch) => {
-  await web3.eth.net.getNetworkType()
-  const networkId = await web3.eth.net.getId()
-  log("networkId", networkId)
-  const account = await loadAccount(web3, dispatch)
-  
-  const traderPaired = await loadTraderPaired(account, web3, networkId, dispatch)
-  if(!traderPaired) {
-    console.log('Smart contract not detected on the current network. Please select another network with Metamask.')
-    return
   }
 }
 

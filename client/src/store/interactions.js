@@ -6,12 +6,13 @@ import PairedInvestments from '../abis/PairedInvestments.json'
 import MultiSigFundWalletFactory from '../abis/MultiSigFundWalletFactory.json'
 import MultiSigFundWallet from '../abis/MultiSigFundWallet.json'
 import ERC20 from '../abis/IERC20.json'
-import { log, ZERO_ADDRESS, INVESTMENT_COLLATERAL, INVESTMENT_DIRECT, userTokens, toBN, etherToWei, tokenAddressForSymbol, tokenSymbolForAddress, info, fail } from '../helpers'
+import { log, ZERO_ADDRESS, INVESTMENT_COLLATERAL, INVESTMENT_DIRECT, setTokens, userTokens, toBN, etherToWei, tokenAddressForSymbol, tokenSymbolForAddress, info, fail } from '../helpers'
 import { getTraderPositions } from './dydxInteractions'
 import {
 	notificationAdded,
 	notificationRemoved,
 	web3Loaded,
+	networkJoined,
 	web3AccountLoaded,
 	traderPairedLoaded,
 	pairedInvestmentsLoaded,
@@ -37,9 +38,7 @@ import {
 	disbursementCreated
 } from './actions.js'
 
-const FACC = `${process.env.REACT_APP_FACC}`
-
-export const loadWeb3 = async (dispatch) => {
+export const loadWebApp = async (dispatch) => {
 
 	let web3
 	if (window.ethereum) {
@@ -64,12 +63,42 @@ export const loadWeb3 = async (dispatch) => {
 
 	if (web3) {
 		web3.eth.handleRevert = true
+
+		await web3.eth.net.getNetworkType()
+		const networkId = await web3.eth.net.getId()
+		console.log("networkId", networkId)
+		const account = await loadAccount(web3, dispatch)
+
+		let network
+
+		switch (networkId) {
+			case 1:
+				network = "MAINNET"
+			case 3:
+				network = "ROPSTEN"
+			default:
+				network = "DEV"
+		}
+
+		setTokens(network)
+		dispatch(networkJoined(network))
+
+		const traderPaired = await loadTraderPaired(network, account, web3, networkId, dispatch)
+		if(!traderPaired) {
+			dispatch(notificationAdded(fail("Contracts", "Smart contract not detected on the current network. Please select the mainnet on Metamask.")))
+			console.log('Smart contract not detected on the current network. Please select the mainnet on Metamask.')
+			return
+		}
+
 		dispatch(web3Loaded(web3))
+	}
+	else {
+		dispatch(notificationAdded(fail("Web3", "Could not load Web3. Have you installed Metamask?")))
 	}
 	return web3
 }
 
-export const loadAccount = async (web3, dispatch) => {
+const loadAccount = async (web3, dispatch) => {
 	const accounts = await web3.eth.getAccounts()
 	const account = accounts[0]
 	dispatch(web3AccountLoaded(account))
@@ -86,7 +115,6 @@ export const loadBalances = async (account, traderPaired, tokens, web3, dispatch
 	})
 }
 
-
 export const loadMainWalletBalances = async (wallet, tokens, dispatch) => {
 
 	const etherBalance = await wallet.methods.etherBalance().call()
@@ -98,7 +126,7 @@ export const loadMainWalletBalances = async (wallet, tokens, dispatch) => {
 	})
 }
 
-export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
+const loadTraderPaired = async (network, account, web3, networkId, dispatch) => {
 	try {
 		log("loadTraderPaired", TraderPaired)
 		if (TraderPaired.networks[networkId] !== undefined) {
@@ -111,8 +139,8 @@ export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 			const walletFactory = await new web3.eth.Contract(MultiSigFundWalletFactory.abi, MultiSigFundWalletFactory.networks[networkId].address, {handleRevert: true})
 			dispatch(walletFactoryLoaded(walletFactory))
 
-			const daiToken = await new web3.eth.Contract(ERC20.abi, `${process.env.REACT_APP_DAI_ADDRESS}`, {handleRevert: true})
-			const usdcToken = await new web3.eth.Contract(ERC20.abi, `${process.env.REACT_APP_USDC_ADDRESS}`, {handleRevert: true})
+			const daiToken = await new web3.eth.Contract(ERC20.abi, process.env['REACT_APP_'+network+'_DAI_ADDRESS'], {handleRevert: true})
+			const usdcToken = await new web3.eth.Contract(ERC20.abi, process.env['REACT_APP_'+network+'_USDC_ADDRESS'], {handleRevert: true})
 
 			dispatch(tokensLoaded([
 			{
@@ -132,21 +160,21 @@ export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 
 			console.log("TI", traderCount, investorCount)
 
-			loadTraders(traderPaired, dispatch)
+			loadTraders(network, traderPaired, dispatch)
 			dispatch(traderPairedLoaded(traderPaired))
 
 			const trader = await traderPaired.methods.traders(account).call()
 			const investor = await traderPaired.methods.investors(account).call()
 
 			if (trader && trader.user !== ZERO_ADDRESS) {
-				await loadMainTrader(trader, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
+				await loadMainTrader(network, trader, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
 			}
 
 			if (investor && investor.user !== ZERO_ADDRESS) {
 				await loadMainInvestor(investor, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
 			}
 
-			if (account === FACC) {
+			if (account === process.env['REACT_APP_'+network+'_FACC']) {
 				await loadAdmin(account, traderPaired, dispatch)
 			}
 
@@ -159,9 +187,9 @@ export const loadTraderPaired = async (account, web3, networkId, dispatch) => {
 	return null
 }
 
-const loadMainTrader = async (trader, traderPaired, pairedInvestments, walletFactory, web3, dispatch) => {
+const loadMainTrader = async (network, trader, traderPaired, pairedInvestments, walletFactory, web3, dispatch) => {
 	await loadTraderInvestments(trader, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
-	await loadTraderAllocations(trader.user, traderPaired, dispatch)
+	await loadTraderAllocations(network, trader.user, traderPaired, dispatch)
 
 	dispatch(mainTraderLoaded(trader))
 }
@@ -179,18 +207,18 @@ const loadAdmin = async (admin, traderPaired, dispatch) => {
 	dispatch(adminLoaded())
 }
 
-const loadTraders = async (traderPaired, dispatch) => {
+const loadTraders = async (network, traderPaired, dispatch) => {
 
 	const traderCount = await traderPaired.methods.traderCount().call()
 	for (let i = 1; i <= traderCount; i++) {
 		const traderAddress = await traderPaired.methods.traderAddresses(i).call()
 		const trader = await traderPaired.methods.traders(traderAddress).call()
 		dispatch(traderLoaded(mapTrader(trader)))
-		await loadTraderAllocations(trader.user, traderPaired, dispatch)
+		await loadTraderAllocations(network, trader.user, traderPaired, dispatch)
 	}
 
 	traderPaired.events.Trader({filter: {}}, (err, event) => {
-		loadTraderAllocations(event.returnValues.user, traderPaired, dispatch)
+		loadTraderAllocations(network, event.returnValues.user, traderPaired, dispatch)
 		dispatch(traderLoaded(mapTrader(event.returnValues)))
 	})
 
@@ -262,7 +290,8 @@ const loadTraderInvestments = async (trader, traderPaired, pairedInvestments, wa
 	})
 }
 
-export const joinAsTrader = async (account, traderPaired, pairedInvestments, walletFactory, web3, dispatch) => {
+export const joinAsTrader = async (network, account, traderPaired, pairedInvestments, walletFactory, web3, dispatch) => {
+	log('joinAsTrader', network, account)
 	try {
 		traderPaired.methods.joinAsTrader().send({from: account})
 		.on('transactionHash', (hash) => {
@@ -275,7 +304,7 @@ export const joinAsTrader = async (account, traderPaired, pairedInvestments, wal
 			const trader = await traderPaired.methods.traders(account).call()
 
 			if (trader.user !== ZERO_ADDRESS) {
-				await loadMainTrader(trader, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
+				await loadMainTrader(network, trader, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
 				dispatch(pageSelected('trader'))
 				dispatch(notificationAdded(info("Trader", "Successfully registered as a trader!")))
 			}
@@ -319,7 +348,7 @@ export const joinAsInvestor = async (account, traderPaired, pairedInvestments, w
 }
 
 
-export const loadTraderAllocations = async (account, traderPaired, dispatch) => {
+export const loadTraderAllocations = async (network, account, traderPaired, dispatch) => {
 	try {
 		// Current allocations
 
@@ -329,13 +358,13 @@ export const loadTraderAllocations = async (account, traderPaired, dispatch) => 
 		dispatch(traderAllocationLoaded(account, mapAllocation(tokenAllocation)))
 
 		// DAI
-		tokenAllocation = await traderPaired.methods.allocations(account, `${process.env.REACT_APP_DAI_ADDRESS}`).call()
-		tokenAllocation.token = `${process.env.REACT_APP_DAI_ADDRESS}`
+		tokenAllocation = await traderPaired.methods.allocations(account, process.env['REACT_APP_'+network+'_DAI_ADDRESS']).call()
+		tokenAllocation.token = process.env['REACT_APP_'+network+'_DAI_ADDRESS']
 		dispatch(traderAllocationLoaded(account, mapAllocation(tokenAllocation)))
 
 		// USDC
-		tokenAllocation = await traderPaired.methods.allocations(account, `${process.env.REACT_APP_USDC_ADDRESS}`).call()
-		tokenAllocation.token = `${process.env.REACT_APP_USDC_ADDRESS}`
+		tokenAllocation = await traderPaired.methods.allocations(account, process.env['REACT_APP_'+network+'_USDC_ADDRESS']).call()
+		tokenAllocation.token = process.env['REACT_APP_'+network+'_USDC_ADDRESS']
 		dispatch(traderAllocationLoaded(account, mapAllocation(tokenAllocation)))
 
 		// New allocations
@@ -862,19 +891,19 @@ const mapRejectExit = (event) => {
 	}
 }
 
-export const loadInvestmentValues = (investments, traderPaired, dispatch) => {
+export const loadInvestmentValues = (network, investments, traderPaired, dispatch) => {
 	investments.forEach(async (investment) => {
-		investment = await getInvestmentValue(investment, traderPaired)
+		investment = await getInvestmentValue(network, investment, traderPaired)
 		dispatch(investmentLoaded(investment))
 	})
 }
 
-const getInvestmentValue = async (investment, traderPaired) => {
+const getInvestmentValue = async (network, investment, traderPaired) => {
 	log("getInvestmentValue", investment)
 	let investorProfitPercent = investment.investorProfitPercent.dividedBy(10000)
 
 	// get all positions for this investment
-	let positions = await getTraderPositions(investment.trader)
+	let positions = await getTraderPositions(network, investment.trader)
 	positions = positions.filter(
 		(position) => tokenAddressForSymbol(position.asset) === investment.token)
 
@@ -1016,7 +1045,7 @@ const getPositionInvestmentsAmount = async (position, traderInvestments) => {
 	return totalAmount
 }
 
-export const loadTraderTrustRating = async (trader, traderPaired, dispatch) => {
+export const loadTraderTrustRating = async (network, trader, traderPaired, dispatch) => {
 
 	let stream = await traderPaired.getPastEvents(
 		'Invest', 
@@ -1127,7 +1156,7 @@ export const loadTraderTrustRating = async (trader, traderPaired, dispatch) => {
 			log("Total", total)
 			if (investment.requestFrom === trader.user) {
 				// trader requested exit, check value
-				investment = await getInvestmentValue(investment, traderPaired)
+				investment = await getInvestmentValue(network, investment, traderPaired)
 				log("Investment Value", investment)
 				if (investment.grossValue.lt(investment.value)) {
 					// trader requested wrong value
@@ -1144,7 +1173,7 @@ export const loadTraderTrustRating = async (trader, traderPaired, dispatch) => {
 					}
 
 				} else if (investment.rejectFrom) {
-					investment = await getInvestmentValue(investment, traderPaired)
+					investment = await getInvestmentValue(network, investment, traderPaired)
 					if (investment.grossValue.lt(investment.rejectValue)) {
 						// trader rejected wrong value
 						log("trader rejected with wrong value", investment.grossValue.toString(), investment.value.toString(), investment.rejectValue.toString())

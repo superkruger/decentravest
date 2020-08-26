@@ -8,6 +8,7 @@ import {
 } from '../../store/interactions'
 import { 
   web3Selector,
+  networkSelector,
   accountSelector,
   investorSelector,
   traderPairedSelector,
@@ -65,7 +66,7 @@ function CreateWallet(props) {
 }
 
 function Wallet(props) {
-  const { wallet } = props.props
+  const { wallet, network } = props.props
 
   return (
     <div className="card shadow mb-4">
@@ -79,7 +80,7 @@ function Wallet(props) {
           <Container>
             <Row>
               <Col sm={12}>
-                <span>Wallet: <a href={`https://${process.env.REACT_APP_ETHERSCAN_BASE}.etherscan.io/address/${wallet.contract.options.address}`} target="_blank" rel="noopener">{wallet.contract.options.address}</a></span>
+                <span>Wallet: <a href={`https://` + process.env['REACT_APP_'+network+'_ETHERSCAN_BASE'] + `.etherscan.io/address/${wallet.contract.options.address}`} target="_blank" rel="noopener">{wallet.contract.options.address}</a></span>
               </Col>
             </Row>
             <Row>
@@ -123,6 +124,7 @@ function mapStateToProps(state) {
 
   return {
     web3: web3Selector(state),
+    network: networkSelector(state),
     account: accountSelector(state),
     investor: investorSelector(state),
     traderPaired: traderPairedSelector(state),

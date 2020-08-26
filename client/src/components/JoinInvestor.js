@@ -16,19 +16,15 @@ import {
   joinAsTrader, 
   joinAsInvestor 
 } from '../store/interactions'
-import { 
-  loadPositionsCount
-} from '../store/dydxInteractions'
 
 class JoinInvestor extends Component {
 
   componentDidMount() {
     const { account, dispatch } = this.props
-    loadPositionsCount(account, dispatch)
   }
 
   render() {
-    const { ready, positionsCount } = this.props
+    const { ready } = this.props
     return (
       <div>
       {

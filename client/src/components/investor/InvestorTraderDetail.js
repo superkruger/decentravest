@@ -9,6 +9,7 @@ import AllocationChart from '../trader/AllocationChart'
 import { INVESTMENT_COLLATERAL, INVESTMENT_DIRECT, etherToWei, weiToEther, fail } from '../../helpers'
 import { 
   web3Selector,
+  networkSelector,
   accountSelector,
   traderPairedSelector,
   tokensSelector,
@@ -35,13 +36,13 @@ import {
 class InvestorTraderDetail extends Component {
 
   componentDidMount() {
-    const { web3, account, trader, traders, traderPaired, tokens, dispatch } = this.props
-    loadTraderRatings(trader.user, traders, dispatch)
-    loadTraderAllocations(trader.user, traderPaired, dispatch)
+    const { web3, network, account, trader, traders, traderPaired, tokens, dispatch } = this.props
+    loadTraderRatings(network, trader.user, traders, dispatch)
+    loadTraderAllocations(network, trader.user, traderPaired, dispatch)
     loadBalances(account, traderPaired, tokens, web3, dispatch)
 
     if (!trader.trustRating) {
-      loadTraderTrustRating(trader, traderPaired, dispatch)
+      loadTraderTrustRating(network, trader, traderPaired, dispatch)
     }
   }
 
@@ -274,6 +275,7 @@ function mapStateToProps(state, props) {
 
   return {
     web3: web3Selector(state),
+    network: networkSelector(state),
     account: account,
     trader: props.trader,
     traderPaired: traderPairedSelector(state),

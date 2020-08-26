@@ -5,6 +5,7 @@ import AddressImage from '../AddressImage'
 import Token from '../Token'
 import { log, toBN, INVESTMENT_COLLATERAL } from '../../helpers'
 import { 
+  networkSelector,
   accountSelector,
   traderSelector,
   traderPairedSelector,
@@ -22,8 +23,8 @@ import {
 
 class TraderInvestments extends Component {
   componentDidMount() {
-    const { investments, traderPaired, dispatch } = this.props
-    loadInvestmentValues(investments, traderPaired, dispatch)
+    const { network, investments, traderPaired, dispatch } = this.props
+    loadInvestmentValues(network, investments, traderPaired, dispatch)
   }
 
   render() {
@@ -248,6 +249,7 @@ function mapStateToProps(state) {
   const account = accountSelector(state)
 
   return {
+    network: networkSelector(state),
     account: account,
     trader: traderSelector(state, account),
     traderPaired: traderPairedSelector(state),

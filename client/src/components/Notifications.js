@@ -5,6 +5,7 @@ import {
   notificationRemoved
 } from '../store/actions'
 import {
+  networkSelector,
   notificationsSelector
 } from '../store/selectors'
 
@@ -31,7 +32,7 @@ class Notifications extends Component {
 }
 
 function Notification(props) {
-  const { notification } = props
+  const { network, notification } = props
   const { dispatch } = props.props
   const [show, setShow] = React.useState(true);
 
@@ -54,7 +55,7 @@ function Notification(props) {
           </Alert>
           <Alert variant={notification.variant}>
             {notification.message}<br/>
-            <a href={`https://${process.env.REACT_APP_ETHERSCAN_BASE}.etherscan.io/tx/${notification.hash}`} target="_blank" rel="noopener">Check transaction</a>
+            <a href={`https://` + process.env['REACT_APP_'+network+'_ETHERSCAN_BASE'] + `.etherscan.io/tx/${notification.hash}`} target="_blank" rel="noopener">Check transaction</a>
           </Alert>
         </Toast.Body>
       </Toast>
@@ -79,6 +80,7 @@ function Notification(props) {
 function mapStateToProps(state) {
 
   return {
+    network: networkSelector(state),
     notifications: notificationsSelector(state)
   }
 }

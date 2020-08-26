@@ -7,6 +7,7 @@ import {
   loadTraderRatings
 } from '../../store/dydxInteractions'
 import { 
+  networkSelector,
   accountSelector, 
   traderSelector,
   traderPairedSelector,
@@ -22,14 +23,14 @@ import { ZERO_ADDRESS } from '../../helpers'
 
 class Trader extends Component {
   componentDidMount() {
-    const { account, trader, traderPaired, traders, dispatch } = this.props
+    const { network, account, trader, traderPaired, traders, dispatch } = this.props
     if (account !== null && account !== ZERO_ADDRESS) {
 
-      loadTraderPositions(account, dispatch)
+      loadTraderPositions(network, account, dispatch)
 
-      loadTraderRatings(account, traders, dispatch)
+      loadTraderRatings(network, account, traders, dispatch)
 
-      loadTraderTrustRating(trader, traderPaired, dispatch)
+      loadTraderTrustRating(network, trader, traderPaired, dispatch)
     }
   }
 
@@ -243,6 +244,7 @@ function mapStateToProps(state) {
   const traderPaired = traderPairedSelector(state)
 
   return {
+    network: networkSelector(state),
     account: account,
     traderPaired: traderPaired,
     trader: traderSelector(state, account),
