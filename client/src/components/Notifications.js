@@ -36,6 +36,8 @@ function Notification(props) {
   const { dispatch } = props.props
   const [show, setShow] = React.useState(true);
 
+  console.log('Notification network', network)
+
   const removeNotification = (id) => {
     setShow(false)
     dispatch(notificationRemoved(id))

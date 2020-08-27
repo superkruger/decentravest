@@ -1,0 +1,17 @@
+org: superkruger
+app: decentravest-event-cron
+service: aws-lambda-cron-events
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  environment:
+    INFURA_BASE_URL: ${param:INFURA_BASE_URL}
+    INFURA_API_KEY: eccafe76d3bc4be4a50ae103de260444
+    REDIS_URL: ${param:REDIS_URL}
+
+functions:
+  processEvents:
+    handler: handler.processEvents
+    events:
+      - schedule: rate(1 day)

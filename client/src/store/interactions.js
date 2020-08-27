@@ -1194,6 +1194,7 @@ export const loadTraderTrustRating = async (network, trader, traderPaired, dispa
 	if (latestApproval && trustRating.gt(8)) {
 		// get allocations just before this
 		userTokens.forEach(async (token) => {
+			log("userTokens", token)
 			const allocations = await getTraderAllocations(trader.user, token.address, traderPaired)
 
 			// find the allocation just before the start of this investment

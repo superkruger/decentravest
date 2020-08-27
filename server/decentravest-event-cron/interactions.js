@@ -1,0 +1,57 @@
+const Web3 = require("web3");
+const TraderPaired = require('./abis/TraderPaired.json')
+
+const loadWeb3 = async () => {
+	console.log('loadWeb3');
+	console.log('INFURA_BASE_URL: ', process.env.INFURA_BASE_URL);
+	console.log('INFURA_API_KEY: ', process.env.INFURA_API_KEY);
+	let web3 = new Web3(new Web3.providers.HttpProvider(`https://${process.env.INFURA_BASE_URL}.infura.io/v3/${process.env.INFURA_API_KEY}`));
+	// web3 = new Web3(Web3.givenProvider || 'http://127.0.0.1:8545')
+	
+	console.log('web3', web3)
+	if (web3) {
+		web3.eth.handleRevert = true
+		await loadWebApp(web3)
+	}
+
+	return web3
+}
+exports.loadWeb3 = loadWeb3
+
+const loadWebApp = async (web3) => {
+  await web3.eth.net.getNetworkType()
+  const networkId = await web3.eth.net.getId()
+  console.log("networkId", networkId)
+  
+  const traderPaired = await loadTraderPaired(web3, networkId)
+  if(!traderPaired) {
+    console.log('Smart contract not detected on the current network.')
+    return
+  }
+}
+
+const loadTraderPaired = async (web3, networkId) => {
+	try {
+		if (TraderPaired.networks[networkId] !== undefined) {
+			console.log("TraderPaired address: ", TraderPaired.networks[networkId].address)
+			const traderPaired = await new web3.eth.Contract(TraderPaired.abi, TraderPaired.networks[networkId].address, {handleRevert: true})
+
+			let stream = await traderPaired.getPastEvents(
+				'Invest',
+				{
+					filter: {},
+					fromBlock: 0
+				}
+			)
+			let investments = stream.map(event => event.returnValues)
+			investments.forEach(async (investment) => {
+				console.log("Invest", investment)
+			})
+
+			return traderPaired
+		}
+	} catch (error) {
+		console.log('Contract not deployed to the current network', error)
+	}
+	return null
+}
