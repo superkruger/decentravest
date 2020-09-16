@@ -1,0 +1,19 @@
+Type: AWS::RDS::DBCluster
+Properties:
+  MasterUsername: ${self:custom.USERNAME}
+  MasterUserPassword: ${self:custom.PASSWORD}
+  DBSubnetGroupName:
+    Ref: ServerlessSubnetGroup
+  Engine: aurora
+  EngineMode: serverless
+  ScalingConfiguration:
+    AutoPause: true
+    MaxCapacity: 2
+    MinCapacity: 2
+    SecondsUntilAutoPause: 300
+  DatabaseName: ${self:custom.DB_NAME}
+  BackupRetentionPeriod: 3
+  DBClusterParameterGroupName:
+    Ref: AuroraRDSClusterParameter
+  VpcSecurityGroupIds:
+  - !Ref 'ServerlessSecurityGroup'

@@ -32,8 +32,8 @@ class Notifications extends Component {
 }
 
 function Notification(props) {
-  const { network, notification } = props
-  const { dispatch } = props.props
+  const { notification } = props
+  const { network, dispatch } = props.props
   const [show, setShow] = React.useState(true);
 
   console.log('Notification network', network)

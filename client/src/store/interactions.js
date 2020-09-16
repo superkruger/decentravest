@@ -74,11 +74,15 @@ export const loadWebApp = async (dispatch) => {
 		switch (networkId) {
 			case 1:
 				network = "MAINNET"
+				break
 			case 3:
 				network = "ROPSTEN"
+				break
 			default:
 				network = "DEV"
 		}
+
+		console.log("network", network)
 
 		setTokens(network)
 		dispatch(networkJoined(network))

@@ -4,14 +4,72 @@ service: aws-lambda-cron-events
 
 provider:
   name: aws
+  region: us-east-1
   runtime: nodejs12.x
+  vpc:
+    securityGroupIds:
+      - !Ref 'ServerlessSecurityGroup'
+    subnetIds:
+      - !Ref 'ServerlessSubnetA'
+      - !Ref 'ServerlessSubnetB'
+      - !Ref 'ServerlessSubnetC'
   environment:
+    AURORA_HOST: ${self:custom.AURORA.HOST}
+    AURORA_PORT: ${self:custom.AURORA.PORT}
+    DB_NAME: ${self:custom.DB_NAME}
+    USERNAME: ${self:custom.USERNAME}
+    PASSWORD: ${self:custom.PASSWORD}
+    DYDX_CLOSED_MARKET_URL: https://api.dydx.exchange/v1/positions?status=CLOSED&market=$1&owner=$2
     INFURA_BASE_URL: ${param:INFURA_BASE_URL}
     INFURA_API_KEY: eccafe76d3bc4be4a50ae103de260444
-    REDIS_URL: ${param:REDIS_URL}
+
+custom:
+  DB_NAME: decentravest
+  USERNAME: master
+  PASSWORD: password
+  AURORA:
+    HOST:
+      Fn::GetAtt: [AuroraRDSCluster, Endpoint.Address]
+    PORT:
+      Fn::GetAtt: [AuroraRDSCluster, Endpoint.Port]
+    VPC_CIDR: 10
 
 functions:
   processEvents:
     handler: handler.processEvents
     events:
       - schedule: rate(1 day)
+
+  processPositions:
+    handler: handler.processPositions
+    events:
+      - schedule: rate(1 day)
+
+  listTraderpairedTrader:
+    handler: traderpaired/trader.webList
+    events:
+      - http:
+          path: traderpaired/trader
+          method: get
+          cors: true
+plugins:
+  - serverless-pseudo-parameters
+
+resources:
+  Resources:
+    LambdaRole: ${file(./resource/LambdaRole.yml)}
+    ServerlessInternetGateway: ${file(./resource/ServerlessInternetGateway.yml)}
+    ServerlessVPC: ${file(./resource/ServerlessVPC.yml)}
+    ServerlessVPCGA: ${file(./resource/ServerlessVPCGA.yml)}
+    ServerlessSubnetA: ${file(./resource/ServerlessSubnetA.yml)}
+    ServerlessSubnetB: ${file(./resource/ServerlessSubnetB.yml)}
+    ServerlessSubnetC: ${file(./resource/ServerlessSubnetC.yml)}
+    ServerlessSubnetGroup: ${file(./resource/ServerlessSubnetGroup.yml)}
+    ServerlessSecurityGroup: ${file(./resource/ServerlessSecurityGroup.yml)}
+    RouteTablePublic: ${file(./resource/RouteTablePublic.yml)}
+    RoutePublic: ${file(./resource/RoutePublic.yml)}
+    RouteTableAssociationSubnetA: ${file(./resource/RouteTableAssociationSubnetA.yml)}
+    RouteTableAssociationSubnetB: ${file(./resource/RouteTableAssociationSubnetB.yml)}
+    RouteTableAssociationSubnetC: ${file(./resource/RouteTableAssociationSubnetC.yml)}
+    AuroraRDSClusterParameter: ${file(./resource/AuroraRDSClusterParameter.yml)}
+    AuroraRDSCluster: ${file(./resource/AuroraRDSCluster.yml)}

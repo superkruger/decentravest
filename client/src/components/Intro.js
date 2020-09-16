@@ -23,9 +23,8 @@ class Intro extends Component {
         <Container>
           <Row>
             <Col sm={12}>
-              <div className="card bg-light text-dark">
-                
-                <div className="card-body">
+              <div>
+                <div>
                   <h3>Welcome to the Decentravest portal for traders and investors</h3>
                 </div>
               </div>
