@@ -1,0 +1,43 @@
+DependsOn: AthenaDB
+Type: AWS::Glue::Table
+Properties:
+  CatalogId: !Ref AWS::AccountId
+  DatabaseName: "blockchain-events-${opt:stage, 'dev'}"
+  TableInput:
+    Name: dydx_position
+    Description: DYDX Positions
+    TableType: EXTERNAL_TABLE
+    Parameters: {
+      "classification": "json"
+    }
+    StorageDescriptor:
+      OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+      Columns:
+      - Name: uuid
+        Type: string
+      - Name: owner
+        Type: string
+      - Name: number
+        Type: string
+      - Name: market
+        Type: string
+      - Name: type
+        Type: string
+      - Name: status
+        Type: string
+      - Name: accountUuid
+        Type: string
+      - Name: expiresAt
+        Type: timestamp
+      - Name: createdAt
+        Type: timestamp
+      - Name: updatedAt
+        Type: timestamp
+      - Name: account
+        Type: struct<uuid:string,owner:string,number:string,createdAt:timestamp,updatedAt:timestamp>
+      - Name: standardActions
+        Type: array<struct<uuid:string,type:string,owner:string,number:string,transferAmount:bigint,tradeAmount:bigint,price:decimal(18),market:string,asset:string,side:string,operationUuid:string,transactionHash:string,positionUuid:string,perpetualPositionUuid:string,borrowAmount:bigint,orderNumber:string,confirmedAt:timestamp,feeAmount:bigint,feeAsset:string,pnl:bigint,payoutAmount:bigint,isPendingBlock:boolean,refundAmount:bigint,conversionAmount:bigint,conversionAsset:string,product:string,createdAt:timestamp,updatedAt:timestamp>>
+      InputFormat: org.apache.hadoop.mapred.TextInputFormat
+      Location: "s3://${self:custom.eventbucket}/dydx-position"
+      SerdeInfo:
+        SerializationLibrary: org.openx.data.jsonserde.JsonSerDe

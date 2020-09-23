@@ -5,12 +5,7 @@ Properties:
   DBSubnetGroupName:
     Ref: ServerlessSubnetGroup
   Engine: aurora
-  EngineMode: serverless
-  ScalingConfiguration:
-    AutoPause: true
-    MaxCapacity: 2
-    MinCapacity: 2
-    SecondsUntilAutoPause: 300
+  EngineVersion: "5.6"
   DatabaseName: ${self:custom.DB_NAME}
   BackupRetentionPeriod: 3
   DBClusterParameterGroupName:

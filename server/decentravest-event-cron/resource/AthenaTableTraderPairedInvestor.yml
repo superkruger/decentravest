@@ -1,0 +1,39 @@
+DependsOn: AthenaDB
+Type: AWS::Glue::Table
+Properties:
+  CatalogId: !Ref AWS::AccountId
+  DatabaseName: "blockchain-events-${opt:stage, 'dev'}"
+  TableInput:
+    Name: investors_events
+    Description: Investor events
+    TableType: EXTERNAL_TABLE
+    Parameters: {
+      "classification": "json"
+    }
+    StorageDescriptor:
+      OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+      Columns:
+      - Name: address
+        Type: string
+      - Name: blockhash
+        Type: string
+      - Name: blocknumber
+        Type: int
+      - Name: logindex
+        Type: int
+      - Name: removed
+        Type: boolean
+      - Name: transactionhash
+        Type: string
+      - Name: transactionindex
+        Type: int
+      - Name: id
+        Type: string
+      - Name: returnvalues
+        Type: array<struct<0:string,1:int,2:int,user:string,investorId:int,date:int>>
+      - Name: event
+        Type: string
+      InputFormat: org.apache.hadoop.mapred.TextInputFormat
+      Location: "s3://${self:custom.eventbucket}/traderpaired-investor"
+      SerdeInfo:
+        SerializationLibrary: org.openx.data.jsonserde.JsonSerDe

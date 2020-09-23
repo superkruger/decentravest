@@ -8,16 +8,30 @@ const investEventHandler = require('./traderpaired/invest')
 
 const positionsHandler = require('dydx/positions')
 
+const axios = require('axios');
+
 const loadWeb3 = async () => {
-	console.log('loadWeb3');
+	console.log('loadWeb3, making axios request');
+
+	try {
+		let response = await axios.get('https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY')
+	
+		console.log("axios success", response.data.url)
+		console.log("axios success", response.data.explanation)
+	} catch(error) {
+		console.log("axios error", error)
+	}
+
 	console.log('INFURA_BASE_URL: ', process.env.INFURA_BASE_URL);
 	console.log('INFURA_API_KEY: ', process.env.INFURA_API_KEY);
+	
 	let web3 = new Web3(new Web3.providers.HttpProvider(`https://${process.env.INFURA_BASE_URL}.infura.io/v3/${process.env.INFURA_API_KEY}`));
 	// web3 = new Web3(Web3.givenProvider || 'http://127.0.0.1:8545')
 	console.log("web3", web3);
+
 	if (web3) {
-		// let networkType = await web3.eth.net.getNetworkType()
-		// console.log("networkType", networkType)
+		let networkType = await web3.eth.net.getNetworkType()
+		console.log("networkType", networkType)
 		let networkId = await web3.eth.net.getId()
 		console.log("networkId", networkId)
 
@@ -43,6 +57,7 @@ const loadTraderPaired = async (web3, networkId) => {
 }
 
 const processEvents = async (web3, networkId) => {
+	console.log('processEvents START')
 	let traderPaired = await loadTraderPaired(web3, networkId)
 	let lastBlock = 0;
 
@@ -57,25 +72,25 @@ const processEvents = async (web3, networkId) => {
 		'Trader', {filter: {},fromBlock: 0}
 	)
 	let events = stream.map(event => event)
+	console.log(`${events.length} Trader Events`)
 	for (let i=0; i<events.length; i++) {
 		console.log("Trader", events[i])
 
 		await traderEventHandler.create(events[i]);
 	}
 
-	return;
-
 	// Investor
 	//
-	last = await investorEventHandler.getLast();
-	console.log("Investor last", last);
-	lastBlock = last.error || !last.result ? 0 : last.result.blockNumber + 1;
-	console.log("Investor blockNumber", lastBlock);
+	// last = await investorEventHandler.getLast();
+	// console.log("Investor last", last);
+	// lastBlock = last.error || !last.result ? 0 : last.result.blockNumber + 1;
+	// console.log("Investor blockNumber", lastBlock);
 
 	stream = await traderPaired.getPastEvents(
-		'Investor', {filter: {},fromBlock: lastBlock}
+		'Investor', {filter: {},fromBlock: 0}
 	)
 	events = stream.map(event => event)
+	console.log(`${events.length} Investor Events`)
 	for (let i=0; i<events.length; i++) {
 		console.log("Investor", events[i])
 
@@ -84,20 +99,24 @@ const processEvents = async (web3, networkId) => {
 
 	// Invest
 	//
-	last = await investEventHandler.getLast();
-	console.log("Invest last", last);
-	lastBlock = last.error || !last.result ? 0 : last.result.blockNumber + 1;
-	console.log("Invest blockNumber", lastBlock);
+	// last = await investEventHandler.getLast();
+	// console.log("Invest last", last);
+	// lastBlock = last.error || !last.result ? 0 : last.result.blockNumber + 1;
+	// console.log("Invest blockNumber", lastBlock);
 
 	stream = await traderPaired.getPastEvents(
-		'Invest', {filter: {},fromBlock: lastBlock}
+		'Invest', {filter: {},fromBlock: 0}
 	)
 	events = stream.map(event => event)
+	console.log(`${events.length} Invest Events`)
 	for (let i=0; i<events.length; i++) {
 		console.log("Invest", events[i])
 
 		await investEventHandler.create(events[i]);
 	}
+
+
+	console.log('processEvents END')
 }
 exports.processEvents = processEvents
 

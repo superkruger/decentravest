@@ -1,6 +1,5 @@
 'use strict';
 
-const dbActions = require('../common/dbActions');
 const encode = require('../common/encode');
 const investorDao = require('../dao/investor')
 

@@ -1,4 +1,3 @@
-
 Type: AWS::IAM::Role
 Properties:
   AssumeRolePolicyDocument:
@@ -19,3 +18,22 @@ Properties:
               - logs:CreateLogGroup
               - logs:PutLogEvents
             Resource: arn:aws:logs:*:*:*
+    - PolicyName: Athena
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - "s3:*"
+            Resource:
+              - "*"
+          - Effect: "Allow"
+            Action:
+              - "glue:*"
+            Resource:
+              - "*"
+          - Effect: "Allow"
+            Action:
+              - "athena:*"
+            Resource:
+              - "*"

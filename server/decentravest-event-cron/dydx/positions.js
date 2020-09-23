@@ -4,8 +4,6 @@ const axios = require('axios');
 const BigNumber = require('bignumber.js');
 const moment = require('moment');
 
-const dbActions = require('../common/dbActions');
-
 const positionsDao = require('../dao/positions');
 
 module.exports.addPosition = async (position) => {

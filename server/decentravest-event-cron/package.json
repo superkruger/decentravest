@@ -3,12 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "dependencies": {
-    "aws-sdk": "^2.742.0",
+    "athena-express": "^6.0.4",
+    "aws-sdk": "^2.756.0",
     "axios": "^0.20.0",
     "bignumber.js": "^9.0.0",
     "moment": "^2.27.0",
-    "redis": "^3.0.2",
-    "serverless-mysql": "^1.5.4",
     "web3": "^1.2.11"
   },
   "devDependencies": {

@@ -1,0 +1,9 @@
+Type: AWS::Glue::Database
+Properties:
+  # The database is created in the Data Catalog for your account
+  CatalogId: !Ref AWS::AccountId   
+  DatabaseInput:
+    # The name of the database is defined in the Parameters section above
+    Name: "blockchain-events-${opt:stage, 'dev'}"	
+    Description: Database to hold events
+    LocationUri: "s3://${self:custom.eventbucket}/"
