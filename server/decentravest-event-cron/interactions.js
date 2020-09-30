@@ -5,8 +5,17 @@ const TraderPaired = require('./abis/TraderPaired.json')
 const traderEventHandler = require('./traderpaired/trader')
 const investorEventHandler = require('./traderpaired/investor')
 const investEventHandler = require('./traderpaired/invest')
+const requestExitEventHandler = require('./traderpaired/requestExit')
+const rejectExitEventHandler = require('./traderpaired/rejectExit')
+const approveExitEventHandler = require('./traderpaired/approveExit')
+const allocateEventHandler = require('./traderpaired/allocate')
+const stopEventHandler = require('./traderpaired/stop')
 
-const positionsHandler = require('dydx/positions')
+const positionsHandler = require('./dydx/positions')
+
+const ratingsDao = require('./dao/ratings')
+
+const ratingsHandler = require('./ratings')
 
 const axios = require('axios');
 
@@ -63,13 +72,13 @@ const processEvents = async (web3, networkId) => {
 
 	// Trader
 	//
-	// let last = await traderEventHandler.getLast();
-	// console.log("Trader last", last);
-	// lastBlock = last.error || !last.result ? 0 : last.result.blockNumber + 1;
-	// console.log("Trader blockNumber", lastBlock);
+	let last = await traderEventHandler.getLast();
+	console.log("Trader last", last);
+	lastBlock = last ? last.blockNumber + 1 : 0;
+	console.log("Trader blockNumber", lastBlock);
 
 	let stream = await traderPaired.getPastEvents(
-		'Trader', {filter: {},fromBlock: 0}
+		'Trader', {filter: {},fromBlock: lastBlock}
 	)
 	let events = stream.map(event => event)
 	console.log(`${events.length} Trader Events`)
@@ -81,13 +90,13 @@ const processEvents = async (web3, networkId) => {
 
 	// Investor
 	//
-	// last = await investorEventHandler.getLast();
-	// console.log("Investor last", last);
-	// lastBlock = last.error || !last.result ? 0 : last.result.blockNumber + 1;
-	// console.log("Investor blockNumber", lastBlock);
+	last = await investorEventHandler.getLast();
+	console.log("Investor last", last);
+	lastBlock = last ? last.blockNumber + 1 : 0;
+	console.log("Investor blockNumber", lastBlock);
 
 	stream = await traderPaired.getPastEvents(
-		'Investor', {filter: {},fromBlock: 0}
+		'Investor', {filter: {},fromBlock: lastBlock}
 	)
 	events = stream.map(event => event)
 	console.log(`${events.length} Investor Events`)
@@ -99,13 +108,13 @@ const processEvents = async (web3, networkId) => {
 
 	// Invest
 	//
-	// last = await investEventHandler.getLast();
-	// console.log("Invest last", last);
-	// lastBlock = last.error || !last.result ? 0 : last.result.blockNumber + 1;
-	// console.log("Invest blockNumber", lastBlock);
+	last = await investEventHandler.getLast();
+	console.log("Invest last", last);
+	lastBlock = last ? last.blockNumber + 1 : 0;
+	console.log("Invest blockNumber", lastBlock);
 
 	stream = await traderPaired.getPastEvents(
-		'Invest', {filter: {},fromBlock: 0}
+		'Invest', {filter: {},fromBlock: lastBlock}
 	)
 	events = stream.map(event => event)
 	console.log(`${events.length} Invest Events`)
@@ -115,6 +124,95 @@ const processEvents = async (web3, networkId) => {
 		await investEventHandler.create(events[i]);
 	}
 
+	// RequestExit
+	//
+	last = await requestExitEventHandler.getLast();
+	console.log("RequestExit last", last);
+	lastBlock = last ? last.blockNumber + 1 : 0;
+	console.log("RequestExit blockNumber", lastBlock);
+
+	stream = await traderPaired.getPastEvents(
+		'RequestExit', {filter: {},fromBlock: lastBlock}
+	)
+	events = stream.map(event => event)
+	console.log(`${events.length} RequestExit Events`)
+	for (let i=0; i<events.length; i++) {
+		console.log("RequestExit", events[i])
+
+		await requestExitEventHandler.create(events[i]);
+	}
+
+	// RejectExit
+	//
+	last = await rejectExitEventHandler.getLast();
+	console.log("RejectExit last", last);
+	lastBlock = last ? last.blockNumber + 1 : 0;
+	console.log("RejectExit blockNumber", lastBlock);
+
+	stream = await traderPaired.getPastEvents(
+		'RejectExit', {filter: {},fromBlock: lastBlock}
+	)
+	events = stream.map(event => event)
+	console.log(`${events.length} RejectExit Events`)
+	for (let i=0; i<events.length; i++) {
+		console.log("RejectExit", events[i])
+
+		await rejectExitEventHandler.create(events[i]);
+	}
+
+	// ApproveExit
+	//
+	last = await approveExitEventHandler.getLast();
+	console.log("ApproveExit last", last);
+	lastBlock = last ? last.blockNumber + 1 : 0;
+	console.log("ApproveExit blockNumber", lastBlock);
+
+	stream = await traderPaired.getPastEvents(
+		'ApproveExit', {filter: {},fromBlock: lastBlock}
+	)
+	events = stream.map(event => event)
+	console.log(`${events.length} ApproveExit Events`)
+	for (let i=0; i<events.length; i++) {
+		console.log("ApproveExit", events[i])
+
+		await approveExitEventHandler.create(events[i]);
+	}
+
+	// Allocate
+	//
+	last = await allocateEventHandler.getLast();
+	console.log("Allocate last", last);
+	lastBlock = last ? last.blockNumber + 1 : 0;
+	console.log("Allocate blockNumber", lastBlock);
+
+	stream = await traderPaired.getPastEvents(
+		'Allocate', {filter: {},fromBlock: lastBlock}
+	)
+	events = stream.map(event => event)
+	console.log(`${events.length} Allocate Events`)
+	for (let i=0; i<events.length; i++) {
+		console.log("Allocate", events[i])
+
+		await allocateEventHandler.create(events[i]);
+	}
+
+	// Stop
+	//
+	last = await stopEventHandler.getLast();
+	console.log("Stop last", last);
+	lastBlock = last ? last.blockNumber + 1 : 0;
+	console.log("Stop blockNumber", lastBlock);
+
+	stream = await traderPaired.getPastEvents(
+		'Stop', {filter: {},fromBlock: lastBlock}
+	)
+	events = stream.map(event => event)
+	console.log(`${events.length} Stop Events`)
+	for (let i=0; i<events.length; i++) {
+		console.log("Stop", events[i])
+
+		await stopEventHandler.create(events[i]);
+	}
 
 	console.log('processEvents END')
 }
@@ -128,11 +226,7 @@ const processPositions = async () => {
 
 	console.log("processPositions", traders);
 
-	if (traders.error || !traders.result) {
-		return
-	}
-
-	traders.result.forEach(async (trader) => {
+	traders.forEach(async (trader) => {
 		// add positions
   		await positionsHandler.loadTraderPositions(trader.user);
 	});
@@ -140,154 +234,28 @@ const processPositions = async () => {
 exports.processPositions = processPositions
 
 const calculateRatings = async () => {
+	console.log('env', process.env.NODE_ENV)
 	// Traders
 	//
 	let traders = await traderEventHandler.list();
 
 	console.log("calculateRatings", traders);
 
-	if (traders.error || !traders.result) {
+	if (!traders) {
 		return
 	}
 
-	traders.result.forEach(async (trader) => {
-  		await calculatePerformanceRating(trader.user, traders.result);
-  		await calculateProfitRating(trader.user);
-  		await calculateTrustRating(trader.user);
+	traders.forEach(async (trader) => {
+
+  		const tradingRatings = await ratingsHandler.calculateTradingRatings(trader.user, traders);
+  		const profitRatings = await ratingsHandler.calculateProfitRatings(trader.user, traders);
+  		const trustRating = await ratingsHandler.calculateTrustRating(trader.user);
+
+  		await ratingsDao.saveRatings(trader.user, {
+  			tradingRatings: tradingRatings,
+  			profitRatings: profitRatings,
+  			trustRating
+  		})
 	});
 }
 exports.calculateRatings = calculateRatings
-
-/////
-
-const calculatePerformanceRating = async (account, allTraders) => {
-
-	console.log("calculatePerformanceRating", account, allTraders);
-
-	let allLow = {
-		WETH: null,
-		DAI: null,
-		USDC: null
-	}
-	let allHigh = {
-		WETH: null,
-		DAI: null,
-		USDC: null
-	}
-
-	let accountAvg = {
-		WETH: new BigNumber(0),
-		DAI: new BigNumber(0),
-		USDC: new BigNumber(0)
-	}
-	let accountTotal = {
-		WETH: new BigNumber(0),
-		DAI: new BigNumber(0),
-		USDC: new BigNumber(0)
-	}
-	let accountCnt = {
-		WETH: 0,
-		DAI: 0,
-		USDC: 0
-	}
-
-	let ratings = {
-		WETH: new BigNumber(0),
-		DAI: new BigNumber(0),
-		USDC: new BigNumber(0)
-	}
-
-	let assets = ["WETH", "DAI", "USDC"]
-
-	for (let traderIndex=0; traderIndex<allTraders.length; traderIndex++) {
-
-		console.log("trader allTraders", allTraders[traderIndex]);
-
-		let trader = allTraders[traderIndex]
-
-		let traderAvg = {
-			WETH: new BigNumber(0),
-			DAI: new BigNumber(0),
-			USDC: new BigNumber(0)
-		}
-		let traderTotal = {
-			WETH: new BigNumber(0),
-			DAI: new BigNumber(0),
-			USDC: new BigNumber(0)
-		}
-		let traderCnt = {
-			WETH: 0,
-			DAI: 0,
-			USDC: 0
-		}
-
-		let positions = await positionsHandler.getTraderPositionsFromTable(trader.user)
-
-		for (let positionIndex=0; positionIndex<positions.length; positionIndex++) {
-			let position = positions[positionIndex]
-
-			const relativeProfit = position.nettProfit.dividedBy(position.initialAmount)
-
-			traderTotal[position.asset] = traderTotal[position.asset].plus(relativeProfit)
-			traderCnt[position.asset] = traderCnt[position.asset] + 1
-
-			if (trader.user === account) {
-				accountTotal[position.asset] = traderTotal[position.asset]
-				accountCnt[position.asset] = traderCnt[position.asset]
-			}
-			
-			if (positionIndex === (positions.length - 1)) {
-				// done with trader
-
-				assets.forEach((asset, assetIndex) => {
-					if (traderCnt[asset] > 0) {
-						traderAvg[asset] = traderTotal[asset].dividedBy(traderCnt[asset])
-					}
-
-					if (allLow[asset] === null || traderAvg[asset].isLessThan(allLow[asset])) {
-						allLow[asset] = traderAvg[asset]
-					}
-
-					if (allHigh[asset] === null || traderAvg[asset].isGreaterThanOrEqualTo(allHigh[asset])) {
-						allHigh[asset] = traderAvg[asset]
-					}
-				})
-
-				if (traderIndex === (allTraders.length - 1)) {
-					// done with all
-
-					assets.forEach((asset, assetIndex) => {
-						if (accountCnt[asset] > 0) {
-							accountAvg[asset] = accountTotal[asset].dividedBy(accountCnt[asset])
-						}
-
-						if (allLow[asset] === null) {
-							allLow[asset] = new BigNumber(0)
-						}
-						if (allHigh[asset] === null) {
-							allHigh[asset] = new BigNumber(0)
-						}
-
-						if (accountCnt[asset] === 0) {
-							ratings[asset] = new BigNumber(0)
-						} else {
-							if (allHigh[asset].isEqualTo(allLow[asset])) {
-								ratings[asset] = new BigNumber(10)
-							} else {
-								ratings[asset] = ((accountAvg[asset].minus(allLow[asset])).dividedBy(allHigh[asset].minus(allLow[asset]))).multipliedBy(10)
-							}
-						}
-					})
-
-					console.log("Performance Rating", account, ratings);
-				}
-			}
-		}
-	}
-}
-
-const calculateProfitRating = async (account) => {
-}
-
-const calculateTrustRating = async (account) => {
-}

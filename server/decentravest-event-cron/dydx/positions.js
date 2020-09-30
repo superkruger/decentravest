@@ -3,16 +3,22 @@
 const axios = require('axios');
 const BigNumber = require('bignumber.js');
 const moment = require('moment');
+const path = require("path");
+const fs = require('fs');
 
-const positionsDao = require('../dao/positions');
+const positionsDao = require('../dao/dydx/positions');
 
-module.exports.addPosition = async (position) => {
+const addPosition = async (position) => {
+	if (!position) {
+		return null
+	}
 	let id = await positionsDao.create(position);
 	if (id === null) {
 		return null
 	}
 	return id;
 }
+module.exports.addPosition = addPosition
 
 module.exports.getPosition = async (uuid) => {
     let position = await positionsDao.get(uuid);
@@ -22,10 +28,11 @@ module.exports.getPosition = async (uuid) => {
 
 module.exports.loadTraderPositions = async (account) => {
 	try {
+		console.log("loadTraderPositions", account)
 		let positions = await getTraderPositions(account)
 
 		positions.forEach(async (position, index) => {
-  			await addPosition(position);
+  			await addPosition(decoratePosition(position));
 		})
 
 	} catch (error) {
@@ -67,14 +74,28 @@ const getTraderAndMarketPositions = async (account, market) => {
 	try {
 
 		let url = process.env.DYDX_CLOSED_MARKET_URL
-		console.log("getTraderAndMarketPositions", url)
-		let response = await axios.get(url.replace('$1', market).replace('$2', '0x6b98d58200439399218157B4A3246DA971039460'))
-		
-	    // handle success
-	    if (response.data.positions.length > 0) {
-	    	return response.data.positions
+		url = url.replace('$1', market).replace('$2', account)
+		let response
+
+		if (process.env.STAGE === 'dev') {
+			if (process.env.LAMBDA_TASK_ROOT) {
+				url = path.resolve(process.env.LAMBDA_TASK_ROOT, url)
+			} else {
+				url = path.resolve(__dirname, url)
+			}
+
+			const response = JSON.parse(fs.readFileSync(url, 'utf8'));
+			return response.positions
+		} else {
+			console.log("getTraderAndMarketPositions", url)
+			const response = await axios.get(url)
+
+			// handle success
+		    if (response.data.positions.length > 0) {
+		    	return response.data.positions
+			}
 		}
-	  
+		
 	} catch(error) {
 	    // handle error
 	    console.log(error)
@@ -82,10 +103,34 @@ const getTraderAndMarketPositions = async (account, market) => {
 	return []
 }
 
+const decoratePosition = (position) => {
+	const transfers = position.standardActions.filter(action => action.transferAmount)
+	if (transfers.length > 1) {
+
+		const lastTransfer = new BigNumber(transfers[0].transferAmount)
+		const firstTransfer = new BigNumber(transfers[transfers.length - 1].transferAmount)
+
+		const profit = lastTransfer.minus(firstTransfer)
+		
+		const mappedPosition = {
+			...position,
+			dv_profit: profit.toString(),
+			dv_initialAmount: transfers[transfers.length - 1].transferAmount,
+			dv_asset: transfers[0].asset,
+			dv_start: transfers[transfers.length - 1].confirmedAt,
+			dv_end: transfers[0].confirmedAt
+		}
+
+		return mappedPosition
+	}
+
+	return null
+}
+
 const mapPositions = (positions) => {
 	
 	const mappedPositions = positions.map((position) => {
-		position = mapPosition(position.data)
+		position = mapPosition(position)
 		return position
 	})
 

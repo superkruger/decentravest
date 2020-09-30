@@ -4,7 +4,7 @@ Properties:
   CatalogId: !Ref AWS::AccountId
   DatabaseName: "blockchain-events-${opt:stage, 'dev'}"
   TableInput:
-    Name: dydx_position
+    Name: dydx_positions
     Description: DYDX Positions
     TableType: EXTERNAL_TABLE
     Parameters: {
@@ -28,16 +28,26 @@ Properties:
       - Name: accountUuid
         Type: string
       - Name: expiresAt
-        Type: timestamp
+        Type: string
       - Name: createdAt
-        Type: timestamp
+        Type: string
       - Name: updatedAt
-        Type: timestamp
+        Type: string
+      - Name: dv_profit
+        Type: bigint
+      - Name: dv_initialAmount
+        Type: bigint
+      - Name: dv_asset
+        Type: string
+      - Name: dv_start
+        Type: string
+      - Name: dv_end
+        Type: string
       - Name: account
-        Type: struct<uuid:string,owner:string,number:string,createdAt:timestamp,updatedAt:timestamp>
+        Type: struct<uuid:string,owner:string,number:string,createdAt:string,updatedAt:string>
       - Name: standardActions
-        Type: array<struct<uuid:string,type:string,owner:string,number:string,transferAmount:bigint,tradeAmount:bigint,price:decimal(18),market:string,asset:string,side:string,operationUuid:string,transactionHash:string,positionUuid:string,perpetualPositionUuid:string,borrowAmount:bigint,orderNumber:string,confirmedAt:timestamp,feeAmount:bigint,feeAsset:string,pnl:bigint,payoutAmount:bigint,isPendingBlock:boolean,refundAmount:bigint,conversionAmount:bigint,conversionAsset:string,product:string,createdAt:timestamp,updatedAt:timestamp>>
+        Type: array<struct<type:string,transferAmount:bigint,tradeAmount:bigint,asset:string,side:string,confirmedAt:string,product:string>>
       InputFormat: org.apache.hadoop.mapred.TextInputFormat
-      Location: "s3://${self:custom.eventbucket}/dydx-position"
+      Location: "s3://${self:custom.eventbucket}/dydx-positions"
       SerdeInfo:
         SerializationLibrary: org.openx.data.jsonserde.JsonSerDe

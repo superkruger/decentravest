@@ -15,22 +15,22 @@ Properties:
       Columns:
       - Name: address
         Type: string
-      - Name: blockhash
+      - Name: blockHash
         Type: string
-      - Name: blocknumber
+      - Name: blockNumber
         Type: bigint
-      - Name: logindex
+      - Name: logIndex
         Type: bigint
       - Name: removed
         Type: boolean
-      - Name: transactionhash
+      - Name: transactionHash
         Type: string
-      - Name: transactionindex
+      - Name: transactionIndex
         Type: bigint
       - Name: id
         Type: string
-      - Name: returnvalues
-        Type: struct<0:string,1:bigint,2:bigint,3:string,4:bigint,5:bigint,6:int,initiator:string,investmentId:bigint,disbursementId:bigint,token:string,value:bigint,amount:bigint,date:int>
+      - Name: returnValues
+        Type: struct<initiator:string,investmentId:bigint,disbursementId:bigint,token:string,value:bigint,amount:bigint,eventDate:int>
       - Name: event
         Type: string
       InputFormat: org.apache.hadoop.mapred.TextInputFormat

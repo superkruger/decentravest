@@ -1,20 +1,12 @@
-const interactions = require('./interactions');
+require('dotenv').config()
 
-const AWS = require("aws-sdk");
-const AthenaExpress = require("athena-express");
-const athenaExpressConfig = {
-	aws: AWS,
-	s3: `s3://${process.env.eventbucket_queryresults}`,
-	db: `blockchain-events-${process.env.STAGE}`
-}
-const athenaExpress = new AthenaExpress(athenaExpressConfig);
+const interactions = require('./interactions');
 
 module.exports.processEvents = (event, context) => {
 	const time = new Date();
 	console.log(`Your cron function "${context.functionName}" ran at ${time}`);
 
-	_processEvents();
-
+	localProcessEvents();
 	
 	return "processed events";
 };
@@ -23,42 +15,34 @@ module.exports.processPositions = (event, context) => {
 	const time = new Date();
 	console.log(`Your cron function "${context.functionName}" ran at ${time}`);
 
-	interactions.processPositions();
-
-	// await interactions.calculateRatings();
+	localProcessPositions();
 
 	return "processed positions";
 };
 
-const _processEvents = async () => {
+module.exports.calculateRatings = (event, context) => {
+	const time = new Date();
+	console.log(`Your cron function "${context.functionName}" ran at ${time}`);
+
+	localCalculateRatings();
+
+	return "calculated ratings";
+};
+
+const localProcessEvents = async () => {
 	let {web3, networkId} = await interactions.loadWeb3();
 	console.log("loaded web3: ", web3, networkId);
 	
 	await interactions.processEvents(web3, networkId);
 }
+module.exports.localProcessEvents = localProcessEvents
 
-
-module.exports.queryEvents = (event, context) => {
-	const time = new Date();
-	console.log(`Your cron function "${context.functionName}" ran at ${time}`);
-
-	_queryEvents();
-
-	
-	return "queried events";
-};
-
-const _queryEvents = async () => {
-
-
-	let query = {
-		sql: "SELECT * FROM investors_events"
-	};
-
-	try {
-		let results = await athenaExpress.query(query);
-		console.log("athena results", results);
-	} catch (error) {
-		console.log("athena error", error);
-	}
+const localProcessPositions = async () => {
+	await interactions.processPositions();
 }
+module.exports.localProcessPositions = localProcessPositions
+
+const localCalculateRatings = async () => {
+	await interactions.calculateRatings();
+}
+module.exports.localCalculateRatings = localCalculateRatings

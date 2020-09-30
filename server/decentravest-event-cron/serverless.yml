@@ -13,43 +13,29 @@ provider:
     #s3
     eventbucket: ${self:custom.eventbucket}
     eventbucket_queryresults: ${self:custom.eventbucket_queryresults}
-    #aurora
-    #AURORA_HOST: ${self:custom.AURORA.HOST}
-    #AURORA_PORT: ${self:custom.AURORA.PORT}
-    #common
-    #DB_NAME: ${self:custom.DB_NAME}
-    #USERNAME: ${self:custom.USERNAME}
-    #PASSWORD: ${self:custom.PASSWORD}
+    ratingsbucket: ${self:custom.ratingsbucket}
     #infura
-    INFURA_BASE_URL: "mainnet"
-    INFURA_API_KEY: eccafe76d3bc4be4a50ae103de260444
+    INFURA_BASE_URL: ${param:INFURA_BASE_URL}
+    INFURA_API_KEY: ${param:INFURA_API_KEY}
     #dydx
-    DYDX_CLOSED_MARKET_URL: https://api.dydx.exchange/v1/positions?status=CLOSED&market=$1&owner=$2
+    DYDX_CLOSED_MARKET_URL: ${param:DYDX_CLOSED_MARKET_URL}
+    #tokens
+    DAI_ADDRESS: ${param:DAI_ADDRESS}
+    USDC_ADDRESS: ${param:USDC_ADDRESS}
+    SAI_ADDRESS: ${param:SAI_ADDRESS}
 custom:
   eventbucket: "eventbucket-${opt:stage, 'dev'}-1"
   eventbucket_queryresults: "resultbucket-${opt:stage, 'dev'}-1"
-  #DB_NAME: decentravest
-  #USERNAME: master
-  #PASSWORD: password
-  AURORA:
-  #  HOST:
-  #    Fn::GetAtt: [AuroraRDSCluster, Endpoint.Address]
-  #  PORT:
-  #    Fn::GetAtt: [AuroraRDSCluster, Endpoint.Port]
-    VPC_CIDR: 10
+  ratingsbucket: "ratingsbucket-${opt:stage, 'dev'}-1"
+  VPC_CIDR: 10
 
 plugins:
   - serverless-pseudo-parameters
 resources:
   Resources:
-    EventBucket:
-      Type: AWS::S3::Bucket
-      Properties:
-        BucketName: ${self:custom.eventbucket}
-    AthenaBucket:
-      Type: AWS::S3::Bucket
-      Properties:
-        BucketName: ${self:custom.eventbucket_queryresults}
+    EventBucket: ${file(./resource/S3BucketEvents.yml)}
+    AthenaBucket: ${file(./resource/S3BucketQueryResults.yml)}
+    RatingsBucket: ${file(./resource/S3BucketRatings.yml)}
     LambdaRole: ${file(./resource/LambdaRole.yml)}
     ServerlessInternetGateway: ${file(./resource/ServerlessInternetGateway.yml)}
     ServerlessVPC: ${file(./resource/ServerlessVPC.yml)}
@@ -65,14 +51,7 @@ resources:
     RouteTableAssociationSubnetB: ${file(./resource/RouteTableAssociationSubnetB.yml)}
     RouteTableAssociationSubnetC: ${file(./resource/RouteTableAssociationSubnetC.yml)}
 
-    #AuroraRDSClusterParameter: ${file(./resource/AuroraRDSClusterParameter.yml)}
-    #AuroraRDSInstanceParameter: ${file(./resource/AuroraRDSInstanceParameter.yml)}
-    #AuroraRDSCluster: ${file(./resource/AuroraRDSCluster.yml)}
-    #AuroraRDSInstance: ${file(./resource/AuroraRDSInstance.yml)}
-
     AthenaDB: ${file(./resource/AthenaDB.yml)}
-    #AthenaTableTraderPairedInvestor: ${file(./resource/AthenaTableTraderPairedInvestor.yml)}
-
     AthenaTableTraderPairedAllocate: ${file(./resource/tables/traderpaired/Allocate.yml)}
     AthenaTableTraderPairedApproveExit: ${file(./resource/tables/traderpaired/ApproveExit.yml)}
     AthenaTableTraderPairedInvest: ${file(./resource/tables/traderpaired/Invest.yml)}
@@ -80,6 +59,7 @@ resources:
     AthenaTableTraderPairedInvestor: ${file(./resource/tables/traderpaired/Investor.yml)}
     AthenaTableTraderPairedProfitPercentages: ${file(./resource/tables/traderpaired/ProfitPercentages.yml)}
     AthenaTableTraderPairedRejectExit: ${file(./resource/tables/traderpaired/RejectExit.yml)}
+    AthenaTableTraderPairedRequestExit: ${file(./resource/tables/traderpaired/RequestExit.yml)}
     AthenaTableTraderPairedStop: ${file(./resource/tables/traderpaired/Stop.yml)}
     AthenaTableTraderPairedTrader: ${file(./resource/tables/traderpaired/Trader.yml)}
 
@@ -106,8 +86,8 @@ functions:
     events:
       - schedule: rate(1 day)
 
-  queryEvents:
-    handler: handler.queryEvents
+  calculateRatings:
+    handler: handler.calculateRatings
     events:
       - schedule: rate(1 day)
 

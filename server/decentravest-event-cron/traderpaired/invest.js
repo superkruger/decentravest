@@ -1,7 +1,7 @@
 'use strict';
 
 const encode = require('../common/encode');
-const investDao = require('../dao/invest')
+const investDao = require('../dao/traderpaired/invest')
 
 module.exports.create = async (event) => {
 
@@ -25,11 +25,11 @@ module.exports.list = async () => {
 };
 
 module.exports.getLast = async () => {
-  let events = await investDao.list();
+  let event = await investDao.getLast();
 
-  if (events.length > 0) {
-    console.log("getLast invest", events[0]);
-    return events[0];
+  if (event) {
+    console.log("getLast invest", event);
+    return event;
   }
 
   return null;
