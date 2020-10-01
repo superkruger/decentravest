@@ -13,26 +13,12 @@ Properties:
     StorageDescriptor:
       OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
       Columns:
-      - Name: address
-        Type: string
-      - Name: blockHash
-        Type: string
       - Name: blockNumber
-        Type: bigint
-      - Name: logIndex
-        Type: bigint
-      - Name: removed
-        Type: boolean
-      - Name: transactionHash
-        Type: string
-      - Name: transactionIndex
         Type: bigint
       - Name: id
         Type: string
       - Name: returnValues
         Type: struct<wallet:string,investor:string,eventDate:int>
-      - Name: event
-        Type: string
       InputFormat: org.apache.hadoop.mapred.TextInputFormat
       Location: "s3://${self:custom.eventbucket}/traderpaired-investment"
       SerdeInfo:

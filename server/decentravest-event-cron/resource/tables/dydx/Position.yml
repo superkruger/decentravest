@@ -17,19 +17,11 @@ Properties:
         Type: string
       - Name: owner
         Type: string
-      - Name: number
-        Type: string
       - Name: market
         Type: string
       - Name: type
         Type: string
       - Name: status
-        Type: string
-      - Name: accountUuid
-        Type: string
-      - Name: expiresAt
-        Type: string
-      - Name: createdAt
         Type: string
       - Name: updatedAt
         Type: string
@@ -43,10 +35,6 @@ Properties:
         Type: string
       - Name: dv_end
         Type: string
-      - Name: account
-        Type: struct<uuid:string,owner:string,number:string,createdAt:string,updatedAt:string>
-      - Name: standardActions
-        Type: array<struct<type:string,transferAmount:bigint,tradeAmount:bigint,asset:string,side:string,confirmedAt:string,product:string>>
       InputFormat: org.apache.hadoop.mapred.TextInputFormat
       Location: "s3://${self:custom.eventbucket}/dydx-positions"
       SerdeInfo:

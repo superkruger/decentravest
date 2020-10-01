@@ -29,6 +29,7 @@ module.exports.getPosition = async (uuid) => {
 module.exports.loadTraderPositions = async (account) => {
 	try {
 		console.log("loadTraderPositions", account)
+
 		let positions = await getTraderPositions(account)
 
 		positions.forEach(async (position, index) => {
@@ -81,7 +82,7 @@ const getTraderAndMarketPositions = async (account, market) => {
 			if (process.env.LAMBDA_TASK_ROOT) {
 				url = path.resolve(process.env.LAMBDA_TASK_ROOT, url)
 			} else {
-				url = path.resolve(__dirname, url)
+				url = path.resolve(__dirname, '../'+url)
 			}
 
 			const response = JSON.parse(fs.readFileSync(url, 'utf8'));
