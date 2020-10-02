@@ -8,6 +8,7 @@
     "axios": "^0.20.0",
     "bignumber.js": "^9.0.0",
     "dotenv": "^8.2.0",
+    "lodash": "^4.17.20",
     "moment": "^2.27.0",
     "web3": "^1.2.11"
   },
@@ -17,7 +18,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "processEvents": "node -e 'require(\"./handler\").localProcessEvents()'",
-    "processPositions": "node -e 'require(\"./handler\").localProcessPositions()'",
+    "processTrades": "node -e 'require(\"./handler\").localProcessTrades()'",
     "calculateRatings": "node -e 'require(\"./handler\").localCalculateRatings()'"
   },
   "author": "Jaco Kruger <superkruger@gmail.com>",

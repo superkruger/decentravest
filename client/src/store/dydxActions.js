@@ -11,11 +11,3 @@ export function traderPositionLoaded(position) {
 		position
 	}
 }
-
-export function traderRatingsLoaded(trader, ratings) {
-	return {
-		type: 'TRADER_RATINGS_LOADED',
-		trader,
-		ratings
-	}
-}

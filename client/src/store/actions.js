@@ -219,6 +219,13 @@ export function disbursementCreated(disbursement) {
 	}
 }
 
+export function traderRatingsLoaded(trader, ratings) {
+	return {
+		type: 'TRADER_RATINGS_LOADED',
+		trader,
+		ratings
+	}
+}
 // export function investmentStopped(investment) {
 // 	investment.changing = false
 // 	return {

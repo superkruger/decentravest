@@ -11,6 +11,7 @@ provider:
   environment:
     STAGE: ${opt:stage, 'dev'}
     #s3
+    tradingbucket: ${self:custom.tradingbucket}
     eventbucket: ${self:custom.eventbucket}
     eventbucket_queryresults: ${self:custom.eventbucket_queryresults}
     ratingsbucket: ${self:custom.ratingsbucket}
@@ -24,15 +25,18 @@ provider:
     USDC_ADDRESS: ${param:USDC_ADDRESS}
     SAI_ADDRESS: ${param:SAI_ADDRESS}
 custom:
+  tradingbucket: "tradingbucket-${opt:stage, 'dev'}-1"
   eventbucket: "eventbucket-${opt:stage, 'dev'}-1"
   eventbucket_queryresults: "resultbucket-${opt:stage, 'dev'}-1"
   ratingsbucket: "ratingsbucket-${opt:stage, 'dev'}-1"
+  athenadb: "blockchain-events-${opt:stage, 'dev'}"
   VPC_CIDR: 10
 
 plugins:
   - serverless-pseudo-parameters
 resources:
   Resources:
+    TradingBucket: ${file(./resource/S3BucketTrades.yml)}
     EventBucket: ${file(./resource/S3BucketEvents.yml)}
     AthenaBucket: ${file(./resource/S3BucketQueryResults.yml)}
     RatingsBucket: ${file(./resource/S3BucketRatings.yml)}
@@ -82,7 +86,7 @@ functions:
       - schedule: rate(1 day)
 
   processPositions:
-    handler: handler.processPositions
+    handler: handler.processTrades
     events:
       - schedule: rate(1 day)
 
@@ -90,6 +94,14 @@ functions:
     handler: handler.calculateRatings
     events:
       - schedule: rate(1 day)
+
+  getRatings:
+    handler: handler.ratings
+    events:
+      - http:
+          path: ratings
+          method: get
+          cors: true
 
   listTraderpairedTrader:
     handler: traderpaired/trader.webList

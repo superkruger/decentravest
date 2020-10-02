@@ -2,7 +2,7 @@ DependsOn: AthenaDB
 Type: AWS::Glue::Table
 Properties:
   CatalogId: !Ref AWS::AccountId
-  DatabaseName: "blockchain-events-${opt:stage, 'dev'}"
+  DatabaseName: "${self:custom.athenadb}"
   TableInput:
     Name: multisigfundwallet_fund
     Description: Fund events
@@ -13,27 +13,16 @@ Properties:
     StorageDescriptor:
       OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
       Columns:
-      - Name: address
-        Type: string
-      - Name: blockHash
-        Type: string
       - Name: blockNumber
-        Type: bigint
-      - Name: logIndex
-        Type: bigint
-      - Name: removed
-        Type: boolean
-      - Name: transactionHash
-        Type: string
-      - Name: transactionIndex
         Type: bigint
       - Name: id
         Type: string
       - Name: returnValues
-        Type: struct<trader:string,investor:string,investmentId:bigint,token:string,amount:bigint,investmentType:int,eventDate:int>
-      - Name: event
-        Type: string
+        Type: struct<trader:string,investor:string,investmentId:bigint,token:string,amount:bigint,investmentType:int,mdate:int>
       InputFormat: org.apache.hadoop.mapred.TextInputFormat
       Location: "s3://${self:custom.eventbucket}/multisigfundwallet-fund"
       SerdeInfo:
+        Parameters: {
+          "mapping.mdate": "date"
+        }
         SerializationLibrary: org.openx.data.jsonserde.JsonSerDe

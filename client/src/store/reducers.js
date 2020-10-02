@@ -190,25 +190,6 @@ function web3 (state = {}, action ) {
 					]
 				}
 			}
-		case 'TRADER_TRUSTRATING_LOADED':
-			{
-				let index, data
-
-				index = state.traders.findIndex(trader => trader.user === action.trader)
-				if (index !== -1) {
-					state.traders[index] = {
-						...state.traders[index],
-						trustRating: action.rating
-					}
-				}
-				data = state.traders
-				return { 
-					...state, 
-					traders: [
-						...data
-					]
-				}
-			}
 		case 'DIRECT_LIMIT_LOADED':
 			{
 				let index, data

@@ -4,6 +4,6 @@ Properties:
   CatalogId: !Ref AWS::AccountId   
   DatabaseInput:
     # The name of the database is defined in the Parameters section above
-    Name: "blockchain-events-${opt:stage, 'dev'}"	
+    Name: "${self:custom.athenadb}"	
     Description: Database to hold events
     LocationUri: "s3://${self:custom.eventbucket}/"

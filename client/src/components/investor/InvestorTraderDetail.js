@@ -24,11 +24,8 @@ import {
   invest,
   loadTraderAllocations,
   loadBalances,
-  loadTraderTrustRating
-} from '../../store/interactions'
-import {
   loadTraderRatings
-} from '../../store/dydxInteractions'
+} from '../../store/interactions'
 import {
   notificationAdded
 } from '../../store/actions'
@@ -37,13 +34,9 @@ class InvestorTraderDetail extends Component {
 
   componentDidMount() {
     const { web3, network, account, trader, traders, traderPaired, tokens, dispatch } = this.props
-    loadTraderRatings(network, trader.user, traders, dispatch)
+    loadTraderRatings(trader.user, network, dispatch)
     loadTraderAllocations(network, trader.user, traderPaired, dispatch)
     loadBalances(account, traderPaired, tokens, web3, dispatch)
-
-    if (!trader.trustRating) {
-      loadTraderTrustRating(network, trader, traderPaired, dispatch)
-    }
   }
 
   render() {
@@ -99,7 +92,7 @@ class InvestorTraderDetail extends Component {
                         return (
                           <div className="card shadow mb-4" key={`${allocation.symbol}_${allocation.trader}`}>
                             <a href={`#${allocation.symbol}${allocation.trader}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`${allocation.symbol}${allocation.trader}`}>
-                              <h6 className="m-0 font-weight-bold text-primary">{allocation.symbol} <Rating ratingKey={allocation.symbol} rating={`${traderRatings[ratingsSymbol]}`}/></h6>
+                              <h6 className="m-0 font-weight-bold text-primary">{allocation.symbol} <Rating ratingKey={allocation.symbol} rating={`${traderRatings.tradingRatings[ratingsSymbol]}`}/></h6>
                             </a>
                             <div className="collapse" id={`${allocation.symbol}${allocation.trader}`}>
                               <div className="card-body">

@@ -129,15 +129,12 @@ module.exports.calculateTradingRatings = async (account, allTraders) => {
 							}
 						}
 					})
-
-					// dispatch(traderRatingsLoaded(account, ratings))
-					// await positionsDao.saveRatings(account, ratings)
-					return ratings
 				}
 			}
 		}
 	}
-	return null
+
+	return ratings
 }
 
 module.exports.calculateProfitRatings = async (account, allTraders) => {

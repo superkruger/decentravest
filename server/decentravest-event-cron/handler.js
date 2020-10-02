@@ -1,6 +1,8 @@
 require('dotenv').config()
 
+const encode = require('./common/encode');
 const interactions = require('./interactions');
+const ratingsDao = require('./dao/ratings');
 
 module.exports.processEvents = (event, context) => {
 	const time = new Date();
@@ -11,13 +13,13 @@ module.exports.processEvents = (event, context) => {
 	return "processed events";
 };
 
-module.exports.processPositions = (event, context) => {
+module.exports.processTrades = (event, context) => {
 	const time = new Date();
 	console.log(`Your cron function "${context.functionName}" ran at ${time}`);
 
-	localProcessPositions();
+	localProcessTrades();
 
-	return "processed positions";
+	return "processed trades";
 };
 
 module.exports.calculateRatings = (event, context) => {
@@ -29,6 +31,19 @@ module.exports.calculateRatings = (event, context) => {
 	return "calculated ratings";
 };
 
+
+module.exports.ratings = async (event, context) => {
+  console.log("ratings", event, context)
+
+  try {
+  	const result = await ratingsDao.getRatings(event.queryStringParameters.trader)
+  	return encode.success(result);
+  } catch (error) {
+  	console.error("could not get ratings", error)
+  	return encode.error(error, "could not get ratings");
+  }
+};
+
 const localProcessEvents = async () => {
 	let {web3, networkId} = await interactions.loadWeb3();
 	console.log("loaded web3: ", web3, networkId);
@@ -37,10 +52,10 @@ const localProcessEvents = async () => {
 }
 module.exports.localProcessEvents = localProcessEvents
 
-const localProcessPositions = async () => {
-	await interactions.processPositions();
+const localProcessTrades = async () => {
+	await interactions.processTrades();
 }
-module.exports.localProcessPositions = localProcessPositions
+module.exports.localProcessTrades = localProcessTrades
 
 const localCalculateRatings = async () => {
 	await interactions.calculateRatings();

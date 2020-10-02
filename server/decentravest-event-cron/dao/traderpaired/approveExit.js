@@ -4,8 +4,8 @@ const BigNumber = require('bignumber.js');
 
 const s3Common = require("../../common/s3Common")
 const select = 'blockNumber, returnvalues.id, returnvalues.wallet, returnvalues.trader, \
-  returnvalues.investor, returnvalues.approvefrom, returnvalues.allocationinvested, \
-  returnvalues.allocationtotal, returnvalues.eventdate'
+  returnvalues.investor, returnvalues.mfrom, returnvalues.allocationinvested, \
+  returnvalues.allocationtotal, returnvalues.mdate'
 
 module.exports.create = async (event) => {
 
@@ -15,7 +15,7 @@ module.exports.create = async (event) => {
     let res = await s3Common.s3.putObject({
       Bucket: `${process.env.eventbucket}/traderpaired-approveexit`,
       Key: event.id,
-      Body: JSON.stringify(mapEvent(event))
+      Body: JSON.stringify(event)
     }).promise()
 
     console.log("created approveExit", res)
@@ -134,19 +134,10 @@ const mapApproveExit = (event) => {
     wallet: event.wallet, 
     trader: event.trader,
     investor: event.investor, 
-    approveFrom: event.approvefrom, 
+    approveFrom: event.mfrom, 
     allocationInvested: new BigNumber(event.allocationinvested),
     allocationTotal: new BigNumber(event.allocationtotal), 
-    eventDate: event.eventdate
-  }
-}
-
-const mapEvent = (event) => {
-  event.returnValues.eventDate = event.returnValues.date
-  event.returnValues.approveFrom = event.returnValues.from
-
-  return {
-    ...event
+    eventDate: event.mdate
   }
 }
 

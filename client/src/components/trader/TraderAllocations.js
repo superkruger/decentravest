@@ -17,7 +17,7 @@ import {
   loadTraderAllocations,
   setTraderAllocation,
   loadBalances,
-  loadTraderTrustRating
+  loadTraderRatings
 } from '../../store/interactions'
 
 class TraderAllocations extends Component {
@@ -27,8 +27,8 @@ class TraderAllocations extends Component {
     loadTraderAllocations(network, account, traderPaired, dispatch)
     loadBalances(account, traderPaired, tokens, web3, dispatch)
 
-    if (!trader.trustRating) {
-      loadTraderTrustRating(network, trader, traderPaired, dispatch)
+    if (!trader.ratings) {
+      loadTraderRatings(trader.user, network, dispatch)
     }
   }
 

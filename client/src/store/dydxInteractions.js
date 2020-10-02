@@ -3,8 +3,7 @@ import moment from 'moment'
 import BigNumber from 'bignumber.js'
 import {
 	positionsCountLoaded,
-	traderPositionLoaded,
-	traderRatingsLoaded
+	traderPositionLoaded
 } from './dydxActions.js'
 import { log, etherToWei } from '../helpers'
 
@@ -24,129 +23,6 @@ export const loadPositionsCount = async (network, account, dispatch) => {
 	} catch (error) {
 		log('Could not get positions', error)
 		return null
-	}
-}
-
-export const loadTraderRatings = async (network, account, allTraders, dispatch) => {
-
-	let allLow = {
-		WETH: null,
-		DAI: null,
-		USDC: null
-	}
-	let allHigh = {
-		WETH: null,
-		DAI: null,
-		USDC: null
-	}
-
-	let accountAvg = {
-		WETH: new BigNumber(0),
-		DAI: new BigNumber(0),
-		USDC: new BigNumber(0)
-	}
-	let accountTotal = {
-		WETH: new BigNumber(0),
-		DAI: new BigNumber(0),
-		USDC: new BigNumber(0)
-	}
-	let accountCnt = {
-		WETH: 0,
-		DAI: 0,
-		USDC: 0
-	}
-
-	let ratings = {
-		WETH: new BigNumber(0),
-		DAI: new BigNumber(0),
-		USDC: new BigNumber(0)
-	}
-
-	let assets = ["WETH", "DAI", "USDC"]
-
-	for (let traderIndex=0; traderIndex<allTraders.length; traderIndex++) {
-		let trader = allTraders[traderIndex]
-
-
-		let traderAvg = {
-			WETH: new BigNumber(0),
-			DAI: new BigNumber(0),
-			USDC: new BigNumber(0)
-		}
-		let traderTotal = {
-			WETH: new BigNumber(0),
-			DAI: new BigNumber(0),
-			USDC: new BigNumber(0)
-		}
-		let traderCnt = {
-			WETH: 0,
-			DAI: 0,
-			USDC: 0
-		}
-
-		let positions = await getTraderPositions(network, trader.user)
-
-		for (let positionIndex=0; positionIndex<positions.length; positionIndex++) {
-			let position = positions[positionIndex]
-
-			const relativeProfit = position.nettProfit.dividedBy(position.initialAmount)
-
-			traderTotal[position.asset] = traderTotal[position.asset].plus(relativeProfit)
-			traderCnt[position.asset] = traderCnt[position.asset] + 1
-			// traderAvg[position.asset] = traderTotal[position.asset].dividedBy(traderCnt[position.asset])
-
-			if (trader.user === account) {
-				accountTotal[position.asset] = traderTotal[position.asset]
-				accountCnt[position.asset] = traderCnt[position.asset]
-			}
-			
-			if (positionIndex === (positions.length - 1)) {
-				// done with trader
-
-				assets.forEach((asset, assetIndex) => {
-					if (traderCnt[asset] > 0) {
-						traderAvg[asset] = traderTotal[asset].dividedBy(traderCnt[asset])
-					}
-
-					if (allLow[asset] === null || traderAvg[asset].isLessThan(allLow[asset])) {
-						allLow[asset] = traderAvg[asset]
-					}
-
-					if (allHigh[asset] === null || traderAvg[asset].isGreaterThanOrEqualTo(allHigh[asset])) {
-						allHigh[asset] = traderAvg[asset]
-					}
-				})
-
-				if (traderIndex === (allTraders.length - 1)) {
-					// done with all
-
-					assets.forEach((asset, assetIndex) => {
-						if (accountCnt[asset] > 0) {
-							accountAvg[asset] = accountTotal[asset].dividedBy(accountCnt[asset])
-						}
-
-						if (allLow[asset] === null) {
-							allLow[asset] = new BigNumber(0)
-						}
-						if (allHigh[asset] === null) {
-							allHigh[asset] = new BigNumber(0)
-						}
-
-						if (accountCnt[asset] === 0) {
-							ratings[asset] = new BigNumber(0)
-						} else {
-							if (allHigh[asset].isEqualTo(allLow[asset])) {
-								ratings[asset] = new BigNumber(10)
-							} else {
-								ratings[asset] = ((accountAvg[asset].minus(allLow[asset])).dividedBy(allHigh[asset].minus(allLow[asset]))).multipliedBy(10)
-							}
-						}
-					})
-
-					dispatch(traderRatingsLoaded(account, ratings))
-				}
-			}
-		}
 	}
 }
 

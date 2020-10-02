@@ -218,20 +218,20 @@ const processEvents = async (web3, networkId) => {
 }
 exports.processEvents = processEvents
 
-const processPositions = async () => {
-	console.log("processPositions")
+const processTrades = async () => {
+	console.log("processTrades")
 	// Traders
 	//
 	let traders = await traderEventHandler.list();
 
-	console.log("processPositions", traders);
+	console.log("processTrades", traders);
 
 	traders.forEach(async (trader) => {
 		// add positions
   		await positionsHandler.loadTraderPositions(trader.user);
 	});
 }
-exports.processPositions = processPositions
+exports.processTrades = processTrades
 
 const calculateRatings = async () => {
 	console.log('env', process.env.NODE_ENV)

@@ -4,7 +4,7 @@ const BigNumber = require('bignumber.js');
 
 const s3Common = require("../../common/s3Common")
 const select = `blockNumber, returnvalues.user, returnvalues.traderid, \
-  returnvalues.investorcollateralprofitpercent, returnvalues.investordirectprofitpercent, returnvalues.eventdate`
+  returnvalues.investorcollateralprofitpercent, returnvalues.investordirectprofitpercent, returnvalues.mdate`
 
 module.exports.create = async (event) => {
 
@@ -14,7 +14,7 @@ module.exports.create = async (event) => {
     let res = await s3Common.s3.putObject({
       Bucket: `${process.env.eventbucket}/traderpaired-trader`,
       Key: event.id,
-      Body: JSON.stringify(mapEvent(event))
+      Body: JSON.stringify(event)
     }).promise()
 
     console.log("created trader", res)
@@ -106,14 +106,7 @@ const mapTrader = (event) => {
     traderId: event.traderid,
     investorCollateralProfitPercent: new BigNumber(event.investorcollateralprofitpercent),
     investorDirectProfitPercent: new BigNumber(event.investordirectprofitpercent),
-    eventDate: event.eventdate
+    eventDate: event.mdate
   }
 }
 
-const mapEvent = (event) => {
-  event.returnValues.eventDate = event.returnValues.date
-
-  return {
-    ...event
-  }
-}

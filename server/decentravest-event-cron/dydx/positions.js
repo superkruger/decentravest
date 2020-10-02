@@ -31,10 +31,13 @@ module.exports.loadTraderPositions = async (account) => {
 		console.log("loadTraderPositions", account)
 
 		let positions = await getTraderPositions(account)
+		positions = positions.map(decoratePosition)
 
-		positions.forEach(async (position, index) => {
-  			await addPosition(decoratePosition(position));
-		})
+		await positionsDao.addAll(account, positions);
+
+		// positions.forEach(async (position, index) => {
+  // 			await addPosition(decoratePosition(position));
+		// })
 
 	} catch (error) {
 		console.log('Could not load trader positions', error)

@@ -113,7 +113,7 @@ const traderRatings = (state, trader) => {
 	if (traderObj && traderObj.ratings) {
 		return traderObj.ratings
 	}
-	return []
+	return null
 }
 export const traderRatingsSelector = createSelector(traderRatings, e => e)
 

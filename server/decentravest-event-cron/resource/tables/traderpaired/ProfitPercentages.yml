@@ -2,7 +2,7 @@ DependsOn: AthenaDB
 Type: AWS::Glue::Table
 Properties:
   CatalogId: !Ref AWS::AccountId
-  DatabaseName: "blockchain-events-${opt:stage, 'dev'}"
+  DatabaseName: "${self:custom.athenadb}"
   TableInput:
     Name: traderpaired_profitpercentages
     Description: ProfitPercentages events

@@ -2,9 +2,9 @@ import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Alert, Form, Button, Container, Row, Col } from 'react-bootstrap'
 import Rating from '../Rating'
+import Spinner from '../Spinner'
 import { 
-  loadTraderPositions,
-  loadTraderRatings
+  loadTraderPositions
 } from '../../store/dydxInteractions'
 import { 
   networkSelector,
@@ -17,25 +17,29 @@ import {
 } from '../../store/selectors'
 import { 
   setProfitPercentages,
-  loadTraderTrustRating
+  loadTraderRatings
 } from '../../store/interactions'
 import { ZERO_ADDRESS } from '../../helpers'
 
 class Trader extends Component {
   componentDidMount() {
-    const { network, account, trader, traderPaired, traders, dispatch } = this.props
+    const { network, account, trader, traderPaired, dispatch } = this.props
     if (account !== null && account !== ZERO_ADDRESS) {
 
       loadTraderPositions(network, account, dispatch)
 
-      loadTraderRatings(network, account, traders, dispatch)
-
-      loadTraderTrustRating(network, trader, traderPaired, dispatch)
+      loadTraderRatings(account, network, dispatch)
     }
   }
 
   render() {
     const {trader, traderPositions, traderRatings} = this.props
+
+    if (!traderRatings) {
+      return (
+        <Spinner />
+      )
+    }
 
     return (
 
@@ -73,7 +77,6 @@ class Trader extends Component {
           </div>
         </div>
 
-        
         <div className="card shadow mb-4">
           <a href="#profitPercentages" className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="profitPercentages">
             <h6 className="m-0 font-weight-bold text-primary">Investor Profit Percentages</h6>
@@ -128,7 +131,7 @@ class Trader extends Component {
                   <Col sm={12}>
                     <div className="card shadow mb-4">
                       <a href="#WETH_Trades" className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="WETH_Trades">
-                        <h6 className="m-0 font-weight-bold text-primary">ETH Trades <Rating ratingKey="WETH" rating={`${traderRatings["WETH"]}`}/></h6>
+                        <h6 className="m-0 font-weight-bold text-primary">ETH Trades <Rating ratingKey="WETH" rating={`${traderRatings.tradingRatings.WETH}`}/></h6>
                       </a>
                       <div className="collapse" id="WETH_Trades">
                         <div className="card-body">
@@ -151,7 +154,7 @@ class Trader extends Component {
                   <Col sm={12}>
                     <div className="card shadow mb-4">
                       <a href="#DAI_Trades" className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="DAI_Trades">
-                        <h6 className="m-0 font-weight-bold text-primary">DAI Trades <Rating ratingKey="DAI" rating={`${traderRatings["DAI"]}`}/></h6>
+                        <h6 className="m-0 font-weight-bold text-primary">DAI Trades <Rating ratingKey="DAI" rating={`${traderRatings.tradingRatings.DAI}`}/></h6>
                       </a>
                       <div className="collapse" id="DAI_Trades">
                         <div className="card-body">
@@ -174,7 +177,7 @@ class Trader extends Component {
                   <Col sm={12}>
                     <div className="card shadow mb-4">
                       <a href="#USDC_Trades" className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="USDC_Trades">
-                        <h6 className="m-0 font-weight-bold text-primary">USDC Trades <Rating ratingKey="USDC" rating={`${traderRatings["USDC"]}`}/></h6>
+                        <h6 className="m-0 font-weight-bold text-primary">USDC Trades <Rating ratingKey="USDC" rating={`${traderRatings.tradingRatings.USDC}`}/></h6>
                       </a>
                       <div className="collapse" id="USDC_Trades">
                         <div className="card-body">

@@ -1,7 +1,7 @@
 'use strict';
 
 const s3Common = require("../../common/s3Common")
-const select = 'blockNumber, returnvalues.user, returnvalues.investorid, returnvalues.eventdate'
+const select = 'blockNumber, returnvalues.user, returnvalues.investorid, returnvalues.mdate'
 
 module.exports.create = async (event) => {
 
@@ -11,7 +11,7 @@ module.exports.create = async (event) => {
     let res = await s3Common.s3.putObject({
       Bucket: `${process.env.eventbucket}/traderpaired-investor`,
       Key: event.id,
-      Body: JSON.stringify(mapEvent(event))
+      Body: JSON.stringify(event)
     }).promise()
 
     console.log("created investor", res)
@@ -101,14 +101,7 @@ const mapInvestor = (event) => {
     blockNumber: event.blockNumber,
     user: event.user,
     investorId: event.investorid,
-    eventDate: event.eventdate
+    eventDate: event.mdate
   }
 }
 
-const mapEvent = (event) => {
-  event.returnValues.eventDate = event.returnValues.date
-
-  return {
-    ...event
-  }
-}
