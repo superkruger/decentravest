@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
+import { withRouter } from 'react-router-dom'
 import { Button, Container, Row, Col, Alert } from 'react-bootstrap'
 import Spinner from './Spinner'
 import {
@@ -73,9 +74,9 @@ function InvestorButton(props) {
 }
 
 const investorJoin = async (props) => {
-  const { account, traderPaired, pairedInvestments, walletFactory, web3, dispatch } = props
+  const { account, traderPaired, pairedInvestments, walletFactory, web3, dispatch, history } = props
 
-  await joinAsInvestor(account, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
+  await joinAsInvestor(account, traderPaired, pairedInvestments, walletFactory, web3, dispatch, history)
 
 }
 
@@ -96,4 +97,4 @@ function mapStateToProps(state) {
   }
 }
 
-export default connect(mapStateToProps)(JoinInvestor)
+export default connect(mapStateToProps)(withRouter(JoinInvestor))

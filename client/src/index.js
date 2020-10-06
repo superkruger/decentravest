@@ -1,20 +1,14 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { BrowserRouter as Router } from 'react-router-dom';
-import { Provider } from 'react-redux'
-import App from './components/App';
+import React from 'react'
+import ReactDOM from 'react-dom'
+import Root from './components/Root'
 import configureStore from './store/configureStore'
-import * as serviceWorker from './serviceWorker';
+import * as serviceWorker from './serviceWorker'
 
 // Importing the Bootstrap CSS
 // import 'bootstrap/dist/css/bootstrap.min.css';
 
 ReactDOM.render(
-  <Provider store = {configureStore()}>
-		<Router basename={process.env.PUBLIC_URL}>
-			<App />
-		</Router>
-	</Provider>,
+  <Root store={configureStore()} />,
   document.getElementById('root')
 );
 

@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 
+import Spinner from './Spinner'
 import Sidebar from './Sidebar'
 import Content from './Content'
 import Notifications from './Notifications'
@@ -10,8 +11,8 @@ import {
   loadWebApp,
 } from '../store/interactions'
 import {
-  pageSelector,
   web3Selector,
+  networkSelector,
   accountSelector, 
   traderPairedSelector,
   traderPairedLoadedSelector,
@@ -28,14 +29,20 @@ class App extends Component {
   }
 
   render() {
-    const { sidebarClosed } = this.props
+    const { network, account, web3, sidebarClosed, page, section } = this.props
+
+    if (!network || !account || !web3) {
+      return (
+        <Spinner/>
+      )
+    }
 
     return (
       <div id="page-top" className={ sidebarClosed ? 'sidebar-toggled' : ''}>
         <Notifications />
         <div id="wrapper">
-          <Sidebar />
-          <Content />
+          <Sidebar page={page}/>
+          <Content page={page} section={section} />
         </div>
         <a className="scroll-to-top rounded" href="#page-top">
           <i className="fas fa-angle-up"></i>
@@ -45,10 +52,12 @@ class App extends Component {
   }
 }
 
-function mapStateToProps(state) {
+function mapStateToProps(state, ownProps) {
   return {
-    page: pageSelector(state),
+    page: ownProps.match.params.page,
+    section: ownProps.match.params.section,
     web3: web3Selector(state),
+    network: networkSelector(state),
     account: accountSelector(state),
     traderPaired: traderPairedSelector(state),
     traderPairedLoaded: traderPairedLoadedSelector(state),

@@ -27,7 +27,6 @@ import {
 	mainInvestorLoaded,
 	traderJoining,
 	investorJoining,
-	pageSelected,
 	traderAllocationLoaded,
 	walletFactoryLoaded,
 	walletCreating,
@@ -48,11 +47,11 @@ export const loadWebApp = async (dispatch) => {
 
 		window.ethereum.on('accountsChanged', async function (accounts) {
 			// await loadWebApp(web3, dispatch)
-			document.location.reload()
+			document.location = "/"
 		})
 
 		window.ethereum.on('chainChanged', () => {
-			document.location.reload()
+			document.location = "/"
 		})
 	} else if (window.web3) {
 		web3 = new Web3(window.web3.currentProvider || Web3.givenProvider || 'http://127.0.0.1:8545')
@@ -295,7 +294,7 @@ const loadTraderInvestments = async (trader, traderPaired, pairedInvestments, wa
 	})
 }
 
-export const joinAsTrader = async (network, account, traderPaired, pairedInvestments, walletFactory, web3, dispatch) => {
+export const joinAsTrader = async (network, account, traderPaired, pairedInvestments, walletFactory, web3, dispatch, history) => {
 	log('joinAsTrader', network, account)
 	try {
 		traderPaired.methods.joinAsTrader().send({from: account})
@@ -310,8 +309,8 @@ export const joinAsTrader = async (network, account, traderPaired, pairedInvestm
 
 			if (trader.user !== ZERO_ADDRESS) {
 				await loadMainTrader(network, trader, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
-				dispatch(pageSelected('trader'))
 				dispatch(notificationAdded(info("Trader", "Successfully registered as a trader!")))
+				history.push('trader_dashboard')
 			}
 		})
 		.on('error', (err) => {
@@ -324,7 +323,7 @@ export const joinAsTrader = async (network, account, traderPaired, pairedInvestm
 	}
 }
 
-export const joinAsInvestor = async (account, traderPaired, pairedInvestments, walletFactory, web3, dispatch) => {
+export const joinAsInvestor = async (account, traderPaired, pairedInvestments, walletFactory, web3, dispatch, history) => {
 	try {
 		traderPaired.methods.joinAsInvestor().send({from: account})
 		.on('transactionHash', async (hash) => {
@@ -338,8 +337,8 @@ export const joinAsInvestor = async (account, traderPaired, pairedInvestments, w
 
 			if (investor.user !== ZERO_ADDRESS) {
 				await loadMainInvestor(investor, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
-				dispatch(pageSelected('investor'))
 				dispatch(notificationAdded(info("Investor", "Successfully registered as an investor")))
+				history.push('investor_dashboard')
 			}
 		})
 		.on('error', (err) => {
@@ -1055,9 +1054,11 @@ export const loadTraderRatings = async (account, network, dispatch) => {
 		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
 					process.env['REACT_APP_' + network + '_API_RATINGS']
 		url = url.replace('$1', account)
+
+		console.log("loadTraderRatings", url)
 		axios.get(url)
 		  .then(function (response) {
-		  	log("loadTraderRatings", response)
+		  	log("loadTraderRatings success", response)
 		    // handle success
 		    dispatch(traderRatingsLoaded(account, response.data))
 		  })

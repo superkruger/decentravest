@@ -27,6 +27,8 @@ export const loadPositionsCount = async (network, account, dispatch) => {
 }
 
 export const loadTraderPositions = async (network, account, dispatch) => {
+	log("loadTraderPositions", network, account)
+	
 	try {
 		let positions = await getTraderPositions(network, account)
 

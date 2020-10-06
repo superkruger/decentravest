@@ -13,13 +13,6 @@ export function notificationRemoved(id) {
 	}
 }
 
-export function pageSelected(page) {
-	return {
-		type: 'PAGE_SELECTED',
-		page
-	}
-}
-
 export function sidebarToggled() {
 	return {
 		type: 'SIDEBAR_TOGGLED'

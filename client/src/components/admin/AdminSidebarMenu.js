@@ -1,13 +1,12 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Badge } from 'react-bootstrap'
+import PageLink from '../containers/PageLink'
+import { Page } from '../containers/pages'
 import {
   accountSelector, 
   traderPairedSelector
 } from '../../store/selectors'
-import { 
-  pageSelected
-} from '../../store/actions'
 
 class AdminSidebarMenu extends Component {
 
@@ -25,42 +24,34 @@ class AdminSidebarMenu extends Component {
 }
 
 function DashboardButton(props) {
-  const handleClick = () => props.props.dispatch(pageSelected('admin_dashboard'))
-
   return (
     <li className="nav-item active">
-      <a className="nav-link" href="/#" onClick={handleClick}>
-        <i className="fas fa-fw fa-tachometer-alt"></i>
-        <span>Admin Dashboard</span>
-      </a>
+      <PageLink page={Page.ADMIN_DASHBOARD} styles="nav-link">
+          <i className="fas fa-fw fa-tachometer-alt"></i>
+          <span>Admin Dashboard</span>
+      </PageLink>
     </li>
   )
 }
 
 function TradersButton(props) {
-  const handleClick = () => props.props.dispatch(pageSelected('admin_traders'))
-
   return (
     <li className="nav-item active">
-      <a className="nav-link" href="/#" onClick={handleClick}>
-        <i className="fas fa-fw fa-chart-pie"></i>
-        <span>Traders</span>
-      </a>
+      <PageLink page={Page.ADMIN_TRADERS} styles="nav-link">
+          <i className="fas fa-fw fa-chart-pie"></i>
+          <span>Traders</span>
+      </PageLink>
     </li>
   )
 }
 
 function InvestorsButton(props) {
-  const handleClick = () => props.props.dispatch(pageSelected('admin_investors'))
-
   return (
     <li className="nav-item active">
-      <a className="nav-link" href="/#" onClick={handleClick}>
-        <i className="fas fa-fw fa-coins"></i>
-        <span>
-          Investors
-        </span>
-      </a>
+      <PageLink page={Page.ADMIN_INVESTORS} styles="nav-link">
+          <i className="fas fa-fw fa-coins"></i>
+          <span>Investors</span>
+      </PageLink>
     </li>
   )
 }

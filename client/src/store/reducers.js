@@ -42,8 +42,6 @@ function app (state = {}, action ) {
 					]
 				} 
 			}
-		case 'PAGE_SELECTED':
-			return { ...state, page: action.page }
 		case 'SIDEBAR_TOGGLED':
 			return { ...state, sidebarClosed: !state.sidebarClosed }
 		default:
@@ -174,6 +172,10 @@ function web3 (state = {}, action ) {
 		case 'TRADER_RATINGS_LOADED':
 			{
 				let index, data
+
+				if (!state.traders) {
+					state.traders = []
+				}
 
 				index = state.traders.findIndex(trader => trader.user === action.trader)
 				if (index !== -1) {

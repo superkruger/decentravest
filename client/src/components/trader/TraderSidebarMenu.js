@@ -1,15 +1,14 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Badge } from 'react-bootstrap'
+import PageLink from '../containers/PageLink'
+import { Page } from '../containers/pages'
 import {
   accountSelector, 
   traderPairedSelector,
   traderSelector,
   investmentActionRequiredSelector
 } from '../../store/selectors'
-import { 
-  pageSelected
-} from '../../store/actions'
 
 class TraderSidebarMenu extends Component {
 
@@ -27,47 +26,42 @@ class TraderSidebarMenu extends Component {
 }
 
 function DashboardButton(props) {
-  const handleClick = () => props.props.dispatch(pageSelected('trader_dashboard'))
-
   return (
     <li className="nav-item active">
-      <a className="nav-link" href="/#" onClick={handleClick}>
-        <i className="fas fa-fw fa-tachometer-alt"></i>
-        <span>Trader Dashboard</span>
-      </a>
+      <PageLink page={Page.TRADER_DASHBOARD} styles="nav-link">
+          <i className="fas fa-fw fa-tachometer-alt"></i>
+          <span>Trader Dashboard</span>
+      </PageLink>
     </li>
   )
 }
 
 function AllocationsButton(props) {
-  const handleClick = () => props.props.dispatch(pageSelected('trader_allocations'))
-
   return (
     <li className="nav-item active">
-      <a className="nav-link" href="/#" onClick={handleClick}>
-        <i className="fas fa-fw fa-chart-pie"></i>
-        <span>Allocations</span>
-      </a>
+      <PageLink page={Page.TRADER_ALLOCATIONS} styles="nav-link">
+          <i className="fas fa-fw fa-chart-pie"></i>
+          <span>Allocations</span>
+      </PageLink>
     </li>
   )
 }
 
 function InvestmentsButton(props) {
   const { investmentActionRequired } = props.props
-  const handleClick = () => props.props.dispatch(pageSelected('trader_investments'))
 
   return (
     <li className="nav-item active">
-      <a className="nav-link" href="/#" onClick={handleClick}>
-        <i className="fas fa-fw fa-coins"></i>
-        <span>
-          Investments
-          {
-            investmentActionRequired && 
-              <Badge variant="danger">!</Badge>
-          }
-        </span>
-      </a>
+      <PageLink page={Page.TRADER_INVESTMENTS} styles="nav-link">
+          <i className="fas fa-fw fa-coins"></i>
+          <span>
+            Investments
+            {
+              investmentActionRequired && 
+                <Badge variant="danger">!</Badge>
+            }
+          </span>
+      </PageLink>
     </li>
   )
 }

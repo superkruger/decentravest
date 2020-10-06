@@ -14,16 +14,19 @@ import TraderInvestments from './trader/TraderInvestments'
 import InvestorTraders from './investor/InvestorTraders'
 import InvestorInvestments from './investor/InvestorInvestments'
 
+import { Page } from './containers/pages'
+
 import {
   accountSelector, 
   traderPairedSelector,
-  traderPairedLoadedSelector,
-  pageSelector
+  traderPairedLoadedSelector
 } from '../store/selectors'
 
 class Content extends Component {
 
   render() {
+    const { page, section } = this.props
+
     return (
       <div id="content-wrapper" className="d-flex flex-column">
 
@@ -37,19 +40,18 @@ class Content extends Component {
           {/* Begin Page Content */}
           <div className="container-fluid">
 
-
             <div className="d-sm-flex align-items-center justify-content-between mb-4">
               {
                 {
-                  'home': <Intro />,
-                  'jointrader': <JoinTrader />,
-                  'joininvestor': <JoinInvestor />,
-                  'trader_dashboard': <Trader />,
+                  'join_trader': <JoinTrader />,
+                  'join_investor': <JoinInvestor />,
+                  'trader_dashboard': <Trader page={page} section={section} />,
                   'trader_allocations': <TraderAllocations />,
                   'trader_investments': <TraderInvestments />,
-                  'investor_dashboard': <Investor />,
+                  'investor_dashboard': <Investor page={page} section={section} />,
                   'investor_traders': <InvestorTraders />,
-                  'investor_investments': <InvestorInvestments />
+                  'investor_investments': <InvestorInvestments />,
+                  undefined: <Intro />
                 }[this.props.page]
               }
           
@@ -73,12 +75,13 @@ class Content extends Component {
 
 
 
-function mapStateToProps(state) {
+function mapStateToProps(state, ownProps) {
   return {
     account: accountSelector(state),
     traderPaired: traderPairedSelector(state),
     traderPairedLoaded: traderPairedLoadedSelector(state),
-    page: pageSelector(state)
+    page: ownProps.page,
+    section: ownProps.section
   }
 }
 

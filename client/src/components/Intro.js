@@ -2,6 +2,8 @@ import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Container, Row, Col, Button } from 'react-bootstrap'
 import { info } from '../helpers'
+import PageLink from './containers/PageLink'
+import { Page } from './containers/pages'
 import {
   traderPairedSelector,
   traderPairedLoadedSelector,
@@ -11,7 +13,6 @@ import {
   isAdminSelector
 } from '../store/selectors'
 import { 
-  pageSelected,
   notificationAdded
 } from '../store/actions'
 
@@ -120,31 +121,23 @@ function JoinSelection(props) {
 }
 
 function JoinTraderButton(props) {
-  const handleClick = () => props.props.dispatch(pageSelected('jointrader'));
+  // const handleClick = () => props.props.dispatch(pageSelected('jointrader'));
 
   return (
     <div>
-      <Button
-        variant="primary"
-        onClick={handleClick}
-        >
+      <PageLink page={Page.JOIN_TRADER}>
         Join Now as a Trader!
-      </Button>
+      </PageLink>
     </div>
   );
 }
 
 function JoinInvestorButton(props) {
-  const handleClick = () => props.props.dispatch(pageSelected('joininvestor'));
-
   return (
     <div>
-      <Button
-        variant="primary"
-        onClick={handleClick}
-        >
+      <PageLink page={Page.JOIN_INVESTOR}>
         Join Now as an Investor!
-      </Button>
+      </PageLink>
     </div>
   );
 }

@@ -3,6 +3,8 @@ import { connect } from 'react-redux'
 import TraderSidebarMenu from './trader/TraderSidebarMenu'
 import InvestorSidebarMenu from './investor/InvestorSidebarMenu'
 import AdminSidebarMenu from './admin/AdminSidebarMenu'
+import PageLink from './containers/PageLink'
+import { Page } from './containers/pages'
 import {
   accountSelector,
   traderSelector,
@@ -11,7 +13,6 @@ import {
   isAdminSelector
 } from '../store/selectors'
 import { 
-  pageSelected,
   sidebarToggled
 } from '../store/actions'
 
@@ -61,16 +62,15 @@ class Sidebar extends Component {
 }
 
 function Logo(props) {
-  const handleClick = () => props.props.dispatch(pageSelected('home'));
-
   return (
-    <a className="logo sidebar-brand d-flex align-items-center justify-content-center" href="#home" onClick={handleClick}>
+    <PageLink page={Page.ROOT} styles="logo sidebar-brand d-flex align-items-center justify-content-center">
       <div className="sidebar-brand-icon">
         <img src={`${process.env.PUBLIC_URL}/logo-192.png`} alt=""/>
       </div>
       <div className="sidebar-brand-text mx-3">Decentravest</div>
-    </a>
+    </PageLink>
   )
+
 }
 
 function SidebarToggle(props) {
@@ -83,11 +83,12 @@ function SidebarToggle(props) {
   )
 }
 
-function mapStateToProps(state) {
+function mapStateToProps(state, ownProps) {
   const account = accountSelector(state)
   const trader = traderSelector(state, account)
   const investor = investorSelector(state)
   return {
+    page: ownProps.page,
     account: account,
     isAdmin: isAdminSelector(state),
     joined: trader || investor,

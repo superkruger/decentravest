@@ -6,9 +6,6 @@ import { NEUTRAL, RED, GREEN, formatBalance, tokenSymbolForAddress, log } from '
 const notifications = (state) => get(state, 'app.notifications', [])
 export const notificationsSelector = createSelector(notifications, a => a)
 
-const page = (state) => get(state, 'app.page', 'home')
-export const pageSelector = createSelector(page, a => a)
-
 const sidebarClosed = (state) => get(state, 'app.sidebarClosed', false)
 export const sidebarClosedSelector = createSelector(sidebarClosed, a => a)
 
