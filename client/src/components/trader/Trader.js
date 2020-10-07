@@ -40,11 +40,9 @@ class Trader extends Component {
     }
 
     return (
-
       <div>
         <DashboardTabs props={this.props}/>
       </div>
-
     )
   }
 }
@@ -53,10 +51,8 @@ function DashboardTabs(props) {
   const [key, setKey] = React.useState('profitPercentages')
   const {trader, traderPositions, traderRatings, page, section} = props.props
 
-  const tradingRatingKeys = Object.keys(traderRatings.tradingRatings)
-  const profitRatingKeys = Object.keys(traderRatings.profitRatings)
-
-  console.log("ratings", traderRatings.trustRating.trustRating)
+  const tradingRatingKeys = Object.keys(traderRatings.tradingRatings.ratings)
+  const profitRatingKeys = Object.keys(traderRatings.profitRatings.ratings)
 
   return (
     <Tabs id="trader_dashboard"
@@ -106,26 +102,32 @@ function DashboardTabs(props) {
                   <div className="card-body">
                     <Container>
                       <Row>
-                        <Col sm={6}>
+                        <Col sm={4}>
                           <Alert variant="info">
                             Your trading rating is based on trade profits relative to other traders on this platform.
                           </Alert>
                         </Col>
-                        <Col sm={6}>
-                        {
-                          tradingRatingKeys.map((key) => {
-                            return (
-                              <Row>
-                                <Col sm={3}>
-                                  <h5>{key}</h5>
-                                </Col>
-                                <Col sm={9}>
-                                  <h5><Rating ratingKey={`trading_${key}`} rating={traderRatings.tradingRatings[key]}/></h5>
-                                </Col>
-                              </Row>
-                            )
-                          })
-                        }
+                        <Col sm={8}>
+                          <table className="table">
+                            <thead>
+                              <tr>
+                                <th></th><th>Rating</th><th>Average Profit</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                            {
+                              tradingRatingKeys.map((key) => {
+                                return (
+                                  <tr>
+                                    <td><h6>{key}</h6></td>
+                                    <td><Rating ratingKey={`trading_${key}`} rating={traderRatings.tradingRatings.ratings[key]}/></td>
+                                    <td><h6>{traderRatings.tradingRatings.formattedAverageProfits[key]}</h6></td>
+                                  </tr>
+                                )
+                              })
+                            }
+                            </tbody>
+                          </table>
                         </Col>
                       </Row>
                     </Container>
@@ -140,26 +142,32 @@ function DashboardTabs(props) {
                   <div className="card-body">
                     <Container>
                       <Row>
-                        <Col sm={6}>
+                        <Col sm={4}>
                           <Alert variant="info">
                             Your profit rating is based on returns to your investors relative to the returns of other traders
                           </Alert>
                         </Col>
-                        <Col sm={6}>
-                        {
-                          profitRatingKeys.map((key) => {
-                            return (
-                              <Row>
-                                <Col sm={3}>
-                                  <h5>{key}</h5>
-                                </Col>
-                                <Col sm={9}>
-                                  <h5><Rating ratingKey={`profit_${key}`} rating={traderRatings.profitRatings[key]}/></h5>
-                                </Col>
-                              </Row>
-                            )
-                          })
-                        }
+                        <Col sm={8}>
+                          <table className="table">
+                            <thead>
+                              <tr>
+                                <th></th><th>Rating</th><th>Average Profit</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                            {
+                              profitRatingKeys.map((key) => {
+                                return (
+                                  <tr>
+                                    <td><h6>{key}</h6></td>
+                                    <td><Rating ratingKey={`profit_${key}`} rating={traderRatings.profitRatings.ratings[key]}/></td>
+                                    <td><h6>{traderRatings.profitRatings.formattedAverageProfits[key]}</h6></td>
+                                  </tr>
+                                )
+                              })
+                            }
+                            </tbody>
+                          </table>
                         </Col>
                       </Row>
                     </Container>
@@ -174,20 +182,20 @@ function DashboardTabs(props) {
                   <div className="card-body">
                     <Container>
                       <Row>
-                        <Col sm={6}>
+                        <Col sm={4}>
                           <Alert variant="info">
                             Your trust rating is based on how settlements are handled. Any suspect or fraudulent activity will impact it negatively, as well as waiting more than 48 hours to approve a settlement request
                           </Alert>
                         </Col>
-                        <Col sm={6}>
+                        <Col sm={8}>
                           <Row>
                             <Col sm={3}>
-                              <h5>Trust</h5>
+                              <h6>Trust</h6>
                             </Col>
                             <Col sm={9}>
                             {
-                              traderRatings.trustRating.trustRating
-                              ? <h5><Rating ratingKey="trust" rating={traderRatings.trustRating.trustRating}/></h5>
+                              traderRatings.trustRating
+                              ? <Rating ratingKey="trust" rating={traderRatings.trustRating}/>
                               : <span>Not enough data yet. Needs at least one settlement</span>
                             }
                             </Col>

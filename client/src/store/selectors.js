@@ -82,16 +82,11 @@ export const investableTradersSelector = createSelector(traders, (traders) => {
 	return res
 })
 
-// const trader = state => get(state, 'trader.trader')
-// export const traderSelector = createSelector(trader, e => e)
-
-
 const trader = (state, account) => {
 	const traderObj = find(state.web3.traders, {user: account})
 	return traderObj
 }
 export const traderSelector = createSelector(trader, e => e)
-
 
 const traderJoining = state => get(state, 'trader.joining', false)
 export const traderJoiningSelector = createSelector(traderJoining, e => e)
@@ -112,7 +107,28 @@ const traderRatings = (state, trader) => {
 	}
 	return null
 }
-export const traderRatingsSelector = createSelector(traderRatings, e => e)
+export const traderRatingsSelector = createSelector(traderRatings, (traderRatings) => {
+	if (!traderRatings) {
+		return null
+	}
+	traderRatings.tradingRatings.formattedAverageProfits = {}
+	traderRatings.profitRatings.formattedAverageProfits = {}
+
+	for (let key in traderRatings.tradingRatings.averageProfits) {
+		console.log("formattedAverageProfits", traderRatings.tradingRatings.averageProfits[key], key)
+		traderRatings.tradingRatings.formattedAverageProfits[key] = 
+			formatBalance(new BigNumber(traderRatings.tradingRatings.averageProfits[key]), key)
+	}
+
+	for (let key in traderRatings.profitRatings.averageProfits) {
+		traderRatings.profitRatings.formattedAverageProfits[key] = 
+			formatBalance(new BigNumber(traderRatings.profitRatings.averageProfits[key]), key)
+	}
+
+	return {
+		...traderRatings
+	}
+})
 
 const traderAllocations = (state, trader) => {
 	const traderObj = find(state.web3.traders, {user: trader})

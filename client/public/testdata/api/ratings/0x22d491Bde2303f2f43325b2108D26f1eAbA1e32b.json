@@ -1,1 +1,32 @@
-{"tradingRatings":{"WETH":"10","DAI":"10","USDC":"0"},"profitRatings":{"ETH":"10","DAI":"0","USDC":"0"},"trustRating":{"trustRating":"10","directLimits":[{"token":"ETH","limit":"200000000000000000"}]}}
+{
+	"tradingRatings": {
+		"ratings": {
+			"WETH": "10",
+			"DAI": "10",
+			"USDC": "0"
+		},
+		"averageProfits": {
+			"WETH": "3000000000000000000",
+			"DAI": "1000000000000000000",
+			"USDC": "0"
+		}
+	},
+	"profitRatings": {
+		"ratings": {
+			"ETH": "10",
+			"DAI": "0",
+			"USDC": "0"
+		},
+		"averageProfits": {
+			"ETH": "0",
+			"DAI": "0",
+			"USDC": "0"
+		}
+	},
+	"trustRating": "10",
+	"directLimits": {
+		"ETH": "200000000000000000",
+		"DAI": "0",
+		"USDC": "0"
+	}
+}
