@@ -9,12 +9,14 @@ import { log, etherToWei } from '../helpers'
 
 export const loadPositionsCount = async (network, account, dispatch) => {
 	try {
-		let url = process.env['REACT_APP_' + network + '_DYDX_CLOSED_URL']
-		log('loadPositionsCount', network, url)
-		axios.get(url.replace('$1', account))
+		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
+					process.env['REACT_APP_' + network + '_API_POSITIONS']
+		url = url.replace('$1', account)
+
+		axios.get(url)
 		  .then(function (response) {
 		    // handle success
-		    dispatch(positionsCountLoaded(response.data.positions.length))
+		    dispatch(positionsCountLoaded(response.data.length))
 		  })
 		  .catch(function (error) {
 		    // handle error
@@ -28,7 +30,7 @@ export const loadPositionsCount = async (network, account, dispatch) => {
 
 export const loadTraderPositions = async (network, account, dispatch) => {
 	log("loadTraderPositions", network, account)
-	
+
 	try {
 		let positions = await getTraderPositions(network, account)
 
@@ -41,20 +43,35 @@ export const loadTraderPositions = async (network, account, dispatch) => {
 }
 
 export const getTraderPositions = async (network, account) => {
+
 	try {
-		let positions = await getTraderAndMarketPositions(network, account, 'WETH-DAI')
-		let p = await getTraderAndMarketPositions(network, account, 'WETH-USDC')
-		if (p.length > 0) {
-			positions = positions.concat(p)
-		}
-		p = await getTraderAndMarketPositions(network, account, 'DAI-USDC')
-		if (p.length > 0) {
-			positions = positions.concat(p)
-		}
-		return positions
+		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
+					process.env['REACT_APP_' + network + '_API_POSITIONS']
+		url = url.replace('$1', account)
+
+		console.log("getTraderPositions", url)
+
+		const response = await axios.get(url)
+	  	log("getTraderPositions success", response)
+	    return response.data
 	} catch (error) {
 		log('Could not get trader positions', error)
 	}
+
+	// try {
+	// 	let positions = await getTraderAndMarketPositions(network, account, 'WETH-DAI')
+	// 	let p = await getTraderAndMarketPositions(network, account, 'WETH-USDC')
+	// 	if (p.length > 0) {
+	// 		positions = positions.concat(p)
+	// 	}
+	// 	p = await getTraderAndMarketPositions(network, account, 'DAI-USDC')
+	// 	if (p.length > 0) {
+	// 		positions = positions.concat(p)
+	// 	}
+	// 	return positions
+	// } catch (error) {
+	// 	log('Could not get trader positions', error)
+	// }
 	return []
 }
 

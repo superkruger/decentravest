@@ -479,6 +479,11 @@ module.exports.calculateTrustRating = async (account) => {
 		DAI: "0",
 		USDC: "0"
 	}
+	let directInvested = {
+		ETH: "0",
+		DAI: "0",
+		USDC: "0"
+	}
 
 	if (total > 0) {
 		trustRating = new BigNumber(total - bad).dividedBy(total).multipliedBy(10)
@@ -504,20 +509,22 @@ module.exports.calculateTrustRating = async (account) => {
 						directLimit = directLimit.plus(allocation.total.multipliedBy(directApprovalCount / 5))
 					}
 
-					let directInvested = investmentDirectTotals[token.address]
-					if (!directInvested) {
-						directInvested = new BigNumber(0)
+					let directInvestment = investmentDirectTotals[token.address]
+					if (!directInvestment) {
+						directInvestment = new BigNumber(0)
 					}
 					directLimits[helpers.tokenSymbolForAddress(allocation.token)] = directLimit.toString()
+					directInvested[helpers.tokenSymbolForAddress(allocation.token)] = directInvestment.toString()
 				}
 			}
 		}
 	}
 
-	console.log("TraderTrustRating", trustRating.toString(), directLimits)
+	console.log("TraderTrustRating", trustRating.toString(), directLimits, directInvested)
 	return {
 		trustRating: trustRating.toString(),
-		directLimits: directLimits
+		directLimits: directLimits,
+		directInvested: directInvested
 	}
 }
 

@@ -5,6 +5,7 @@ import { connect } from 'react-redux'
 import { Container, Row, Col, Form, Button } from 'react-bootstrap'
 import AddressImage from '../AddressImage'
 import Rating from '../Rating'
+import Spinner from '../Spinner'
 import AllocationChart from '../trader/AllocationChart'
 import { INVESTMENT_COLLATERAL, INVESTMENT_DIRECT, etherToWei, weiToEther, fail } from '../../helpers'
 import { 
@@ -42,6 +43,12 @@ class InvestorTraderDetail extends Component {
   render() {
     const {trader, traderAllocations, traderRatings, investments } = this.props
 
+    if (!traderRatings) {
+      return (
+        <Spinner />
+      )
+    }
+
     return (
       <div className="card shadow mb-4">
         <a href={`#trader_${trader.user}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`trader_${trader.user}`}>
@@ -60,8 +67,8 @@ class InvestorTraderDetail extends Component {
                   </Col>
                   <Col sm={8}>
                   {
-                    trader.trustRating
-                    ? <Rating ratingKey="trust" rating={trader.trustRating}/>
+                    traderRatings.trustRating
+                    ? <Rating ratingKey="trust" rating={traderRatings.trustRating}/>
                     : <span>Not enough data yet. Needs at least one settlement</span>
                   }
                   </Col>
@@ -92,7 +99,7 @@ class InvestorTraderDetail extends Component {
                         return (
                           <div className="card shadow mb-4" key={`${allocation.symbol}_${allocation.trader}`}>
                             <a href={`#${allocation.symbol}${allocation.trader}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`${allocation.symbol}${allocation.trader}`}>
-                              <h6 className="m-0 font-weight-bold text-primary">{allocation.symbol} <Rating ratingKey={allocation.symbol} rating={`${traderRatings.tradingRatings[ratingsSymbol]}`}/></h6>
+                              <h6 className="m-0 font-weight-bold text-primary">{allocation.symbol} <Rating ratingKey={allocation.symbol} rating={`${traderRatings.tradingRatings.ratings[ratingsSymbol]}`}/></h6>
                             </a>
                             <div className="collapse" id={`${allocation.symbol}${allocation.trader}`}>
                               <div className="card-body">
@@ -129,7 +136,7 @@ class InvestorTraderDetail extends Component {
                                   </div>
                                 </div>
                                 {
-                                  allocation.directLimit
+                                  traderRatings.directLimits[allocation.symbol].gt(0)
                                   && 
                                     <div className="card shadow mb-4" key={`direct_${allocation.symbol}_${allocation.trader}`}>
                                       <a href={`#direct_${allocation.symbol}${allocation.trader}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`direct_${allocation.symbol}${allocation.trader}`}>
@@ -139,7 +146,7 @@ class InvestorTraderDetail extends Component {
                                         <Container>
                                           <Row>
                                             <Col sm={6}>
-                                              <span>Available: {allocation.formattedDirectAvailable}</span>
+                                              <span>Available: {traderRatings.formattedDirectAvailable[allocation.symbol]}</span>
                                             </Col>
                                             <Col sm={6}>
                                                 <div>
@@ -231,7 +238,7 @@ function collateralInvestHandler (allocation, inputId, props) {
 }
 
 function directInvestHandler (allocation, inputId, props) {
-  const {account, trader, balances, tokens, wallet, dispatch} = props
+  const {account, trader, traderRatings, balances, tokens, wallet, dispatch} = props
 
   console.log("directInvestHandler tokens", tokens)
 
@@ -251,12 +258,13 @@ function directInvestHandler (allocation, inputId, props) {
   const decimals = token ? token.decimals : 18
   const amount = document.getElementById(inputId).value
   const weiAmount = etherToWei(amount, decimals)
+  const directAvailable = traderRatings.directLimits[allocation.symbol].minus(traderRatings.directInvested[allocation.symbol])
 
   if (weiAmount.lte(balance)) {
-    if (weiAmount.lte(allocation.directAvailable)) {
+    if (weiAmount.lte(directAvailable)) {
       invest(account, trader.user, allocation.token, token, weiAmount, wallet.contract, INVESTMENT_DIRECT, dispatch)
     } else {
-      dispatch(notificationAdded(fail("Invest", `Investment exceeds available amount of ${allocation.formattedDirectAvailable}`)))
+      dispatch(notificationAdded(fail("Invest", `Investment exceeds available amount of ${traderRatings.formattedDirectAvailable[allocation.symbol]}`)))
     }
   } else {
     dispatch(notificationAdded(fail("Invest", "Wallet balance too small")))

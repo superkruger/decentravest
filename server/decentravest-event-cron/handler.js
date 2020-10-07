@@ -1,8 +1,9 @@
 require('dotenv').config()
 
-const encode = require('./common/encode');
-const interactions = require('./interactions');
-const ratingsDao = require('./dao/ratings');
+const encode = require('./common/encode')
+const interactions = require('./interactions')
+const ratingsDao = require('./dao/ratings')
+const positionsDao = require('./dao/dydx/positions')
 
 module.exports.processEvents = (event, context) => {
 	const time = new Date();
@@ -11,7 +12,7 @@ module.exports.processEvents = (event, context) => {
 	localProcessEvents();
 	
 	return "processed events";
-};
+}
 
 module.exports.processTrades = (event, context) => {
 	const time = new Date();
@@ -20,7 +21,7 @@ module.exports.processTrades = (event, context) => {
 	localProcessTrades();
 
 	return "processed trades";
-};
+}
 
 module.exports.calculateRatings = (event, context) => {
 	const time = new Date();
@@ -29,8 +30,7 @@ module.exports.calculateRatings = (event, context) => {
 	localCalculateRatings();
 
 	return "calculated ratings";
-};
-
+}
 
 module.exports.ratings = async (event, context) => {
   console.log("ratings", event, context)
@@ -42,7 +42,19 @@ module.exports.ratings = async (event, context) => {
   	console.error("could not get ratings", error)
   	return encode.error(error, "could not get ratings");
   }
-};
+}
+
+module.exports.positions = async (event, context) => {
+  console.log("positions", event, context)
+
+  try {
+  	const result = await positionsDao.getByOwner(event.queryStringParameters.trader)
+  	return encode.success(result);
+  } catch (error) {
+  	console.error("could not get positions", error)
+  	return encode.error(error, "could not get positions");
+  }
+}
 
 const localProcessEvents = async () => {
 	let {web3, networkId} = await interactions.loadWeb3();

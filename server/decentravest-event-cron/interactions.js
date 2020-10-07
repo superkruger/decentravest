@@ -255,7 +255,8 @@ const calculateRatings = async () => {
   			tradingRatings: tradingRatings,
   			profitRatings: profitRatings,
   			trustRating: trustRatings.trustRating,
-  			directLimits: trustRatings.directLimits
+  			directLimits: trustRatings.directLimits,
+  			directInvested: trustRatings.directInvested
   		})
 	})
 }

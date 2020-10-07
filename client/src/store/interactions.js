@@ -21,7 +21,6 @@ import {
 	tokensLoaded,
 	balanceLoaded,
 	traderLoaded,
-	directLimitLoaded,
 	profitPercentagesLoaded,
 	mainTraderLoaded,
 	mainInvestorLoaded,

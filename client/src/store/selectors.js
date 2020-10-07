@@ -1,5 +1,6 @@
 import { find, get, groupBy } from 'lodash'
 import BigNumber from 'bignumber.js'
+import moment from 'moment'
 import { createSelector } from 'reselect'
 import { NEUTRAL, RED, GREEN, formatBalance, tokenSymbolForAddress, log } from '../helpers'
 
@@ -113,16 +114,31 @@ export const traderRatingsSelector = createSelector(traderRatings, (traderRating
 	}
 	traderRatings.tradingRatings.formattedAverageProfits = {}
 	traderRatings.profitRatings.formattedAverageProfits = {}
+	traderRatings.formattedDirectAvailable = {}
 
 	for (let key in traderRatings.tradingRatings.averageProfits) {
-		console.log("formattedAverageProfits", traderRatings.tradingRatings.averageProfits[key], key)
-		traderRatings.tradingRatings.formattedAverageProfits[key] = 
-			formatBalance(new BigNumber(traderRatings.tradingRatings.averageProfits[key]), key)
+		const average = new BigNumber(traderRatings.tradingRatings.averageProfits[key])
+		traderRatings.tradingRatings.formattedAverageProfits[key] = formatBalance(average, key)
+		traderRatings.tradingRatings.averageProfits[key] = average
 	}
 
 	for (let key in traderRatings.profitRatings.averageProfits) {
-		traderRatings.profitRatings.formattedAverageProfits[key] = 
-			formatBalance(new BigNumber(traderRatings.profitRatings.averageProfits[key]), key)
+		const average = new BigNumber(traderRatings.profitRatings.averageProfits[key])
+		traderRatings.profitRatings.formattedAverageProfits[key] = formatBalance(average, key)
+		traderRatings.profitRatings.averageProfits[key] = average
+	}
+
+	for (let key in traderRatings.directLimits) {
+		const limit = new BigNumber(traderRatings.directLimits[key])
+		traderRatings.directLimits[key] = limit
+	}
+
+	for (let key in traderRatings.directInvested) {
+		const invested = new BigNumber(traderRatings.directInvested[key])
+		traderRatings.directInvested[key] = invested
+
+		traderRatings.formattedDirectAvailable[key] = 
+			formatBalance(traderRatings.directLimits[key].minus(traderRatings.directInvested[key]), key)
 	}
 
 	return {
@@ -180,11 +196,11 @@ export const traderPositionsSelector = createSelector(traderPositions, (position
 	// log('Positions', positions)
 	if (positions !== undefined) {
 
-		positions = positions.sort((a, b) => b.start.diff(a.start))
 		positions = decorateTraderPositions(positions)
+		positions = positions.sort((a, b) => b.dv_start.diff(a.dv_start))
 
 		// group by asset
-		positions = groupBy(positions, (p) => p.asset)
+		positions = groupBy(positions, (p) => p.dv_asset)
 	}
 	return positions
 })
@@ -198,20 +214,25 @@ const decorateTraderPositions = (positions) => {
 
 const decorateTraderPosition = (position) => {
 
+	let dv_start = moment(position.dv_start)
+	let dv_end = moment(position.dv_end)
 	return ({
 		...position,
-		formattedStart: position.start.local().format('HH:mm:ss D-M-Y'),
+		dv_start: dv_start,
+		dv_end: dv_end,
+		formattedStart: dv_start.local().format('HH:mm:ss D-M-Y'),
+		formattedEnd: dv_end.local().format('HH:mm:ss D-M-Y'),
+		dv_profit: new BigNumber(position.dv_profit),
+		dv_initialAmount: new BigNumber(position.dv_initialAmount),
 		profit: decoratePositionProfit(position)
 	})
 }
 
 const decoratePositionProfit = (position) => {
+	let profit = new BigNumber(position.dv_profit)
 	return ({
-		formattedFeeAmount: formatBalance(position.fee, position.asset),
-		formattedProfit: formatBalance(position.profit, position.asset),
-		profitClass: position.profit.lt(0) ? RED : position.profit.gt(0) ? GREEN : NEUTRAL,
-		formattedNettProfit: formatBalance(position.nettProfit, position.asset),
-		nettProfitClass: position.nettProfit.lt(0) ? RED : position.nettProfit.gt(0) ? GREEN : NEUTRAL
+		formattedProfit: formatBalance(profit, position.dv_asset),
+		profitClass: profit.lt(0) ? RED : profit.gt(0) ? GREEN : NEUTRAL
 	})
 }
 
@@ -223,18 +244,18 @@ const positionsForInvestment = (state, investment) => {
 	if (state.trader && state.trader.positions) {
 		let positions = state.trader.positions.data.filter(position => 
 			position.owner === investment.trader &&
-			position.asset === tokenSymbol)
+			position.dv_asset === tokenSymbol)
 
-		positions = positions.sort((a, b) => b.start.diff(a.start))
 		positions = decorateTraderPositions(positions)
+		positions = positions.sort((a, b) => b.dv_start.diff(a.dv_start))
 
 		// if(process.env.NODE_ENV !== 'development') {
 			// filter by date
 			positions = positions.filter(position =>
-				position.start.isAfter(investment.start) 
+				position.dv_start.isAfter(investment.dv_start) 
 					&& (
 						(investment.end.unix() === 0 || investment.state === "0") 
-							|| position.end.isBefore(investment.end)))
+							|| position.dv_end.isBefore(investment.end)))
 		// }
 
 		return positions
