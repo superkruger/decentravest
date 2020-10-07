@@ -109,7 +109,7 @@ module.exports.getByTraderAndToken = async (trader, token) => {
   }
 
   const query = {
-    sql: `SELECT ${select} FROM traderpaired_allocate WHERE returnvalues.trader = '${trader}' AND returnvalues.token = '${token}' ORDER by returnvalues.eventdate desc`
+    sql: `SELECT ${select} FROM traderpaired_allocate WHERE returnvalues.trader = '${trader}' AND returnvalues.token = '${token}' ORDER by returnvalues.mdate desc`
   };
 
   try {

@@ -18,18 +18,28 @@ const helpers = require('./helpers')
 
 module.exports.calculateTradingRatings = async (account, allTraders) => {
 
-	let allLow = {
+	let allLowRel = {
 		WETH: null,
 		DAI: null,
 		USDC: null
 	}
-	let allHigh = {
+	let allHighRel = {
 		WETH: null,
 		DAI: null,
 		USDC: null
 	}
 
+	let accountAvgRel = {
+		WETH: new BigNumber(0),
+		DAI: new BigNumber(0),
+		USDC: new BigNumber(0)
+	}
 	let accountAvg = {
+		WETH: new BigNumber(0),
+		DAI: new BigNumber(0),
+		USDC: new BigNumber(0)
+	}
+	let accountTotalRel = {
 		WETH: new BigNumber(0),
 		DAI: new BigNumber(0),
 		USDC: new BigNumber(0)
@@ -51,12 +61,28 @@ module.exports.calculateTradingRatings = async (account, allTraders) => {
 		USDC: "0"
 	}
 
+	let averageProfits = {
+		WETH: "0",
+		DAI: "0",
+		USDC: "0"
+	}
+
 	let assets = ["WETH", "DAI", "USDC"]
 
 	for (let traderIndex=0; traderIndex<allTraders.length; traderIndex++) {
 		let trader = allTraders[traderIndex]
 
+		let traderAvgRel = {
+			WETH: new BigNumber(0),
+			DAI: new BigNumber(0),
+			USDC: new BigNumber(0)
+		}
 		let traderAvg = {
+			WETH: new BigNumber(0),
+			DAI: new BigNumber(0),
+			USDC: new BigNumber(0)
+		}
+		let traderTotalRel = {
 			WETH: new BigNumber(0),
 			DAI: new BigNumber(0),
 			USDC: new BigNumber(0)
@@ -78,11 +104,14 @@ module.exports.calculateTradingRatings = async (account, allTraders) => {
 			let position = positions[positionIndex]
 
 			const relativeProfit = position.dv_profit.dividedBy(position.dv_initialAmount)
+			const profit = position.dv_profit
 
-			traderTotal[position.dv_asset] = traderTotal[position.dv_asset].plus(relativeProfit)
+			traderTotalRel[position.dv_asset] = traderTotalRel[position.dv_asset].plus(relativeProfit)
+			traderTotal[position.dv_asset] = traderTotal[position.dv_asset].plus(profit)
 			traderCnt[position.dv_asset] = traderCnt[position.dv_asset] + 1
 
 			if (trader.user === account) {
+				accountTotalRel[position.dv_asset] = traderTotalRel[position.dv_asset]
 				accountTotal[position.dv_asset] = traderTotal[position.dv_asset]
 				accountCnt[position.dv_asset] = traderCnt[position.dv_asset]
 			}
@@ -92,15 +121,16 @@ module.exports.calculateTradingRatings = async (account, allTraders) => {
 
 				assets.forEach((asset, assetIndex) => {
 					if (traderCnt[asset] > 0) {
+						traderAvgRel[asset] = traderTotalRel[asset].dividedBy(traderCnt[asset])
 						traderAvg[asset] = traderTotal[asset].dividedBy(traderCnt[asset])
 					}
 
-					if (allLow[asset] === null || traderAvg[asset].isLessThan(allLow[asset])) {
-						allLow[asset] = traderAvg[asset]
+					if (allLowRel[asset] === null || traderAvgRel[asset].isLessThan(allLowRel[asset])) {
+						allLowRel[asset] = traderAvgRel[asset]
 					}
 
-					if (allHigh[asset] === null || traderAvg[asset].isGreaterThanOrEqualTo(allHigh[asset])) {
-						allHigh[asset] = traderAvg[asset]
+					if (allHighRel[asset] === null || traderAvgRel[asset].isGreaterThanOrEqualTo(allHighRel[asset])) {
+						allHighRel[asset] = traderAvgRel[asset]
 					}
 				})
 
@@ -109,23 +139,24 @@ module.exports.calculateTradingRatings = async (account, allTraders) => {
 
 					assets.forEach((asset, assetIndex) => {
 						if (accountCnt[asset] > 0) {
-							accountAvg[asset] = accountTotal[asset].dividedBy(accountCnt[asset])
+							accountAvgRel[asset] = accountTotalRel[asset].dividedBy(accountCnt[asset])
+							averageProfits[asset] = accountTotal[asset].dividedBy(accountCnt[asset]).toString()
 						}
 
-						if (allLow[asset] === null) {
-							allLow[asset] = new BigNumber(0)
+						if (allLowRel[asset] === null) {
+							allLowRel[asset] = new BigNumber(0)
 						}
-						if (allHigh[asset] === null) {
-							allHigh[asset] = new BigNumber(0)
+						if (allHighRel[asset] === null) {
+							allHighRel[asset] = new BigNumber(0)
 						}
 
 						if (accountCnt[asset] === 0) {
 							ratings[asset] = "0"
 						} else {
-							if (allHigh[asset].isEqualTo(allLow[asset])) {
+							if (allHighRel[asset].isEqualTo(allLowRel[asset])) {
 								ratings[asset] = "10"
 							} else {
-								ratings[asset] = ((accountAvg[asset].minus(allLow[asset])).dividedBy(allHigh[asset].minus(allLow[asset]))).multipliedBy(10).toString()
+								ratings[asset] = ((accountAvgRel[asset].minus(allLowRel[asset])).dividedBy(allHighRel[asset].minus(allLowRel[asset]))).multipliedBy(10).toString()
 							}
 						}
 					})
@@ -134,22 +165,33 @@ module.exports.calculateTradingRatings = async (account, allTraders) => {
 		}
 	}
 
-	return ratings
+	console.log("tradingRatings", ratings, averageProfits)
+	return { ratings, averageProfits }
 }
 
 module.exports.calculateProfitRatings = async (account, allTraders) => {
-	let allLow = {
+	let allLowRel = {
 		ETH: null,
 		DAI: null,
 		USDC: null
 	}
-	let allHigh = {
+	let allHighRel = {
 		ETH: null,
 		DAI: null,
 		USDC: null
 	}
 
+	let accountAvgRel = {
+		ETH: new BigNumber(0),
+		DAI: new BigNumber(0),
+		USDC: new BigNumber(0)
+	}
 	let accountAvg = {
+		ETH: new BigNumber(0),
+		DAI: new BigNumber(0),
+		USDC: new BigNumber(0)
+	}
+	let accountTotalRel = {
 		ETH: new BigNumber(0),
 		DAI: new BigNumber(0),
 		USDC: new BigNumber(0)
@@ -171,12 +213,28 @@ module.exports.calculateProfitRatings = async (account, allTraders) => {
 		USDC: "0"
 	}
 
+	let averageProfits = {
+		ETH: "0",
+		DAI: "0",
+		USDC: "0"
+	}
+
 	let assets = ["ETH", "DAI", "USDC"]
 
 	for (let traderIndex=0; traderIndex<allTraders.length; traderIndex++) {
 		let trader = allTraders[traderIndex]
 
+		let traderAvgRel = {
+			ETH: new BigNumber(0),
+			DAI: new BigNumber(0),
+			USDC: new BigNumber(0)
+		}
 		let traderAvg = {
+			ETH: new BigNumber(0),
+			DAI: new BigNumber(0),
+			USDC: new BigNumber(0)
+		}
+		let traderTotalRel = {
 			ETH: new BigNumber(0),
 			DAI: new BigNumber(0),
 			USDC: new BigNumber(0)
@@ -230,12 +288,15 @@ module.exports.calculateProfitRatings = async (account, allTraders) => {
 
 			investment = await getInvestmentValue(investment)
 
-			const relativeProfit = investment.nettValue.dividedBy(investment.amount)
+			const relativeProfit = (investment.nettValue.minus(investment.amount)).dividedBy(investment.amount)
+			const profit = investment.nettValue.minus(investment.amount)
 
-			traderTotal[tokenSymbol] = traderTotal[tokenSymbol].plus(relativeProfit)
+			traderTotalRel[tokenSymbol] = traderTotalRel[tokenSymbol].plus(relativeProfit)
+			traderTotal[tokenSymbol] = traderTotal[tokenSymbol].plus(profit)
 			traderCnt[tokenSymbol] = traderCnt[tokenSymbol] + 1
 
 			if (trader.user === account) {
+				accountTotalRel[tokenSymbol] = traderTotalRel[tokenSymbol]
 				accountTotal[tokenSymbol] = traderTotal[tokenSymbol]
 				accountCnt[tokenSymbol] = traderCnt[tokenSymbol]
 			}
@@ -245,15 +306,16 @@ module.exports.calculateProfitRatings = async (account, allTraders) => {
 
 				assets.forEach((asset, assetIndex) => {
 					if (traderCnt[asset] > 0) {
+						traderAvgRel[asset] = traderTotalRel[asset].dividedBy(traderCnt[asset])
 						traderAvg[asset] = traderTotal[asset].dividedBy(traderCnt[asset])
 					}
 
-					if (allLow[asset] === null || traderAvg[asset].isLessThan(allLow[asset])) {
-						allLow[asset] = traderAvg[asset]
+					if (allLowRel[asset] === null || traderAvgRel[asset].isLessThan(allLowRel[asset])) {
+						allLowRel[asset] = traderAvgRel[asset]
 					}
 
-					if (allHigh[asset] === null || traderAvg[asset].isGreaterThanOrEqualTo(allHigh[asset])) {
-						allHigh[asset] = traderAvg[asset]
+					if (allHighRel[asset] === null || traderAvgRel[asset].isGreaterThanOrEqualTo(allHighRel[asset])) {
+						allHighRel[asset] = traderAvgRel[asset]
 					}
 				})
 
@@ -262,36 +324,33 @@ module.exports.calculateProfitRatings = async (account, allTraders) => {
 
 					assets.forEach((asset, assetIndex) => {
 						if (accountCnt[asset] > 0) {
-							accountAvg[asset] = accountTotal[asset].dividedBy(accountCnt[asset])
+							accountAvgRel[asset] = accountTotalRel[asset].dividedBy(accountCnt[asset])
+							averageProfits[asset] = accountTotal[asset].dividedBy(accountCnt[asset]).toString()
 						}
 
-						if (allLow[asset] === null) {
-							allLow[asset] = new BigNumber(0)
+						if (allLowRel[asset] === null) {
+							allLowRel[asset] = new BigNumber(0)
 						}
-						if (allHigh[asset] === null) {
-							allHigh[asset] = new BigNumber(0)
+						if (allHighRel[asset] === null) {
+							allHighRel[asset] = new BigNumber(0)
 						}
 
 						if (accountCnt[asset] === 0) {
 							ratings[asset] = "0"
 						} else {
-							if (allHigh[asset].isEqualTo(allLow[asset])) {
+							if (allHighRel[asset].isEqualTo(allLowRel[asset])) {
 								ratings[asset] = "10"
 							} else {
-								ratings[asset] = ((accountAvg[asset].minus(allLow[asset])).dividedBy(allHigh[asset].minus(allLow[asset]))).multipliedBy(10).toString()
+								ratings[asset] = ((accountAvgRel[asset].minus(allLowRel[asset])).dividedBy(allHighRel[asset].minus(allLowRel[asset]))).multipliedBy(10).toString()
 							}
 						}
 					})
-
-					// dispatch(traderRatingsLoaded(account, ratings))
-					// await positionsDao.saveRatings(account, ratings)
-					console.log("profitRatings", ratings)
-					return ratings
 				}
 			}
 		}
 	}
-	return null
+	console.log("profitRatings", ratings, averageProfits)
+	return { ratings, averageProfits }
 }
 
 module.exports.calculateTrustRating = async (account) => {
@@ -414,10 +473,16 @@ module.exports.calculateTrustRating = async (account) => {
 		}
 	})
 
-	if (total > 0) {
-		const trustRating = new BigNumber(total - bad).dividedBy(total).multipliedBy(10)
-		let directLimits = []
+	let trustRating = new BigNumber(0)
+	let directLimits = {
+		ETH: "0",
+		DAI: "0",
+		USDC: "0"
+	}
 
+	if (total > 0) {
+		trustRating = new BigNumber(total - bad).dividedBy(total).multipliedBy(10)
+		
 		console.log("getting token direct limits", latestApproval, trustRating.toString(), helpers.userTokens)
 
 		if (latestApproval && trustRating.gt(8)) {
@@ -443,21 +508,17 @@ module.exports.calculateTrustRating = async (account) => {
 					if (!directInvested) {
 						directInvested = new BigNumber(0)
 					}
-					console.log("directLimitLoaded", account, allocation.token, directLimit.toString(), directInvested.toString())
-					directLimits.push({token: helpers.tokenSymbolForAddress(allocation.token), limit: directLimit.toString()})
+					directLimits[helpers.tokenSymbolForAddress(allocation.token)] = directLimit.toString()
 				}
 			}
 		}
-
-
-		console.log("TraderTrustRating", trustRating.toString())
-
-		return {
-			trustRating: trustRating.toString(),
-			directLimits: directLimits
-		}
 	}
-	return null
+
+	console.log("TraderTrustRating", trustRating.toString(), directLimits)
+	return {
+		trustRating: trustRating.toString(),
+		directLimits: directLimits
+	}
 }
 
 const mapAllocate = (event) => {

@@ -247,15 +247,16 @@ const calculateRatings = async () => {
 
 	traders.forEach(async (trader) => {
 
-  		const tradingRatings = await ratingsHandler.calculateTradingRatings(trader.user, traders);
-  		const profitRatings = await ratingsHandler.calculateProfitRatings(trader.user, traders);
-  		const trustRating = await ratingsHandler.calculateTrustRating(trader.user);
+  		const tradingRatings = await ratingsHandler.calculateTradingRatings(trader.user, traders)
+  		const profitRatings = await ratingsHandler.calculateProfitRatings(trader.user, traders)
+  		const trustRatings = await ratingsHandler.calculateTrustRating(trader.user)
 
   		await ratingsDao.saveRatings(trader.user, {
   			tradingRatings: tradingRatings,
   			profitRatings: profitRatings,
-  			trustRating
+  			trustRating: trustRatings.trustRating,
+  			directLimits: trustRatings.directLimits
   		})
-	});
+	})
 }
 exports.calculateRatings = calculateRatings

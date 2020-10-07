@@ -110,23 +110,39 @@ const loadAccount = async (web3, dispatch) => {
 }
 
 export const loadBalances = async (account, traderPaired, tokens, web3, dispatch) => {
-	const etherBalance = await web3.eth.getBalance(account)
-	dispatch(balanceLoaded({amount: new BigNumber(etherBalance), symbol: "ETH"}))
+
+	try {
+		const etherBalance = await web3.eth.getBalance(account)
+		dispatch(balanceLoaded({amount: new BigNumber(etherBalance), symbol: "ETH"}))
+	} catch (error) {
+		log("etherBalance error", error)
+	}
 
 	tokens.forEach(async (token) => {
-		const tokenBalance = await token.contract.methods.balanceOf(account).call()
-		dispatch(balanceLoaded({amount: new BigNumber(tokenBalance), symbol: token.symbol}))
+		try {
+			const tokenBalance = await token.contract.methods.balanceOf(account).call()
+			dispatch(balanceLoaded({amount: new BigNumber(tokenBalance), symbol: token.symbol}))
+		} catch (error) {
+			log(`tokenBalance ${token.symbol} error`, error)
+		}
 	})
 }
 
 export const loadMainWalletBalances = async (wallet, tokens, dispatch) => {
 
-	const etherBalance = await wallet.methods.etherBalance().call()
-	dispatch(mainWalletBalanceLoaded({amount: new BigNumber(etherBalance), symbol: "ETH"}))
-
+	try {
+		const etherBalance = await wallet.methods.etherBalance().call()
+		dispatch(mainWalletBalanceLoaded({amount: new BigNumber(etherBalance), symbol: "ETH"}))
+	} catch (error) {
+		log("etherBalance error", error)
+	}
 	tokens.forEach(async (token) => {
-		const tokenBalance = await wallet.methods.tokenBalance(token.contract.options.address).call()
-		dispatch(mainWalletBalanceLoaded({amount: new BigNumber(tokenBalance), symbol: token.symbol}))
+		try {
+			const tokenBalance = await wallet.methods.tokenBalance(token.contract.options.address).call()
+			dispatch(mainWalletBalanceLoaded({amount: new BigNumber(tokenBalance), symbol: token.symbol}))
+		} catch (error) {
+			log(`tokenBalance ${token.symbol} error`, error)
+		}
 	})
 }
 
