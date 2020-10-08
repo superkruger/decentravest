@@ -111,6 +111,14 @@ functions:
           method: get
           cors: true
 
+  getTrades:
+    handler: handler.trades
+    events:
+      - http:
+          path: trades
+          method: get
+          cors: true
+
   listTraderpairedTrader:
     handler: traderpaired/trader.webList
     events:

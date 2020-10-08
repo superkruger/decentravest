@@ -9,8 +9,6 @@ import {
   traderPairedSelector,
   pairedInvestmentsSelector,
   walletFactorySelector,
-  positionsCountSelector,
-  traderJoiningSelector,
   investorJoiningSelector
 } from '../store/selectors'
 import { 
@@ -91,8 +89,6 @@ function mapStateToProps(state) {
     pairedInvestments: pairedInvestmentsSelector(state),
     walletFactory: walletFactorySelector(state),
     ready: account && traderPaired,
-    positionsCount: positionsCountSelector(state),
-    traderJoining: traderJoiningSelector(state),
     investorJoining: investorJoiningSelector(state)
   }
 }

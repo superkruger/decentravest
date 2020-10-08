@@ -4,29 +4,28 @@ import { withRouter } from 'react-router-dom'
 import { Alert, Form, Button, Container, Row, Col, Tabs, Tab } from 'react-bootstrap'
 import Rating from '../Rating'
 import Spinner from '../Spinner'
-import { 
-  loadTraderPositions
-} from '../../store/dydxInteractions'
+
 import { 
   networkSelector,
   accountSelector, 
   traderSelector,
   traderPairedSelector,
   tradersSelector,
-  traderPositionsSelector,
+  tradesSelector,
   traderRatingsSelector
 } from '../../store/selectors'
 import { 
   setProfitPercentages,
-  loadTraderRatings
+  loadTraderRatings,
+  loadTrades
 } from '../../store/interactions'
-import { ZERO_ADDRESS } from '../../helpers'
+import { ZERO_ADDRESS, displaySymbol } from '../../helpers'
 
 class Trader extends Component {
   componentDidMount() {
     const { network, account, dispatch } = this.props
     
-    loadTraderPositions(network, account, dispatch)
+    loadTrades(network, account, dispatch)
     loadTraderRatings(account, network, dispatch)
   }
 
@@ -49,7 +48,7 @@ class Trader extends Component {
 
 function DashboardTabs(props) {
   const [key, setKey] = React.useState('profitPercentages')
-  const {trader, traderPositions, traderRatings, page, section} = props.props
+  const {trader, trades, traderRatings, page, section} = props.props
 
   const tradingRatingKeys = Object.keys(traderRatings.tradingRatings.ratings)
   const profitRatingKeys = Object.keys(traderRatings.profitRatings.ratings)
@@ -118,8 +117,8 @@ function DashboardTabs(props) {
                             {
                               tradingRatingKeys.map((key) => {
                                 return (
-                                  <tr>
-                                    <td><h6>{key}</h6></td>
+                                  <tr key={`${key}`}>
+                                    <td><h6>{displaySymbol(key)}</h6></td>
                                     <td><Rating ratingKey={`trading_${key}`} rating={traderRatings.tradingRatings.ratings[key]}/></td>
                                     <td><h6>{traderRatings.tradingRatings.formattedAverageProfits[key]}</h6></td>
                                   </tr>
@@ -158,8 +157,8 @@ function DashboardTabs(props) {
                             {
                               profitRatingKeys.map((key) => {
                                 return (
-                                  <tr>
-                                    <td><h6>{key}</h6></td>
+                                  <tr key={`${key}`}>
+                                    <td><h6>{displaySymbol(key)}</h6></td>
                                     <td><Rating ratingKey={`profit_${key}`} rating={traderRatings.profitRatings.ratings[key]}/></td>
                                     <td><h6>{traderRatings.profitRatings.formattedAverageProfits[key]}</h6></td>
                                   </tr>
@@ -232,11 +231,10 @@ function DashboardTabs(props) {
                             <thead>
                               <tr>
                                 <th>Date</th>
-                                <th>Type</th>
                                 <th>Profit</th>
                               </tr>
                             </thead>
-                            { showPositions(traderPositions["WETH"]) }
+                            { showTrades(trades["WETH"]) }
                           </table>
                         </div>
                       </div>
@@ -255,11 +253,10 @@ function DashboardTabs(props) {
                             <thead>
                               <tr>
                                 <th>Date</th>
-                                <th>Type</th>
                                 <th>Profit</th>
                               </tr>
                             </thead>
-                            { showPositions(traderPositions["DAI"]) }
+                            { showTrades(trades["DAI"]) }
                           </table>
                         </div>
                       </div>
@@ -278,11 +275,10 @@ function DashboardTabs(props) {
                             <thead>
                               <tr>
                                 <th>Date</th>
-                                <th>Type</th>
                                 <th>Profit</th>
                               </tr>
                             </thead>
-                            { showPositions(traderPositions["USDC"]) }
+                            { showTrades(trades["USDC"]) }
                           </table>
                         </div>
                       </div>
@@ -307,8 +303,8 @@ function profitSubmitHandler (collateralInputId, directInputId, props) {
   setProfitPercentages(account, collateralPercentage, directPercentage, traderPaired, dispatch)
 }
 
-function showPositions(positions) {
-  if (positions === undefined || positions.length === 0) {
+function showTrades(trades) {
+  if (trades === undefined || trades.length === 0) {
     return (
       <tbody></tbody>
     )
@@ -316,12 +312,11 @@ function showPositions(positions) {
 
   return (
     <tbody>
-    { positions.map((position) => {
+    { trades.map((trade) => {
         return (
-            <tr key={position.uuid}>
-              <td className="text-muted">{position.formattedStart}</td>
-              <td>{position.type}</td>
-              <td className={`text-${position.profit.profitClass}`}>{position.profit.formattedProfit}</td>
+            <tr key={trade.uuid}>
+              <td className="text-muted">{trade.formattedStart}</td>
+              <td className={`text-${trade.profitClass}`}>{trade.formattedProfit}</td>
             </tr>
         )
       })
@@ -343,7 +338,7 @@ function mapStateToProps(state, ownProps) {
     traderPaired: traderPaired,
     trader: traderSelector(state, account),
     traders: tradersSelector(state),
-    traderPositions: traderPositionsSelector(state),
+    trades: tradesSelector(state),
     traderRatings: traderRatingsSelector(state, account)
   }
 }

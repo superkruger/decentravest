@@ -38,9 +38,10 @@ module.exports.addAll = async (account, positions) => {
 
     try {
       const data = await s3Common.s3.getObject(options).promise()
-      existingPositions = JSON.parse(data.Body)
-      console.log("existingPositions", existingPositions, typeof existingPositions)
+      existingPositions = JSON.parse(data.Body).positions
+      console.log("existingPositions", existingPositions)
     } catch (e) {
+      console.log("error", e)
     }
     
     positions = _.unionBy(positions, existingPositions, 'uuid')

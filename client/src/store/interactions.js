@@ -8,7 +8,6 @@ import MultiSigFundWalletFactory from '../abis/MultiSigFundWalletFactory.json'
 import MultiSigFundWallet from '../abis/MultiSigFundWallet.json'
 import ERC20 from '../abis/IERC20.json'
 import { log, ZERO_ADDRESS, INVESTMENT_COLLATERAL, INVESTMENT_DIRECT, setTokens, userTokens, toBN, etherToWei, tokenAddressForSymbol, tokenSymbolForAddress, info, fail } from '../helpers'
-import { getTraderPositions } from './dydxInteractions'
 import {
 	notificationAdded,
 	notificationRemoved,
@@ -34,7 +33,9 @@ import {
 	investmentLoaded,
 	investmentChanging,
 	disbursementCreated,
-	traderRatingsLoaded
+	traderRatingsLoaded,
+	tradeCountLoaded,
+	tradeLoaded
 } from './actions.js'
 
 export const loadWebApp = async (dispatch) => {
@@ -921,21 +922,19 @@ const getInvestmentValue = async (network, investment, traderPaired) => {
 	log("getInvestmentValue", investment)
 	let investorProfitPercent = investment.investorProfitPercent.dividedBy(10000)
 
-	// get all positions for this investment
-	let positions = await getTraderPositions(network, investment.trader)
-	positions = positions.filter(
-		(position) => tokenAddressForSymbol(position.asset) === investment.token)
+	// get all trades for this investment
+	let trades = await getTrades(network, investment.trader)
+	trades = trades.filter(
+		(trade) => tokenAddressForSymbol(trade.asset) === investment.token)
 
-	// if(process.env.NODE_ENV !== 'development') {
-		// filter by date
-		positions = positions.filter(position =>
-			position.start.isAfter(investment.start) 
-				&& (
-					(investment.end.unix() === 0 || investment.state === "0") 
-						|| position.end.isBefore(investment.end)))
-	// }
+	trades = trades.filter(trade =>
+		moment(trade.start).isAfter(investment.start) 
+			&& (
+				(investment.end.unix() === 0 || investment.state === "0") 
+					|| moment(trade.end).isBefore(investment.end)))
+	
 
-	log("P", positions)
+	log("T", trades)
 
 	const allocations = await getTraderAllocations(investment.trader, investment.token, traderPaired)
 
@@ -947,15 +946,15 @@ const getInvestmentValue = async (network, investment, traderPaired) => {
 
 	log("traderInvestments", traderInvestments)
 
-	// for each position get all investments that it should be split over
+	// for each trade get all investments that it should be split over
 	// and calculate profit/loss
 	let grossProfit = new BigNumber(0)
-	await positions.forEach(async (position) => {
+	await trades.forEach(async (trade) => {
 
-		// find the allocation just before the start of this position
-		let allocation = allocations.find(allocation => allocation.date.isBefore(position.start))
+		// find the allocation just before the start of this trade
+		let allocation = allocations.find(allocation => allocation.date.isBefore(trade.start))
 
-		// Fallback to the last allocation made, but there should be an allocation made before the position started
+		// Fallback to the last allocation made, but there should be an allocation made before the trade started
 		// TODO: maybe remove?
 		if (!allocation) {
 			allocation = allocations[0]
@@ -963,8 +962,8 @@ const getInvestmentValue = async (network, investment, traderPaired) => {
 
 		log("allocation total", allocation.total.toString())
 
-		log("position.profit", position.nettProfit.toString())
-		let totalAmount = await getPositionInvestmentsAmount(position, traderInvestments)
+		log("trade.profit", trade.profit.toString())
+		let totalAmount = await getTradeInvestmentsAmount(trade, traderInvestments)
 		log("totalAmount", totalAmount.toString())
 
 		let investorsShare = totalAmount.dividedBy(allocation.total)
@@ -974,10 +973,10 @@ const getInvestmentValue = async (network, investment, traderPaired) => {
 		let sharePercentage = investment.amount.dividedBy(totalAmount)
 		log("sharePercentage", sharePercentage.toString())
 
-		let positionProfit = position.nettProfit.multipliedBy(sharePercentage).multipliedBy(investorsShare)
-		log("positionProfit", positionProfit.toString())
+		let tradeProfit = trade.profit.multipliedBy(sharePercentage).multipliedBy(investorsShare)
+		log("tradeProfit", tradeProfit.toString())
 
-		grossProfit = grossProfit.plus(positionProfit)
+		grossProfit = grossProfit.plus(tradeProfit)
 	})
 
 	if (investment.amount.plus(grossProfit).isNegative()) {
@@ -1048,17 +1047,14 @@ const getTraderInvestments = async (account, token, traderPaired) => {
 	return result
 }
 
-const getPositionInvestmentsAmount = async (position, traderInvestments) => {
-	let investments = traderInvestments.filter((investment) => tokenAddressForSymbol(position.asset) === investment.token)
+const getTradeInvestmentsAmount = async (trade, traderInvestments) => {
+	let investments = traderInvestments.filter((investment) => tokenAddressForSymbol(trade.asset) === investment.token)
 	
-	// if(process.env.NODE_ENV !== 'development') {
-		// filter by date
-		investments = investments.filter(investment =>
-			position.start.isAfter(investment.start) 
-				&& (
-					(investment.end.unix() === 0 || investment.state === "0") 
-						|| position.end.isBefore(investment.end)))
-	// }
+	investments = investments.filter(investment =>
+		trade.start.isAfter(investment.start) 
+			&& (
+				(investment.end.unix() === 0 || investment.state === "0") 
+					|| trade.end.isBefore(investment.end)))
 	
 	let totalAmount = investments.reduce((total, investment) => total.plus(investment.amount), new BigNumber(0))
 	return totalAmount
@@ -1084,6 +1080,60 @@ export const loadTraderRatings = async (account, network, dispatch) => {
 	} catch (error) {
 		log('Could not get ratings', error)
 	}
+}
+
+export const loadTradeCount = async (network, account, dispatch) => {
+	try {
+		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
+					process.env['REACT_APP_' + network + '_API_TRADES']
+		url = url.replace('$1', account)
+
+		axios.get(url)
+		  .then(function (response) {
+		    // handle success
+		    dispatch(tradeCountLoaded(response.data.length))
+		  })
+		  .catch(function (error) {
+		    // handle error
+		    log(error)
+		  })
+	} catch (error) {
+		log('Could not get trades', error)
+		return null
+	}
+}
+
+export const loadTrades = async (network, account, dispatch) => {
+	log("loadTrades", network, account)
+
+	try {
+		let trades = await getTrades(network, account)
+
+		trades.forEach((trade, index) => dispatch(tradeLoaded(trade)))
+
+	} catch (error) {
+		log('Could not get trader trades', error)
+		return null
+	}
+}
+
+export const getTrades = async (network, account) => {
+
+	try {
+		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
+					process.env['REACT_APP_' + network + '_API_TRADES']
+		url = url.replace('$1', account)
+
+		console.log("getTrades", url)
+
+		const response = await axios.get(url)
+	  	log("getTrades success", response)
+	    return response.data
+	} catch (error) {
+		log('Could not get trades', error)
+	}
+
+	return []
 }
 
 function sleep(ms) {

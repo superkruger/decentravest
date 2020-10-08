@@ -4,6 +4,7 @@ const encode = require('./common/encode')
 const interactions = require('./interactions')
 const ratingsDao = require('./dao/ratings')
 const positionsDao = require('./dao/dydx/positions')
+const tradesDao = require('./dao/trades')
 
 module.exports.processEvents = (event, context) => {
 	const time = new Date();
@@ -53,6 +54,18 @@ module.exports.positions = async (event, context) => {
   } catch (error) {
   	console.error("could not get positions", error)
   	return encode.error(error, "could not get positions");
+  }
+}
+
+module.exports.trades = async (event, context) => {
+  console.log("trades", event, context)
+
+  try {
+  	const result = await tradesDao.getByOwner(event.queryStringParameters.trader)
+  	return encode.success(result);
+  } catch (error) {
+  	console.error("could not get trades", error)
+  	return encode.error(error, "could not get trades");
   }
 }
 

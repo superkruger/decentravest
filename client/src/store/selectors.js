@@ -98,8 +98,8 @@ export const investorSelector = createSelector(investor, e => e)
 const investorJoining = state => get(state, 'investor.joining', false)
 export const investorJoiningSelector = createSelector(investorJoining, e => e)
 
-const positionsCount = state => get(state, 'web3.positionsCount', 0)
-export const positionsCountSelector = createSelector(positionsCount, e => e)
+const tradeCount = state => get(state, 'web3.tradeCount', 0)
+export const tradeCountSelector = createSelector(tradeCount, e => e)
 
 const traderRatings = (state, trader) => {
 	const traderObj = find(state.web3.traders, {user: trader})
@@ -188,81 +188,66 @@ const decorateTraderAllocation = (allocation) => {
 	})
 }
 
-const traderPositionsLoaded = state => get(state, 'trader.positions.loaded', false)
-export const traderPositionsLoadedSelector = createSelector(traderPositionsLoaded, e => e)
+const tradesLoaded = state => get(state, 'trader.trades.loaded', false)
+export const tradesLoadedSelector = createSelector(tradesLoaded, e => e)
 
-const traderPositions = state => get(state, 'trader.positions.data', [])
-export const traderPositionsSelector = createSelector(traderPositions, (positions) => {
-	// log('Positions', positions)
-	if (positions !== undefined) {
+const trades = state => get(state, 'trader.trades.data', [])
+export const tradesSelector = createSelector(trades, (trades) => {
+	if (trades !== undefined) {
 
-		positions = decorateTraderPositions(positions)
-		positions = positions.sort((a, b) => b.dv_start.diff(a.dv_start))
+		trades = trades.map(decorateTrade)
+		trades = trades.sort((a, b) => b.start.diff(a.start))
 
 		// group by asset
-		positions = groupBy(positions, (p) => p.dv_asset)
+		trades = groupBy(trades, (p) => p.asset)
 	}
-	return positions
+	return trades
 })
 
-const decorateTraderPositions = (positions) => {
-	return positions.map((position) => {
-		position = decorateTraderPosition(position)
-		return position
-	})
-}
+const decorateTrade = (trade) => {
 
-const decorateTraderPosition = (position) => {
+	const start = moment(trade.start)
+	const end = moment(trade.end)
+	const profit = new BigNumber(trade.profit)
 
-	let dv_start = moment(position.dv_start)
-	let dv_end = moment(position.dv_end)
 	return ({
-		...position,
-		dv_start: dv_start,
-		dv_end: dv_end,
-		formattedStart: dv_start.local().format('HH:mm:ss D-M-Y'),
-		formattedEnd: dv_end.local().format('HH:mm:ss D-M-Y'),
-		dv_profit: new BigNumber(position.dv_profit),
-		dv_initialAmount: new BigNumber(position.dv_initialAmount),
-		profit: decoratePositionProfit(position)
-	})
-}
-
-const decoratePositionProfit = (position) => {
-	let profit = new BigNumber(position.dv_profit)
-	return ({
-		formattedProfit: formatBalance(profit, position.dv_asset),
+		...trade,
+		start: start,
+		end: end,
+		formattedStart: start.local().format('HH:mm:ss D-M-Y'),
+		formattedEnd: end.local().format('HH:mm:ss D-M-Y'),
+		profit: new BigNumber(trade.profit),
+		formattedProfit: formatBalance(profit, trade.asset),
+		initialAmount: new BigNumber(trade.initialAmount),
+		formattedProfit: formatBalance(profit, trade.asset),
 		profitClass: profit.lt(0) ? RED : profit.gt(0) ? GREEN : NEUTRAL
 	})
 }
 
-const positionsForInvestment = (state, investment) => {
+const tradesForInvestment = (state, investment) => {
 	let tokenSymbol = tokenSymbolForAddress(investment.token)
 	if (tokenSymbol === 'ETH') {
 		tokenSymbol = 'WETH'
 	}
-	if (state.trader && state.trader.positions) {
-		let positions = state.trader.positions.data.filter(position => 
-			position.owner === investment.trader &&
-			position.dv_asset === tokenSymbol)
+	if (state.trader && state.trader.trades) {
+		let trades = state.trader.trades.data.filter(trade => 
+			trade.trader === investment.trader &&
+			trade.asset === tokenSymbol)
 
-		positions = decorateTraderPositions(positions)
-		positions = positions.sort((a, b) => b.dv_start.diff(a.dv_start))
+		trades = trades.map(decorateTrade)
+		trades = trades.sort((a, b) => b.start.diff(a.start))
 
-		// if(process.env.NODE_ENV !== 'development') {
-			// filter by date
-			positions = positions.filter(position =>
-				position.dv_start.isAfter(investment.dv_start) 
-					&& (
-						(investment.end.unix() === 0 || investment.state === "0") 
-							|| position.dv_end.isBefore(investment.end)))
-		// }
+		trades = trades.filter(trade =>
+			trade.start.isAfter(investment.start) 
+				&& (
+					(investment.end.unix() === 0 || investment.state === "0") 
+						|| trade.end.isBefore(investment.end)))
 
-		return positions
+		return trades
 	}
 	return []
 }
-export const positionsForInvestmentSelector = createSelector(positionsForInvestment, e => e)
+export const tradesForInvestmentSelector = createSelector(tradesForInvestment, e => e)
 
 const investments = state => get(state, 'web3.investments', [])
 export const investmentsSelector = createSelector(investments, (investments) => {

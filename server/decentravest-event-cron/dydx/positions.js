@@ -7,6 +7,7 @@ const path = require("path");
 const fs = require('fs');
 
 const positionsDao = require('../dao/dydx/positions');
+const tradesDao = require('../dao/trades');
 
 const addPosition = async (position) => {
 	if (!position) {
@@ -35,9 +36,7 @@ module.exports.loadTraderPositions = async (account) => {
 
 		await positionsDao.addAll(account, positions);
 
-		// positions.forEach(async (position, index) => {
-  // 			await addPosition(decoratePosition(position));
-		// })
+		await tradesDao.addAll(account, positions.map(positionToTrade))
 
 	} catch (error) {
 		console.log('Could not load trader positions', error)
@@ -129,6 +128,18 @@ const decoratePosition = (position) => {
 	}
 
 	return null
+}
+
+const positionToTrade = (position) => {
+	return {
+		uuid: position.uuid,
+		trader: position.owner,
+		start: position.dv_start,
+		end: position.dv_end,
+		asset: position.dv_asset,
+		profit: position.dv_profit,
+		initialAmount: position.dv_initialAmount
+	}
 }
 
 const mapPositions = (positions) => {

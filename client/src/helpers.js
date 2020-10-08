@@ -26,6 +26,13 @@ export const setTokens = (network) => {
 	]
 }
 
+export const displaySymbol = (symbol) => {
+	if (symbol === 'WETH') {
+		return 'ETH'
+	}
+	return symbol
+}
+
 export const log = (...logs) => {
 	if (process.env.NODE_ENV === 'development') {
 		console.log(logs)

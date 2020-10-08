@@ -57,8 +57,8 @@ function web3 (state = {}, action ) {
 			return { ...state, network: action.name }
 		case 'WEB3_ACCOUNT_LOADED':
 			return { ...state, account: action.account }
-		case 'POSITIONS_COUNT_LOADED':
-			return { ...state, positionsCount: action.count } 
+		case 'TRADE_COUNT_LOADED':
+			return { ...state, tradeCount: action.count } 
 		case 'TRADERPAIRED_LOADED':
 			return { ...state, traderPaired: {loaded: true, contract: action.contract} }
 		case 'PAIREDINVESTMENTS_LOADED':
@@ -328,24 +328,24 @@ function trader (state = {}, action ) {
 			return { ...state, joining: true }
 		case 'MAIN_TRADER_LOADED':
 			return { ...state, joining: false, trader: action.trader }
-		case 'TRADER_POSITION_LOADED':
+		case 'TRADE_LOADED':
 			{
 				// prevent duplicates
 				let index, data
 
-				if (state.positions === undefined) {
-					state.positions = {data: []}
+				if (state.trades === undefined) {
+					state.trades = {data: []}
 				}
-				index = state.positions.data.findIndex(position => position.uuid === action.position.uuid)
+				index = state.trades.data.findIndex(trade => trade.uuid === action.trade.uuid)
 				if (index === -1) {
-					data = [...state.positions.data, action.position]
+					data = [...state.trades.data, action.trade]
 				} else {
-					data = state.positions.data
+					data = state.trades.data
 				}
 				return { 
 					...state, 
-					positions: {
-						...state.positions,
+					trades: {
+						...state.trades,
 						data
 					}}
 			}

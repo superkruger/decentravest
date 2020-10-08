@@ -20,11 +20,9 @@ import {
   disburseInvestment,
   approveDisbursement,
   rejectDisbursement,
-  loadInvestmentValues
+  loadInvestmentValues,
+  loadTrades
 } from '../../store/interactions'
-import { 
-  loadTraderPositions
-} from '../../store/dydxInteractions'
 
 
 class InvestorInvestments extends Component {
@@ -37,7 +35,7 @@ class InvestorInvestments extends Component {
     console.log("traderInvestments", traderInvestments)
 
     traderInvestments.forEach(async (investment) => {
-      await loadTraderPositions(network, investment.trader, dispatch)
+      await loadTrades(network, investment.trader, dispatch)
     })
   }
 

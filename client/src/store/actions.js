@@ -219,6 +219,21 @@ export function traderRatingsLoaded(trader, ratings) {
 		ratings
 	}
 }
+
+export function tradeCountLoaded(count) {
+	return {
+		type: 'TRADE_COUNT_LOADED',
+		count
+	}
+}
+
+export function tradeLoaded(trade) {
+	return {
+		type: 'TRADE_LOADED',
+		trade
+	}
+}
+
 // export function investmentStopped(investment) {
 // 	investment.changing = false
 // 	return {

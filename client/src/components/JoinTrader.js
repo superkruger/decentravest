@@ -10,27 +10,24 @@ import {
   traderPairedSelector,
   pairedInvestmentsSelector,
   walletFactorySelector,
-  positionsCountSelector,
-  traderJoiningSelector,
-  investorJoiningSelector
+  tradeCountSelector,
+  traderJoiningSelector
 } from '../store/selectors'
 import { 
   joinAsTrader, 
-  joinAsInvestor 
+  joinAsInvestor,
+  loadTradeCount
 } from '../store/interactions'
-import { 
-  loadPositionsCount
-} from '../store/dydxInteractions'
 
 class JoinTrader extends Component {
 
   componentDidMount() {
     const { account, network, dispatch } = this.props
-    loadPositionsCount(network, account, dispatch)
+    loadTradeCount(network, account, dispatch)
   }
 
   render() {
-    const { ready, positionsCount } = this.props
+    const { ready, tradeCount } = this.props
     return (
       <div className="content">
       {
@@ -49,7 +46,7 @@ class JoinTrader extends Component {
             <Row>
               <Col sm={4}>
                 <ListGroup>
-                  <ListGroup.Item action href="#step1" action variant={positionsCount > 0 ? 'success' : 'danger'}>
+                  <ListGroup.Item action href="#step1" action variant={tradeCount > 0 ? 'success' : 'danger'}>
                     Step 1: Trading experience
                   </ListGroup.Item>
                   <ListGroup.Item action href="#step2" action>
@@ -64,7 +61,7 @@ class JoinTrader extends Component {
                 <Tab.Content>
                   <Tab.Pane eventKey="#step1">
                       {
-                        positionsCount > 0 
+                        tradeCount > 0 
                         ? <p>
                             Looks like you've already got some trades under your belt.<br/><br/>
                             For now, we <strong>ONLY</strong> count Isolated Margin trades toward your score as a trader.
@@ -105,14 +102,14 @@ class JoinTrader extends Component {
 }
 
 function TraderButton(props) {
-  const { positionsCount, traderJoining } = props.props
+  const { tradeCount, traderJoining } = props.props
 
   const handleClick = () => traderJoin(props.props)
 
   return (
     <div>
       {
-        positionsCount > 0 ? 
+        tradeCount > 0 ? 
           traderJoining ?
             <Spinner />
             :
@@ -154,9 +151,8 @@ function mapStateToProps(state) {
     pairedInvestments: pairedInvestmentsSelector(state),
     walletFactory: walletFactorySelector(state),
     ready: account && traderPaired,
-    positionsCount: positionsCountSelector(state),
-    traderJoining: traderJoiningSelector(state),
-    investorJoining: investorJoiningSelector(state)
+    tradeCount: tradeCountSelector(state),
+    traderJoining: traderJoiningSelector(state)
   }
 }
 

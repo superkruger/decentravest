@@ -12,7 +12,7 @@ import {
   pairedInvestmentsSelector,
   walletSelector,
   tokensSelector,
-  positionsForInvestmentSelector
+  tradesForInvestmentSelector
 } from '../../store/selectors'
 import { 
   stopInvestment,
@@ -24,7 +24,7 @@ import {
 class InvestorInvestment extends Component {
 
   render() {
-    const { network, investment, positionsForInvestment } = this.props
+    const { network, investment, tradesForInvestment } = this.props
     const headerClass = investment.state === "4" ? "disbursed" : ""
 
     const dydxUrl = process.env['REACT_APP_'+network+'_DYDX_CLOSED_URL'].replace('$1', investment.trader)
@@ -112,18 +112,16 @@ class InvestorInvestment extends Component {
                         <thead>
                           <tr>
                             <th>Date</th>
-                            <th>Type</th>
                             <th>Nett Profit</th>
                           </tr>
                         </thead>
                         <tbody>
                         {
-                          positionsForInvestment.map((position) => {
+                          tradesForInvestment.map((trade) => {
                             return (
-                              <tr key={position.uuid}>
-                                <td className="text-muted">{position.formattedStart}</td>
-                                <td>{position.type}</td>
-                                <td className={`text-${position.profit.nettProfitClass}`}>{position.profit.formattedNettProfit}</td>
+                              <tr key={trade.uuid}>
+                                <td className="text-muted">{trade.formattedStart}</td>
+                                <td className={`text-${trade.profitClass}`}>{trade.formattedProfit}</td>
                               </tr>
                             )
                           })
@@ -263,7 +261,7 @@ function mapStateToProps(state, props) {
     pairedInvestments: pairedInvestmentsSelector(state),
     wallet: walletSelector(state),
     tokens: tokensSelector(state),
-    positionsForInvestment: positionsForInvestmentSelector(state, props.investment)
+    tradesForInvestment: tradesForInvestmentSelector(state, props.investment)
   }
 }
 
