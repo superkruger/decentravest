@@ -6,6 +6,10 @@ import { Container, Row, Col, Form, Button } from 'react-bootstrap'
 import AddressImage from '../AddressImage'
 import Rating from '../Rating'
 import Spinner from '../Spinner'
+
+import PageLink from '../containers/PageLink'
+import { Page } from '../containers/pages'
+
 import AllocationChart from '../trader/AllocationChart'
 import { INVESTMENT_COLLATERAL, INVESTMENT_DIRECT, etherToWei, weiToEther, fail } from '../../helpers'
 import { 
@@ -82,6 +86,10 @@ class InvestorTraderDetail extends Component {
         </a>
         <div className="collapse" id={`trader_${trader.user}`}>
           <div className="card-body">
+            <PageLink page={Page.TRADER_PROFILE} section={trader.user} styles="nav-link">
+                <i className="fas fa-fw fa-address-card"></i>
+                <span>Profile</span>
+            </PageLink>
             <Container>
               <Row>
                 <Col sm={12}>

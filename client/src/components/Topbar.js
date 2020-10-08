@@ -1,8 +1,11 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import AddressLink from './AddressLink'
+import PageLink from './containers/PageLink'
+import { Page } from './containers/pages'
 import {
-  accountSelector
+  accountSelector,
+  mainTraderSelector
 } from '../store/selectors'
 import { 
   sidebarToggled
@@ -11,7 +14,7 @@ import {
 class Topbar extends Component {
 
   render() {
-    const { account } = this.props
+    const { account, mainTrader } = this.props
 
     return (
       <nav className="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
@@ -25,7 +28,17 @@ class Topbar extends Component {
           <div className="topbar-divider d-none d-sm-block"></div>
 
           {/* Nav Item - User Information */}
-          <li className="nav-item dropdown no-arrow">
+          { mainTrader 
+            ?
+              <li className="nav-item">
+                <PageLink page={Page.TRADER_PROFILE} section={mainTrader.user} styles="nav-link">
+                    <i className="fas fa-address-card"></i>
+                </PageLink>
+              </li>
+            :
+              <div/>
+          }
+          <li className="nav-item">
             { account
                 ? <AddressLink address={account}/>
                 : <span></span>
@@ -51,7 +64,8 @@ function SidebarToggleTop(props) {
 
 function mapStateToProps(state) {
   return {
-    account: accountSelector(state)
+    account: accountSelector(state),
+    mainTrader: mainTraderSelector(state)
   }
 }
 

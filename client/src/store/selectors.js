@@ -83,6 +83,9 @@ export const investableTradersSelector = createSelector(traders, (traders) => {
 	return res
 })
 
+const mainTrader = state => get(state, 'trader.trader')
+export const mainTraderSelector = createSelector(mainTrader, e => e)
+
 const trader = (state, account) => {
 	const traderObj = find(state.web3.traders, {user: account})
 	return traderObj

@@ -6,6 +6,7 @@ export const Page = {
 	JOIN_TRADER: 'join_trader',
 	JOIN_INVESTOR: 'join_investor',
 	TRADER_DASHBOARD: 'trader_dashboard',
+	TRADER_PROFILE: 'trader_profile',
 	TRADER_ALLOCATIONS: 'trader_allocations',
 	TRADER_INVESTMENTS: 'trader_investments',
 	INVESTOR_DASHBOARD: 'investor_dashboard',

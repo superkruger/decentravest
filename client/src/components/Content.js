@@ -3,9 +3,11 @@ import { connect } from 'react-redux'
 import Topbar from './Topbar'
 import Footer from './Footer'
 import Intro from './Intro'
+import Notifications from './Notifications'
 import JoinTrader from './JoinTrader'
 import JoinInvestor from './JoinInvestor'
 import Trader from './trader/Trader'
+import Profile from './trader/Profile'
 import Investor from './investor/Investor'
 
 import TraderAllocations from './trader/TraderAllocations'
@@ -36,6 +38,8 @@ class Content extends Component {
           {/* Topbar */}
           <Topbar />
           {/* End of Topbar */}
+          
+          <Notifications />
 
           {/* Begin Page Content */}
           <div className="container-fluid">
@@ -46,6 +50,7 @@ class Content extends Component {
                   'join_trader': <JoinTrader />,
                   'join_investor': <JoinInvestor />,
                   'trader_dashboard': <Trader page={page} section={section} />,
+                  'trader_profile': <Profile page={page} section={section} />,
                   'trader_allocations': <TraderAllocations />,
                   'trader_investments': <TraderInvestments />,
                   'investor_dashboard': <Investor page={page} section={section} />,

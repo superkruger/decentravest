@@ -14,7 +14,7 @@ class TraderSidebarMenu extends Component {
 
   render() {
     return (
-      <div>
+      <div className="col-sm-12">
         <DashboardButton props={this.props} /> 
             
         <AllocationsButton props={this.props} />

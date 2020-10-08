@@ -2,10 +2,10 @@ import React from 'react'
 import { NavLink } from 'react-router-dom'
 import { Page } from './pages'
 
-const PageLink = ({ page, styles, children }) => (
+const PageLink = ({ page, section, styles, children }) => (
     <NavLink
       exact
-      to={page === Page.ROOT ? '/' : `/${page}`}
+      to={page === Page.ROOT ? '/' : (section ? `/${page}/${section}` : `/${page}`)}
       className={styles}
       activeStyle={{
         textDecoration: 'none',

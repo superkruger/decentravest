@@ -39,7 +39,7 @@ class Trader extends Component {
     }
 
     return (
-      <div>
+      <div className="col-sm-12">
         <DashboardTabs props={this.props}/>
       </div>
     )

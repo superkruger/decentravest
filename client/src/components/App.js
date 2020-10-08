@@ -4,7 +4,6 @@ import { connect } from 'react-redux'
 import Spinner from './Spinner'
 import Sidebar from './Sidebar'
 import Content from './Content'
-import Notifications from './Notifications'
 import { log } from '../helpers'
 import './App.css'
 import { 
@@ -39,7 +38,6 @@ class App extends Component {
 
     return (
       <div id="page-top" className={ sidebarClosed ? 'sidebar-toggled' : ''}>
-        <Notifications />
         <div id="wrapper">
           <Sidebar page={page}/>
           <Content page={page} section={section} />

@@ -44,7 +44,7 @@ class TraderInvestments extends Component {
 function showInvestments(investments, props) {
 
   return (
-    <div>
+    <div className="col-sm-12">
     { investments.map((investment) => {
         const headerClass = investment.state === "4" ? "disbursed" : ""
         

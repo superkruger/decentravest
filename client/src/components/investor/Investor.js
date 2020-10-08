@@ -30,7 +30,7 @@ class Investor extends Component {
     const { wallet } = this.props
 
     return (
-      <div>
+      <div className="col-sm-12">
         {
           wallet && wallet.contract ?
             <Wallet props={this.props}/> :
