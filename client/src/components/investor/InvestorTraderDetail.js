@@ -20,7 +20,7 @@ import {
   tokensSelector,
   balancesSelector,
   traderAllocationsSelector,
-  traderRatingsSelector,
+  traderStatisticsSelector,
   tradersSelector,
   walletSelector,
   investmentsSelector
@@ -29,7 +29,7 @@ import {
   invest,
   loadTraderAllocations,
   loadBalances,
-  loadTraderRatings
+  loadTraderStatistics
 } from '../../store/interactions'
 import {
   notificationAdded
@@ -39,15 +39,16 @@ class InvestorTraderDetail extends Component {
 
   componentDidMount() {
     const { web3, network, account, trader, traders, traderPaired, tokens, dispatch } = this.props
-    loadTraderRatings(trader.user, network, dispatch)
+
+    loadTraderStatistics(trader.user, network, dispatch)
     loadTraderAllocations(network, trader.user, traderPaired, dispatch)
     loadBalances(account, traderPaired, tokens, web3, dispatch)
   }
 
   render() {
-    const {trader, traderAllocations, traderRatings, investments } = this.props
+    const {web3, trader, traderAllocations, traderStatistics, investments } = this.props
 
-    if (!traderRatings) {
+    if (!web3 || !traderStatistics) {
       return (
         <Spinner />
       )
@@ -71,8 +72,8 @@ class InvestorTraderDetail extends Component {
                   </Col>
                   <Col sm={8}>
                   {
-                    traderRatings.trustRating
-                    ? <Rating ratingKey="trust" rating={traderRatings.trustRating}/>
+                    traderStatistics.trustRating
+                    ? <Rating ratingKey="trust" rating={traderStatistics.trustRating}/>
                     : <span>Not enough data yet. Needs at least one settlement</span>
                   }
                   </Col>
@@ -102,12 +103,10 @@ class InvestorTraderDetail extends Component {
 
                       if (allocation.symbol && !allocation.total.isZero()) {
 
-                        let ratingsSymbol = allocation.symbol === 'ETH' ? 'WETH' : allocation.symbol
-
                         return (
                           <div className="card shadow mb-4" key={`${allocation.symbol}_${allocation.trader}`}>
                             <a href={`#${allocation.symbol}${allocation.trader}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`${allocation.symbol}${allocation.trader}`}>
-                              <h6 className="m-0 font-weight-bold text-primary">{allocation.symbol} <Rating ratingKey={allocation.symbol} rating={`${traderRatings.tradingRatings.ratings[ratingsSymbol]}`}/></h6>
+                              <h6 className="m-0 font-weight-bold text-primary">{allocation.symbol} <Rating ratingKey={allocation.symbol} rating={`${traderStatistics.tradingRatings.ratings[allocation.symbol]}`}/></h6>
                             </a>
                             <div className="collapse" id={`${allocation.symbol}${allocation.trader}`}>
                               <div className="card-body">
@@ -144,7 +143,7 @@ class InvestorTraderDetail extends Component {
                                   </div>
                                 </div>
                                 {
-                                  traderRatings.directLimits[allocation.symbol].gt(0)
+                                  traderStatistics.limits.directLimits[allocation.symbol].gt(0)
                                   && 
                                     <div className="card shadow mb-4" key={`direct_${allocation.symbol}_${allocation.trader}`}>
                                       <a href={`#direct_${allocation.symbol}${allocation.trader}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`direct_${allocation.symbol}${allocation.trader}`}>
@@ -154,7 +153,7 @@ class InvestorTraderDetail extends Component {
                                         <Container>
                                           <Row>
                                             <Col sm={6}>
-                                              <span>Available: {traderRatings.formattedDirectAvailable[allocation.symbol]}</span>
+                                              <span>Available: {traderStatistics.limits.formattedDirectAvailable[allocation.symbol]}</span>
                                             </Col>
                                             <Col sm={6}>
                                                 <div>
@@ -246,7 +245,7 @@ function collateralInvestHandler (allocation, inputId, props) {
 }
 
 function directInvestHandler (allocation, inputId, props) {
-  const {account, trader, traderRatings, balances, tokens, wallet, dispatch} = props
+  const {account, trader, traderStatistics, balances, tokens, wallet, dispatch} = props
 
   console.log("directInvestHandler tokens", tokens)
 
@@ -266,13 +265,13 @@ function directInvestHandler (allocation, inputId, props) {
   const decimals = token ? token.decimals : 18
   const amount = document.getElementById(inputId).value
   const weiAmount = etherToWei(amount, decimals)
-  const directAvailable = traderRatings.directLimits[allocation.symbol].minus(traderRatings.directInvested[allocation.symbol])
+  const directAvailable = traderStatistics.limits.directLimits[allocation.symbol].minus(traderStatistics.limits.directInvested[allocation.symbol])
 
   if (weiAmount.lte(balance)) {
     if (weiAmount.lte(directAvailable)) {
       invest(account, trader.user, allocation.token, token, weiAmount, wallet.contract, INVESTMENT_DIRECT, dispatch)
     } else {
-      dispatch(notificationAdded(fail("Invest", `Investment exceeds available amount of ${traderRatings.formattedDirectAvailable[allocation.symbol]}`)))
+      dispatch(notificationAdded(fail("Invest", `Investment exceeds available amount of ${traderStatistics.limits.formattedDirectAvailable[allocation.symbol]}`)))
     }
   } else {
     dispatch(notificationAdded(fail("Invest", "Wallet balance too small")))
@@ -290,7 +289,7 @@ function mapStateToProps(state, props) {
     traderPaired: traderPairedSelector(state),
     traderAllocations: traderAllocationsSelector(state, props.trader.user),
     traders: tradersSelector(state),
-    traderRatings: traderRatingsSelector(state, props.trader.user),
+    traderStatistics: traderStatisticsSelector(state, props.trader.user),
     tokens: tokensSelector(state),
     balances: balancesSelector(state),
     wallet: walletSelector(state),

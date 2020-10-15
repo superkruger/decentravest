@@ -136,7 +136,7 @@ const positionToTrade = (position) => {
 		trader: position.owner,
 		start: position.dv_start,
 		end: position.dv_end,
-		asset: position.dv_asset,
+		asset: position.dv_asset === 'WETH' ? 'ETH' : position.dv_asset,
 		profit: position.dv_profit,
 		initialAmount: position.dv_initialAmount
 	}

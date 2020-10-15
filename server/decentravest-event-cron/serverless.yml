@@ -8,6 +8,7 @@ provider:
   memorySize: 256
   runtime: nodejs12.x
   role: LambdaRole
+  timeout: 20
   environment:
     STAGE: ${opt:stage, 'dev'}
     #s3
@@ -83,31 +84,23 @@ functions:
   processEvents:
     handler: handler.processEvents
     events:
-      - schedule: rate(1 day)
+      - schedule: rate(1 hour)
 
   processTrades:
     handler: handler.processTrades
     events:
-      - schedule: rate(1 day)
+      - schedule: rate(1 hour)
 
-  calculateRatings:
-    handler: handler.calculateRatings
+  calculateStatistics:
+    handler: handler.calculateStatistics
     events:
-      - schedule: rate(1 day)
+      - schedule: rate(1 hour)
 
-  getRatings:
-    handler: handler.ratings
-    events:
-      - http:
-          path: ratings
-          method: get
-          cors: true
-
-  getPositions:
-    handler: handler.positions
+  getStatistics:
+    handler: handler.statistics
     events:
       - http:
-          path: positions
+          path: statistics
           method: get
           cors: true
 

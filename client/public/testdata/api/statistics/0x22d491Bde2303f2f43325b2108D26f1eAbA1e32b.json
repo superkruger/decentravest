@@ -1,0 +1,70 @@
+{
+	"counts": {
+		"ETH": {
+			"0": {
+				"approved": {
+					"positive": {
+						"count": 2,
+						"total": "10000000000000000"
+					},
+					"negative": {
+						"count": 1,
+						"total": "5000000000000000"
+					}
+				},
+				"active": {
+					"positive": {
+						"count": 3,
+						"total": "20000000000000000"
+					},
+					"negative": {
+						"count": 1,
+						"total": "3000000000000000"
+					}
+				}
+			},
+			"1": {
+				"approved": {
+					"positive": {
+						"count": 1,
+						"total": "5000000000000000"
+					}
+				}
+			}
+		}
+	},
+	"trustRating": "10",
+	"level": 0,
+	"limits": {
+		"directLimits": {
+			"ETH": "0"
+		},
+		"directInvested": {
+			"ETH": "0"
+		}
+	},
+	"tradingRatings": {
+		"ratings": {
+			"ETH": "10",
+			"DAI": "10",
+			"USDC": "0"
+		},
+		"averageProfits": {
+			"ETH": "3000000000000000000",
+			"DAI": "1000000000000000000",
+			"USDC": "0"
+		}
+	},
+	"profitRatings": {
+		"ratings": {
+			"ETH": "10",
+			"DAI": "0",
+			"USDC": "0"
+		},
+		"averageProfits": {
+			"ETH": "0",
+			"DAI": "0",
+			"USDC": "0"
+		}
+	}
+}

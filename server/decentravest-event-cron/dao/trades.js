@@ -37,11 +37,16 @@ module.exports.addAll = async (account, trades) => {
 }
 
 module.exports.getTrades = async (account) => {
-  let options = {
-    "Bucket": `${process.env.tradingbucket}`,
-    "Key": account
-  }
+  try {
+    let options = {
+      "Bucket": `${process.env.tradingbucket}`,
+      "Key": account
+    }
 
-  const data = await s3Common.s3.getObject(options).promise()
-  return JSON.parse(data.Body)
+    const data = await s3Common.s3.getObject(options).promise()
+    return JSON.parse(data.Body).trades
+  } catch (error) {
+    console.error("could not getTrades", error)
+  }
+  return []
 }

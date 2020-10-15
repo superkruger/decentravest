@@ -1,9 +1,13 @@
+import moment from 'moment'
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
 import { Alert, Form, Button, Container, Row, Col, Tabs, Tab } from 'react-bootstrap'
 import Rating from '../Rating'
 import Spinner from '../Spinner'
+import Level from '../cards/Level'
+import ExplodingPieChart from '../cards/ExplodingPieChart'
+import DateLineChart from '../cards/DateLineChart'
 
 import { 
   networkSelector,
@@ -12,11 +16,10 @@ import {
   traderPairedSelector,
   tradersSelector,
   tradesSelector,
-  traderRatingsSelector
+  traderStatisticsSelector
 } from '../../store/selectors'
 import { 
-  setProfitPercentages,
-  loadTraderRatings,
+  loadTraderStatistics,
   loadTrades
 } from '../../store/interactions'
 import { ZERO_ADDRESS, displaySymbol } from '../../helpers'
@@ -26,13 +29,13 @@ class Trader extends Component {
     const { network, account, dispatch } = this.props
     
     loadTrades(network, account, dispatch)
-    loadTraderRatings(account, network, dispatch)
+    loadTraderStatistics(account, network, dispatch)
   }
 
   render() {
-    const {traderRatings} = this.props
+    const {traderStatistics} = this.props
 
-    if (!traderRatings) {
+    if (!traderStatistics) {
       return (
         <Spinner />
       )
@@ -40,56 +43,134 @@ class Trader extends Component {
 
     return (
       <div className="col-sm-12">
-        <DashboardTabs props={this.props}/>
+        <Container>
+          <Row>
+            <Col sm={12}>
+              <Level level={traderStatistics.level}/>
+            </Col>
+          </Row>
+          <Row>
+            <Col sm={6}>
+              <ExplodingPieChart title="All Investments" data={mapStatisticsToAllInvestments(traderStatistics)}/>
+            </Col>
+            <Col sm={6}>
+              <ExplodingPieChart title="Active Investments" data={mapStatisticsToActiveInvestments(traderStatistics)}/>
+            </Col>
+          </Row>
+          <Row>
+            <Col sm={12}>
+              <DashboardTabs props={this.props}/>
+            </Col>
+          </Row>
+        </Container>
+        
       </div>
     )
   }
 }
 
-function DashboardTabs(props) {
-  const [key, setKey] = React.useState('profitPercentages')
-  const {trader, trades, traderRatings, page, section} = props.props
+function mapStatisticsToAllInvestments(traderStatistics) {
 
-  const tradingRatingKeys = Object.keys(traderRatings.tradingRatings.ratings)
-  const profitRatingKeys = Object.keys(traderRatings.profitRatings.ratings)
+  let data = []
+  for (let assetKey of Object.keys(traderStatistics.counts)) {
+    let assetObj = traderStatistics.counts[assetKey]
+    let asset = {"category": assetKey}
+    let assetTotal = 0
+    let collateralTotal = 0
+    let directTotal = 0
+
+    for (let typeKey of Object.keys(assetObj)) {
+      let typeObj = assetObj[typeKey]
+      let total = 0
+
+      for (let stateKey of Object.keys(typeObj)) {
+        let stateObj = typeObj[stateKey]
+        let total = 0
+
+        for (let sideKey of Object.keys(stateObj)) {
+          let sideObj = stateObj[sideKey]
+          assetTotal = assetTotal + sideObj.count
+
+          if (typeKey === "0") {
+            collateralTotal = collateralTotal + sideObj.count
+          } else {
+            directTotal = directTotal + sideObj.count
+          }
+        }
+      }
+    }
+
+    asset.value = assetTotal
+    asset.subData = [{ name: "Collateral", value: collateralTotal }, { name: "Direct", value: directTotal }]
+    data.push(asset)
+  }
+
+  return data
+}
+
+function mapStatisticsToActiveInvestments(traderStatistics) {
+
+  let data = []
+  for (let assetKey of Object.keys(traderStatistics.counts)) {
+    let assetObj = traderStatistics.counts[assetKey]
+    let asset = {"category": assetKey}
+    let assetTotal = 0
+    let collateralTotal = 0
+    let directTotal = 0
+
+    for (let typeKey of Object.keys(assetObj)) {
+      let typeObj = assetObj[typeKey]
+      let total = 0
+
+      for (let stateKey of Object.keys(typeObj)) {
+
+        if (stateKey !== "active") {
+          continue
+        }
+
+        let stateObj = typeObj[stateKey]
+        let total = 0
+
+        for (let sideKey of Object.keys(stateObj)) {
+          let sideObj = stateObj[sideKey]
+          assetTotal = assetTotal + sideObj.count
+
+          if (typeKey === "0") {
+            collateralTotal = collateralTotal + sideObj.count
+          } else {
+            directTotal = directTotal + sideObj.count
+          }
+        }
+      }
+    }
+
+    asset.value = assetTotal
+    asset.subData = [{ name: "Collateral", value: collateralTotal }, { name: "Direct", value: directTotal }]
+    data.push(asset)
+  }
+
+  return data
+}
+
+function mapTrades(trades) {
+  let data = trades.map(trade => {
+    return {date: trade.start.toDate(), value: trade.formattedProfit}
+  })
+  return data
+}
+
+function DashboardTabs(props) {
+  const [key, setKey] = React.useState('ratings')
+  const {trader, trades, traderStatistics, page, section} = props.props
+
+  const tradingRatingKeys = Object.keys(traderStatistics.tradingRatings.ratings)
+  const profitRatingKeys = Object.keys(traderStatistics.profitRatings.ratings)
 
   return (
     <Tabs id="trader_dashboard"
         activeKey={section || key}
         onSelect={(k) => {setKey(k); props.props.history.push(`/${page}/${k}`)}}>
         
-        <Tab eventKey="profitPercentages" title="Profit Percentages">
-          <div className="card shadow mb-4">
-            <div className="card-body">
-              <Container>
-                <Row>
-                  <Col sm={6}>
-                    <Alert variant="info">
-                      Set your investor profit percentages here. The higher the values, the more your investors will earn.
-                    </Alert>
-                  </Col>
-                  <Col sm={6}>
-                    <div>
-                      <Form>
-                        <Form.Group controlId="collateralProfit">
-                          <Form.Label>Collateral Investment Profit</Form.Label>
-                          <Form.Control type="number" placeholder="Investor profit for collateral investments" defaultValue={trader.investorCollateralProfitPercent} />
-                        </Form.Group>
-                        <Form.Group controlId="directProfit">
-                          <Form.Label>Direct Investment Profit</Form.Label>
-                          <Form.Control type="number" placeholder="Investor profit for direct investments" defaultValue={trader.investorDirectProfitPercent} />
-                        </Form.Group>
-                        <Button variant="primary" onClick={(e) => {profitSubmitHandler("collateralProfit", "directProfit", this.props)}}>
-                          Set Profit Percentages
-                        </Button>
-                      </Form>
-                    </div>
-                  </Col>
-                </Row>
-              </Container>
-            </div>
-          </div>
-        </Tab>
         <Tab eventKey="ratings" title="Ratings">
           <div className="card shadow mb-4">
             <div className="card-body">
@@ -119,8 +200,8 @@ function DashboardTabs(props) {
                                 return (
                                   <tr key={`${key}`}>
                                     <td><h6>{displaySymbol(key)}</h6></td>
-                                    <td><Rating ratingKey={`trading_${key}`} rating={traderRatings.tradingRatings.ratings[key]}/></td>
-                                    <td><h6>{traderRatings.tradingRatings.formattedAverageProfits[key]}</h6></td>
+                                    <td><Rating ratingKey={`trading_${key}`} rating={traderStatistics.tradingRatings.ratings[key]}/></td>
+                                    <td><h6>{traderStatistics.tradingRatings.formattedAverageProfits[key]}</h6></td>
                                   </tr>
                                 )
                               })
@@ -159,8 +240,8 @@ function DashboardTabs(props) {
                                 return (
                                   <tr key={`${key}`}>
                                     <td><h6>{displaySymbol(key)}</h6></td>
-                                    <td><Rating ratingKey={`profit_${key}`} rating={traderRatings.profitRatings.ratings[key]}/></td>
-                                    <td><h6>{traderRatings.profitRatings.formattedAverageProfits[key]}</h6></td>
+                                    <td><Rating ratingKey={`profit_${key}`} rating={traderStatistics.profitRatings.ratings[key]}/></td>
+                                    <td><h6>{traderStatistics.profitRatings.formattedAverageProfits[key]}</h6></td>
                                   </tr>
                                 )
                               })
@@ -193,8 +274,8 @@ function DashboardTabs(props) {
                             </Col>
                             <Col sm={9}>
                             {
-                              traderRatings.trustRating
-                              ? <Rating ratingKey="trust" rating={traderRatings.trustRating}/>
+                              traderStatistics.trustRating
+                              ? <Rating ratingKey="trust" rating={traderStatistics.trustRating}/>
                               : <span>Not enough data yet. Needs at least one settlement</span>
                             }
                             </Col>
@@ -221,68 +302,17 @@ function DashboardTabs(props) {
                 </Row>
                 <Row>
                   <Col sm={12}>
-                    <div className="card shadow mb-4">
-                      <a href="#WETH_Trades" className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="WETH_Trades">
-                        <h6 className="m-0 font-weight-bold text-primary">ETH Trades</h6>
-                      </a>
-                      <div className="collapse" id="WETH_Trades">
-                        <div className="card-body">
-                          <table className="table table-bordered table-light table-sm small" id="dataTable" width="100%">
-                            <thead>
-                              <tr>
-                                <th>Date</th>
-                                <th>Profit</th>
-                              </tr>
-                            </thead>
-                            { showTrades(trades["WETH"]) }
-                          </table>
-                        </div>
-                      </div>
-                    </div>
+                    { showTrades("ETH", trades["ETH"]) }
                   </Col>
                 </Row>
                 <Row>
                   <Col sm={12}>
-                    <div className="card shadow mb-4">
-                      <a href="#DAI_Trades" className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="DAI_Trades">
-                        <h6 className="m-0 font-weight-bold text-primary">DAI Trades</h6>
-                      </a>
-                      <div className="collapse" id="DAI_Trades">
-                        <div className="card-body">
-                          <table className="table table-bordered table-light table-sm small" id="dataTable" width="100%">
-                            <thead>
-                              <tr>
-                                <th>Date</th>
-                                <th>Profit</th>
-                              </tr>
-                            </thead>
-                            { showTrades(trades["DAI"]) }
-                          </table>
-                        </div>
-                      </div>
-                    </div>
+                    { showTrades("DAI", trades["DAI"]) }
                   </Col>
                 </Row>
                 <Row>
                   <Col sm={12}>
-                    <div className="card shadow mb-4">
-                      <a href="#USDC_Trades" className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="USDC_Trades">
-                        <h6 className="m-0 font-weight-bold text-primary">USDC Trades</h6>
-                      </a>
-                      <div className="collapse" id="USDC_Trades">
-                        <div className="card-body">
-                          <table className="table table-bordered table-light table-sm small" id="dataTable" width="100%">
-                            <thead>
-                              <tr>
-                                <th>Date</th>
-                                <th>Profit</th>
-                              </tr>
-                            </thead>
-                            { showTrades(trades["USDC"]) }
-                          </table>
-                        </div>
-                      </div>
-                    </div>
+                    { showTrades("USDC", trades["USDC"]) }
                   </Col>
                 </Row>
               </Container>
@@ -293,35 +323,15 @@ function DashboardTabs(props) {
   );
 }
 
-
-function profitSubmitHandler (collateralInputId, directInputId, props) {
-  const {account, traderPaired, dispatch} = props
-
-  const collateralPercentage = document.getElementById(collateralInputId).value
-  const directPercentage = document.getElementById(directInputId).value
-
-  setProfitPercentages(account, collateralPercentage, directPercentage, traderPaired, dispatch)
-}
-
-function showTrades(trades) {
+function showTrades(title, trades) {
   if (trades === undefined || trades.length === 0) {
     return (
-      <tbody></tbody>
+      <div></div>
     )
   }
 
   return (
-    <tbody>
-    { trades.map((trade) => {
-        return (
-            <tr key={trade.uuid}>
-              <td className="text-muted">{trade.formattedStart}</td>
-              <td className={`text-${trade.profitClass}`}>{trade.formattedProfit}</td>
-            </tr>
-        )
-      })
-    }
-    </tbody>
+    <DateLineChart title={title} data={mapTrades(trades)} />
   )
 }
 
@@ -339,7 +349,7 @@ function mapStateToProps(state, ownProps) {
     trader: traderSelector(state, account),
     traders: tradersSelector(state),
     trades: tradesSelector(state),
-    traderRatings: traderRatingsSelector(state, account)
+    traderStatistics: traderStatisticsSelector(state, account)
   }
 }
 

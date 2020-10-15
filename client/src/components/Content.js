@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
+import Spinner from './Spinner'
 import Topbar from './Topbar'
 import Footer from './Footer'
 import Intro from './Intro'
@@ -10,6 +11,7 @@ import Trader from './trader/Trader'
 import Profile from './trader/Profile'
 import Investor from './investor/Investor'
 
+import ProfitPercentages from './trader/ProfitPercentages'
 import TraderAllocations from './trader/TraderAllocations'
 import TraderInvestments from './trader/TraderInvestments'
 
@@ -19,6 +21,8 @@ import InvestorInvestments from './investor/InvestorInvestments'
 import { Page } from './containers/pages'
 
 import {
+  web3Selector,
+  networkSelector,
   accountSelector, 
   traderPairedSelector,
   traderPairedLoadedSelector
@@ -27,7 +31,13 @@ import {
 class Content extends Component {
 
   render() {
-    const { page, section } = this.props
+    const { network, account, web3, sidebarClosed, page, section } = this.props
+
+    if (requiresWeb3(page) && (!network || !account || !web3)) {
+      return (
+        <Spinner/>
+      )
+    }
 
     return (
       <div id="content-wrapper" className="d-flex flex-column">
@@ -49,8 +59,9 @@ class Content extends Component {
                 {
                   'join_trader': <JoinTrader />,
                   'join_investor': <JoinInvestor />,
-                  'trader_dashboard': <Trader page={page} section={section} />,
                   'trader_profile': <Profile page={page} section={section} />,
+                  'trader_dashboard': <Trader page={page} section={section} />,
+                  'trader_profitpercentages': <ProfitPercentages page={page} />,
                   'trader_allocations': <TraderAllocations />,
                   'trader_investments': <TraderInvestments />,
                   'investor_dashboard': <Investor page={page} section={section} />,
@@ -61,7 +72,6 @@ class Content extends Component {
               }
           
             </div>
-
 
           </div>
           {/* /.container-fluid */}
@@ -78,10 +88,14 @@ class Content extends Component {
   }
 }
 
-
+function requiresWeb3(page) {
+  return page !== 'trader_profile'
+}
 
 function mapStateToProps(state, ownProps) {
   return {
+    web3: web3Selector(state),
+    network: networkSelector(state),
     account: accountSelector(state),
     traderPaired: traderPairedSelector(state),
     traderPairedLoaded: traderPairedLoadedSelector(state),

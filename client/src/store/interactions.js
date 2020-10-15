@@ -33,7 +33,7 @@ import {
 	investmentLoaded,
 	investmentChanging,
 	disbursementCreated,
-	traderRatingsLoaded,
+	traderStatisticsLoaded,
 	tradeCountLoaded,
 	tradeLoaded
 } from './actions.js'
@@ -911,6 +911,16 @@ const mapRejectExit = (event) => {
 	}
 }
 
+const mapTrade = (trade) => {
+	return {
+		...trade,
+		start: moment(trade.start),
+		end: moment(trade.end),
+		profit: new BigNumber(trade.profit),
+		initialAmount: new BigNumber(trade.initialAmount)
+	}
+}
+
 export const loadInvestmentValues = (network, investments, traderPaired, dispatch) => {
 	investments.forEach(async (investment) => {
 		investment = await getInvestmentValue(network, investment, traderPaired)
@@ -919,19 +929,27 @@ export const loadInvestmentValues = (network, investments, traderPaired, dispatc
 }
 
 const getInvestmentValue = async (network, investment, traderPaired) => {
-	log("getInvestmentValue", investment)
+	let investmentToken = tokenSymbolForAddress(investment.token)
+	log("getInvestmentValue", investment, investmentToken)
+
+	console.log("investment start", investment.start.toString())
+
 	let investorProfitPercent = investment.investorProfitPercent.dividedBy(10000)
 
 	// get all trades for this investment
 	let trades = await getTrades(network, investment.trader)
+	console.log("trades", trades)
 	trades = trades.filter(
-		(trade) => tokenAddressForSymbol(trade.asset) === investment.token)
+		(trade) => trade.asset === investmentToken)
 
-	trades = trades.filter(trade =>
-		moment(trade.start).isAfter(investment.start) 
+	trades = trades.filter(trade => {
+		console.log("trade start", trade.start.toString())
+		console.log("investment end unix", investment.end.unix())
+		return trade.start.isAfter(investment.start) 
 			&& (
 				(investment.end.unix() === 0 || investment.state === "0") 
-					|| moment(trade.end).isBefore(investment.end)))
+					|| trade.end.isBefore(investment.end))
+	})
 	
 
 	log("T", trades)
@@ -1060,25 +1078,25 @@ const getTradeInvestmentsAmount = async (trade, traderInvestments) => {
 	return totalAmount
 }
 
-export const loadTraderRatings = async (account, network, dispatch) => {
+export const loadTraderStatistics = async (account, network, dispatch) => {
 	try {
 		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
-					process.env['REACT_APP_' + network + '_API_RATINGS']
+					process.env['REACT_APP_' + network + '_API_STATISTICS']
 		url = url.replace('$1', account)
 
-		console.log("loadTraderRatings", url)
+		console.log("loadTraderStatistics", url)
 		axios.get(url)
 		  .then(function (response) {
-		  	log("loadTraderRatings success", response)
+		  	log("loadTraderStatistics success", response)
 		    // handle success
-		    dispatch(traderRatingsLoaded(account, response.data))
+		    dispatch(traderStatisticsLoaded(account, response.data))
 		  })
 		  .catch(function (error) {
 		    // handle error
-		    log('Could not get ratings', error)
+		    log('Could not get statistics', error)
 		  })
 	} catch (error) {
-		log('Could not get ratings', error)
+		log('Could not get statistics', error)
 	}
 }
 
@@ -1127,8 +1145,7 @@ export const getTrades = async (network, account) => {
 		console.log("getTrades", url)
 
 		const response = await axios.get(url)
-	  	log("getTrades success", response)
-	    return response.data
+	    return response.data.map(mapTrade)
 	} catch (error) {
 		log('Could not get trades', error)
 	}

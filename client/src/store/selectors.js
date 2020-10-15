@@ -16,7 +16,7 @@ export const accountSelector = createSelector(account, a => a)
 const web3 = state => get(state, 'web3.connection')
 export const web3Selector = createSelector(web3, w => w)
 
-const network = state => get(state, 'web3.network')
+const network = state => get(state, 'web3.network', 'DEV')
 export const networkSelector = createSelector(network, w => w)
 
 const traderPairedLoaded = state => get(state, 'web3.traderPaired.loaded', false)
@@ -104,48 +104,48 @@ export const investorJoiningSelector = createSelector(investorJoining, e => e)
 const tradeCount = state => get(state, 'web3.tradeCount', 0)
 export const tradeCountSelector = createSelector(tradeCount, e => e)
 
-const traderRatings = (state, trader) => {
+const traderStatistics = (state, trader) => {
 	const traderObj = find(state.web3.traders, {user: trader})
-	if (traderObj && traderObj.ratings) {
-		return traderObj.ratings
+	if (traderObj && traderObj.statistics) {
+		return traderObj.statistics
 	}
 	return null
 }
-export const traderRatingsSelector = createSelector(traderRatings, (traderRatings) => {
-	if (!traderRatings) {
+export const traderStatisticsSelector = createSelector(traderStatistics, (traderStatistics) => {
+	if (!traderStatistics) {
 		return null
 	}
-	traderRatings.tradingRatings.formattedAverageProfits = {}
-	traderRatings.profitRatings.formattedAverageProfits = {}
-	traderRatings.formattedDirectAvailable = {}
+	traderStatistics.tradingRatings.formattedAverageProfits = {}
+	traderStatistics.profitRatings.formattedAverageProfits = {}
+	traderStatistics.limits.formattedDirectAvailable = {}
 
-	for (let key in traderRatings.tradingRatings.averageProfits) {
-		const average = new BigNumber(traderRatings.tradingRatings.averageProfits[key])
-		traderRatings.tradingRatings.formattedAverageProfits[key] = formatBalance(average, key)
-		traderRatings.tradingRatings.averageProfits[key] = average
+	for (let key in traderStatistics.tradingRatings.averageProfits) {
+		const average = new BigNumber(traderStatistics.tradingRatings.averageProfits[key])
+		traderStatistics.tradingRatings.formattedAverageProfits[key] = formatBalance(average, key)
+		traderStatistics.tradingRatings.averageProfits[key] = average
 	}
 
-	for (let key in traderRatings.profitRatings.averageProfits) {
-		const average = new BigNumber(traderRatings.profitRatings.averageProfits[key])
-		traderRatings.profitRatings.formattedAverageProfits[key] = formatBalance(average, key)
-		traderRatings.profitRatings.averageProfits[key] = average
+	for (let key in traderStatistics.profitRatings.averageProfits) {
+		const average = new BigNumber(traderStatistics.profitRatings.averageProfits[key])
+		traderStatistics.profitRatings.formattedAverageProfits[key] = formatBalance(average, key)
+		traderStatistics.profitRatings.averageProfits[key] = average
 	}
 
-	for (let key in traderRatings.directLimits) {
-		const limit = new BigNumber(traderRatings.directLimits[key])
-		traderRatings.directLimits[key] = limit
+	for (let key in traderStatistics.limits.directLimits) {
+		const limit = new BigNumber(traderStatistics.limits.directLimits[key])
+		traderStatistics.limits.directLimits[key] = limit
 	}
 
-	for (let key in traderRatings.directInvested) {
-		const invested = new BigNumber(traderRatings.directInvested[key])
-		traderRatings.directInvested[key] = invested
+	for (let key in traderStatistics.limits.directInvested) {
+		const invested = new BigNumber(traderStatistics.limits.directInvested[key])
+		traderStatistics.limits.directInvested[key] = invested
 
-		traderRatings.formattedDirectAvailable[key] = 
-			formatBalance(traderRatings.directLimits[key].minus(traderRatings.directInvested[key]), key)
+		traderStatistics.limits.formattedDirectAvailable[key] = 
+			formatBalance(traderStatistics.limits.directLimits[key].minus(traderStatistics.limits.directInvested[key]), key)
 	}
 
 	return {
-		...traderRatings
+		...traderStatistics
 	}
 })
 
@@ -209,29 +209,18 @@ export const tradesSelector = createSelector(trades, (trades) => {
 
 const decorateTrade = (trade) => {
 
-	const start = moment(trade.start)
-	const end = moment(trade.end)
-	const profit = new BigNumber(trade.profit)
-
 	return ({
 		...trade,
-		start: start,
-		end: end,
-		formattedStart: start.local().format('HH:mm:ss D-M-Y'),
-		formattedEnd: end.local().format('HH:mm:ss D-M-Y'),
-		profit: new BigNumber(trade.profit),
-		formattedProfit: formatBalance(profit, trade.asset),
-		initialAmount: new BigNumber(trade.initialAmount),
-		formattedProfit: formatBalance(profit, trade.asset),
-		profitClass: profit.lt(0) ? RED : profit.gt(0) ? GREEN : NEUTRAL
+		formattedStart: trade.start.local().format('HH:mm:ss D-M-Y'),
+		formattedEnd: trade.end.local().format('HH:mm:ss D-M-Y'),
+		formattedProfit: formatBalance(trade.profit, trade.asset),
+		profitClass: trade.profit.lt(0) ? RED : trade.profit.gt(0) ? GREEN : NEUTRAL
 	})
 }
 
 const tradesForInvestment = (state, investment) => {
 	let tokenSymbol = tokenSymbolForAddress(investment.token)
-	if (tokenSymbol === 'ETH') {
-		tokenSymbol = 'WETH'
-	}
+
 	if (state.trader && state.trader.trades) {
 		let trades = state.trader.trades.data.filter(trade => 
 			trade.trader === investment.trader &&

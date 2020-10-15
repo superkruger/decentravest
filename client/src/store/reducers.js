@@ -99,11 +99,11 @@ function web3 (state = {}, action ) {
 					state.traders = []
 				}
 				index = state.traders.findIndex(trader => trader.user === action.trader.user)
-				if (index === -1) {
+				// if (index === -1) {
 					data = [...state.traders, action.trader]
-				} else {
-					data = state.traders
-				}
+				// } else {
+				// 	data = state.traders
+				// }
 				return { 
 					...state, 
 					traders: [
@@ -169,19 +169,19 @@ function web3 (state = {}, action ) {
 					]
 				}
 			}
-		case 'TRADER_RATINGS_LOADED':
+		case 'TRADER_STATISTICS_LOADED':
 			{
 				let index, data
 
 				if (!state.traders) {
-					state.traders = []
+					state.traders = [{user: action.trader}]
 				}
 
 				index = state.traders.findIndex(trader => trader.user === action.trader)
 				if (index !== -1) {
 					state.traders[index] = {
 						...state.traders[index],
-						ratings: action.ratings
+						statistics: action.statistics
 					}
 				}
 				data = state.traders

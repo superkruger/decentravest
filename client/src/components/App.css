@@ -1,7 +1,11 @@
 /* spacers */
-p + p, li + li { 
+/*p + p, li + li { 
     margin-top: 10px;
-}
+}*/
+
+/*div, p, li {
+    margin-top: 10px;
+}*/
 
 /* header */
 .header {

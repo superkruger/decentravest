@@ -2,8 +2,6 @@ import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { OverlayTrigger, Tooltip } from 'react-bootstrap'
 
-import 'font-awesome/css/font-awesome.min.css';
-
 class Rating extends Component {
 
   render() {

@@ -1,12 +1,32 @@
 {
+	"counts": {
+		"ETH": {
+			"0": {
+				"approved": 2
+			},
+			"1": {
+				"approved": 1
+			}
+		}
+	},
+	"level": 0,
+	"trustRating": "10",
+	"limits": {
+		"directLimits": {
+			"ETH": "0"
+		},
+		"directInvested": {
+			"ETH": "0"
+		}
+	},
 	"tradingRatings": {
 		"ratings": {
-			"WETH": "10",
+			"ETH": "10",
 			"DAI": "10",
 			"USDC": "0"
 		},
 		"averageProfits": {
-			"WETH": "3000000000000000000",
+			"ETH": "3000000000000000000",
 			"DAI": "1000000000000000000",
 			"USDC": "0"
 		}
@@ -22,16 +42,5 @@
 			"DAI": "0",
 			"USDC": "0"
 		}
-	},
-	"trustRating": "10",
-	"directLimits": {
-		"ETH": "200000000000000000",
-		"DAI": "0",
-		"USDC": "0"
-	},
-	"directInvested": {
-		"ETH": "0",
-		"DAI": "0",
-		"USDC": "0"
 	}
 }

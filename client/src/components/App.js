@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-
 import Spinner from './Spinner'
 import Sidebar from './Sidebar'
 import Content from './Content'
@@ -30,11 +29,11 @@ class App extends Component {
   render() {
     const { network, account, web3, sidebarClosed, page, section } = this.props
 
-    if (!network || !account || !web3) {
-      return (
-        <Spinner/>
-      )
-    }
+    // if (!network || !account || !web3) {
+    //   return (
+    //     <Spinner/>
+    //   )
+    // }
 
     return (
       <div id="page-top" className={ sidebarClosed ? 'sidebar-toggled' : ''}>

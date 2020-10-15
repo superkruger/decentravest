@@ -16,6 +16,8 @@ class TraderSidebarMenu extends Component {
     return (
       <div className="col-sm-12">
         <DashboardButton props={this.props} /> 
+
+        <ProfitPercentagesButton props={this.props} /> 
             
         <AllocationsButton props={this.props} />
 
@@ -31,6 +33,17 @@ function DashboardButton(props) {
       <PageLink page={Page.TRADER_DASHBOARD} styles="nav-link">
           <i className="fas fa-fw fa-tachometer-alt"></i>
           <span>Trader Dashboard</span>
+      </PageLink>
+    </li>
+  )
+}
+
+function ProfitPercentagesButton(props) {
+  return (
+    <li className="nav-item active">
+      <PageLink page={Page.TRADER_PROFITPERCENTAGES} styles="nav-link">
+          <i className="fas fa-fw fa-percent"></i>
+          <span>Profit Percentages</span>
       </PageLink>
     </li>
   )

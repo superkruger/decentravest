@@ -16,6 +16,7 @@ const positionsHandler = require('./dydx/positions')
 const ratingsDao = require('./dao/ratings')
 
 const ratingsHandler = require('./ratings')
+const statisticsHandler = require('./statistics')
 
 const axios = require('axios');
 
@@ -233,31 +234,22 @@ const processTrades = async () => {
 }
 exports.processTrades = processTrades
 
-const calculateRatings = async () => {
+const calculateStatistics = async () => {
 	console.log('env', process.env.NODE_ENV)
 	// Traders
 	//
 	let traders = await traderEventHandler.list();
 
-	console.log("calculateRatings", traders);
+	console.log("calculateStatistics", traders);
 
 	if (!traders) {
 		return
 	}
 
 	traders.forEach(async (trader) => {
+		const statistics = await statisticsHandler.calculateStatistics(trader.user, traders)
 
-  		const tradingRatings = await ratingsHandler.calculateTradingRatings(trader.user, traders)
-  		const profitRatings = await ratingsHandler.calculateProfitRatings(trader.user, traders)
-  		const trustRatings = await ratingsHandler.calculateTrustRating(trader.user)
-
-  		await ratingsDao.saveRatings(trader.user, {
-  			tradingRatings: tradingRatings,
-  			profitRatings: profitRatings,
-  			trustRating: trustRatings.trustRating,
-  			directLimits: trustRatings.directLimits,
-  			directInvested: trustRatings.directInvested
-  		})
+  		await ratingsDao.saveRatings(trader.user, statistics)
 	})
 }
-exports.calculateRatings = calculateRatings
+exports.calculateStatistics = calculateStatistics

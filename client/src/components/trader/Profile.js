@@ -9,13 +9,11 @@ import AddressLink from '../AddressLink'
 import { 
   networkSelector,
   traderSelector,
-  traderPairedSelector,
   tradesSelector,
-  traderRatingsSelector
+  traderStatisticsSelector
 } from '../../store/selectors'
 import { 
-  setProfitPercentages,
-  loadTraderRatings,
+  loadTraderStatistics,
   loadTrades
 } from '../../store/interactions'
 import { ZERO_ADDRESS, displaySymbol } from '../../helpers'
@@ -27,20 +25,20 @@ class Profile extends Component {
     console.log("page, section", page, section)
     
     loadTrades(network, section, dispatch)
-    loadTraderRatings(section, network, dispatch)
+    loadTraderStatistics(section, network, dispatch)
   }
 
   render() {
-    const {trader, trades, traderRatings, page, section} = this.props
+    const {trader, trades, traderStatistics, page, section} = this.props
 
-    if (!traderRatings) {
+    if (!traderStatistics) {
       return (
         <Spinner />
       )
     }
 
-    const tradingRatingKeys = Object.keys(traderRatings.tradingRatings.ratings)
-    const profitRatingKeys = Object.keys(traderRatings.profitRatings.ratings)
+    const tradingRatingKeys = Object.keys(traderStatistics.tradingRatings.ratings)
+    const profitRatingKeys = Object.keys(traderStatistics.profitRatings.ratings)
 
     return (
       <div className="col-sm-12">
@@ -86,8 +84,8 @@ class Profile extends Component {
                               return (
                                 <tr key={`${key}`}>
                                   <td><h6>{displaySymbol(key)}</h6></td>
-                                  <td><Rating ratingKey={`trading_${key}`} rating={traderRatings.tradingRatings.ratings[key]}/></td>
-                                  <td><h6>{traderRatings.tradingRatings.formattedAverageProfits[key]}</h6></td>
+                                  <td><Rating ratingKey={`trading_${key}`} rating={traderStatistics.tradingRatings.ratings[key]}/></td>
+                                  <td><h6>{traderStatistics.tradingRatings.formattedAverageProfits[key]}</h6></td>
                                 </tr>
                               )
                             })
@@ -126,8 +124,8 @@ class Profile extends Component {
                               return (
                                 <tr key={`${key}`}>
                                   <td><h6>{displaySymbol(key)}</h6></td>
-                                  <td><Rating ratingKey={`profit_${key}`} rating={traderRatings.profitRatings.ratings[key]}/></td>
-                                  <td><h6>{traderRatings.profitRatings.formattedAverageProfits[key]}</h6></td>
+                                  <td><Rating ratingKey={`profit_${key}`} rating={traderStatistics.profitRatings.ratings[key]}/></td>
+                                  <td><h6>{traderStatistics.profitRatings.formattedAverageProfits[key]}</h6></td>
                                 </tr>
                               )
                             })
@@ -160,8 +158,8 @@ class Profile extends Component {
                           </Col>
                           <Col sm={9}>
                           {
-                            traderRatings.trustRating
-                            ? <Rating ratingKey="trust" rating={traderRatings.trustRating}/>
+                            traderStatistics.trustRating
+                            ? <Rating ratingKey="trust" rating={traderStatistics.trustRating}/>
                             : <span>Not enough data yet. Needs at least one settlement</span>
                           }
                           </Col>
@@ -285,16 +283,14 @@ function showTrades(trades) {
 
 
 function mapStateToProps(state, ownProps) {
-  const traderPaired = traderPairedSelector(state)
 
   return {
     page: ownProps.page,
     section: ownProps.section,
     network: networkSelector(state),
-    traderPaired: traderPaired,
     trader: traderSelector(state, ownProps.section),
     trades: tradesSelector(state),
-    traderRatings: traderRatingsSelector(state, ownProps.section)
+    traderStatistics: traderStatisticsSelector(state, ownProps.section)
   }
 }
 

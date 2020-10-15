@@ -117,7 +117,8 @@ module.exports.getByTrader = async (trader) => {
     const results = await s3Common.athenaExpress.query(query);
     if (results.Items.length > 0) {
 
-      return results.Items.map(mapInvest)
+      const res = results.Items.map(mapInvest)
+      return res
     }
   } catch (error) {
     console.log("athena error", error);

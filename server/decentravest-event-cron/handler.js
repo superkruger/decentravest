@@ -24,17 +24,17 @@ module.exports.processTrades = (event, context) => {
 	return "processed trades";
 }
 
-module.exports.calculateRatings = (event, context) => {
+module.exports.calculateStatistics = (event, context) => {
 	const time = new Date();
 	console.log(`Your cron function "${context.functionName}" ran at ${time}`);
 
-	localCalculateRatings();
+	localCalculateStatistics();
 
-	return "calculated ratings";
+	return "calculated statistics";
 }
 
-module.exports.ratings = async (event, context) => {
-  console.log("ratings", event, context)
+module.exports.statistics = async (event, context) => {
+  console.log("statistics", event, context)
 
   try {
   	const result = await ratingsDao.getRatings(event.queryStringParameters.trader)
@@ -82,7 +82,7 @@ const localProcessTrades = async () => {
 }
 module.exports.localProcessTrades = localProcessTrades
 
-const localCalculateRatings = async () => {
-	await interactions.calculateRatings();
+const localCalculateStatistics = async () => {
+	await interactions.calculateStatistics();
 }
-module.exports.localCalculateRatings = localCalculateRatings
+module.exports.localCalculateStatistics = localCalculateStatistics

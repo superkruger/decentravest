@@ -212,11 +212,11 @@ export function disbursementCreated(disbursement) {
 	}
 }
 
-export function traderRatingsLoaded(trader, ratings) {
+export function traderStatisticsLoaded(trader, statistics) {
 	return {
-		type: 'TRADER_RATINGS_LOADED',
+		type: 'TRADER_STATISTICS_LOADED',
 		trader,
-		ratings
+		statistics
 	}
 }
 
