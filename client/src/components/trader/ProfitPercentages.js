@@ -19,7 +19,7 @@ class ProfitPercentages extends Component {
   render() {
     const {trader, traderPaired} = this.props
 
-    if (!traderPaired) {
+    if (!trader || !traderPaired) {
       return (
         <Spinner />
       )

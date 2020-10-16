@@ -37,10 +37,12 @@
 	"level": 0,
 	"limits": {
 		"directLimits": {
-			"ETH": "0"
+			"ETH": "3000000000000000",
+			"USDC": "10000"
 		},
 		"directInvested": {
-			"ETH": "0"
+			"ETH": "50000000000000",
+			"USDC": "200"
 		}
 	},
 	"tradingRatings": {

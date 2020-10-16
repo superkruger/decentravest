@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import { Container, Row, Col, Button, Badge, Alert } from 'react-bootstrap'
+import { Container, Row, Col, Button, Badge, Alert, Form } from 'react-bootstrap'
 import AddressImage from '../AddressImage'
 import Token from '../Token'
 import { log, toBN, INVESTMENT_COLLATERAL } from '../../helpers'
@@ -22,18 +22,43 @@ import {
 } from '../../store/interactions'
 
 class TraderInvestments extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {pastInvestmentsFilter: false, currentInvestmentsFilter: true};
+  }
+
   componentDidMount() {
     const { network, investments, traderPaired, dispatch } = this.props
     loadInvestmentValues(network, investments, traderPaired, dispatch)
   }
 
   render() {
-    const {investments} = this.props
     return (
       <Container>
         <Row>
           <Col sm={12}>  
-            { showInvestments(investments, this.props) }
+            <Form>
+              <Form.Check 
+                inline
+                type="switch"
+                id="past-investments-filter"
+                label="Past Investments"
+                onChange={(e) => {switchFilterPastInvestments(e, this)}}
+              />
+              <Form.Check 
+                inline
+                defaultChecked
+                type="switch"
+                id="current-investments-filter"
+                label="Current Investments"
+                onChange={(e) => {switchFilterCurrentInvestments(e, this)}}
+              />
+            </Form>
+          </Col>
+        </Row>
+        <Row>
+          <Col sm={12}>  
+            { showInvestments(this) }
           </Col>
         </Row>
       </Container>
@@ -41,12 +66,29 @@ class TraderInvestments extends Component {
   }
 }
 
-function showInvestments(investments, props) {
+function switchFilterPastInvestments (event, component) {
+  component.setState({pastInvestmentsFilter: event.target.checked})
+}
+
+function switchFilterCurrentInvestments (event, component) {
+  component.setState({currentInvestmentsFilter: event.target.checked})
+}
+
+function showInvestments(component) {
+  const { investments } = component.props
 
   return (
     <div className="col-sm-12">
     { investments.map((investment) => {
         const headerClass = investment.state === "4" ? "disbursed" : ""
+
+        if (investment.state === "4" && !component.state.pastInvestmentsFilter) {
+          return null
+        }
+        
+        if (investment.state !== "4" && !component.state.currentInvestmentsFilter) {
+          return null
+        }
         
         return (
           <div className="card shadow mb-4" key={investment.id}>
@@ -93,10 +135,10 @@ function showInvestments(investments, props) {
                   <Col sm={8}>
                   {
                     {
-                      0: <StopButton investment={investment} props={props} />,
-                      1: <DisburseButton investment={investment} props={props} />,
-                      2: <ApproveButton investment={investment} props={props} />,
-                      3: <ApproveButton investment={investment} props={props} />,
+                      0: <StopButton investment={investment} props={component.props} />,
+                      1: <DisburseButton investment={investment} props={component.props} />,
+                      2: <ApproveButton investment={investment} props={component.props} />,
+                      3: <ApproveButton investment={investment} props={component.props} />,
                       4: <div>Divested</div>
                     }[investment.state]
                   }

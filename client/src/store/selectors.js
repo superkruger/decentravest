@@ -117,7 +117,9 @@ export const traderStatisticsSelector = createSelector(traderStatistics, (trader
 	}
 	traderStatistics.tradingRatings.formattedAverageProfits = {}
 	traderStatistics.profitRatings.formattedAverageProfits = {}
+	traderStatistics.limits.formattedDirectInvested = {}
 	traderStatistics.limits.formattedDirectAvailable = {}
+	traderStatistics.limits.formattedDirectLimits = {}
 
 	for (let key in traderStatistics.tradingRatings.averageProfits) {
 		const average = new BigNumber(traderStatistics.tradingRatings.averageProfits[key])
@@ -134,11 +136,17 @@ export const traderStatisticsSelector = createSelector(traderStatistics, (trader
 	for (let key in traderStatistics.limits.directLimits) {
 		const limit = new BigNumber(traderStatistics.limits.directLimits[key])
 		traderStatistics.limits.directLimits[key] = limit
+
+		traderStatistics.limits.formattedDirectLimits[key] = 
+			formatBalance(traderStatistics.limits.directLimits[key], key)
 	}
 
 	for (let key in traderStatistics.limits.directInvested) {
 		const invested = new BigNumber(traderStatistics.limits.directInvested[key])
 		traderStatistics.limits.directInvested[key] = invested
+
+		traderStatistics.limits.formattedDirectInvested[key] = 
+			formatBalance(traderStatistics.limits.directInvested[key], key)
 
 		traderStatistics.limits.formattedDirectAvailable[key] = 
 			formatBalance(traderStatistics.limits.directLimits[key].minus(traderStatistics.limits.directInvested[key]), key)

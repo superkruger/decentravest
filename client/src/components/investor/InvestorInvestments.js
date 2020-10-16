@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import { Container, Row, Col, Button, Badge } from 'react-bootstrap'
+import { Container, Row, Col, Button, Badge, Form } from 'react-bootstrap'
 import AddressImage from '../AddressImage'
 import Token from '../Token'
 import InvestorInvestment from './InvestorInvestment'
@@ -26,6 +26,11 @@ import {
 
 
 class InvestorInvestments extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {pastInvestmentsFilter: false, currentInvestmentsFilter: true};
+  }
+
   componentDidMount() {
     const { network, investments, traderPaired, dispatch } = this.props
     loadInvestmentValues(network, investments, traderPaired, dispatch)
@@ -45,8 +50,38 @@ class InvestorInvestments extends Component {
       <Container>
         <Row>
           <Col sm={12}>  
+            <Form>
+              <Form.Check 
+                inline
+                type="switch"
+                id="past-investments-filter"
+                label="Past Investments"
+                onChange={(e) => {switchFilterPastInvestments(e, this)}}
+              />
+              <Form.Check 
+                inline
+                defaultChecked
+                type="switch"
+                id="current-investments-filter"
+                label="Current Investments"
+                onChange={(e) => {switchFilterCurrentInvestments(e, this)}}
+              />
+            </Form>
+          </Col>
+        </Row>
+        <Row>
+          <Col sm={12}>  
             { 
               investments.map((investment) => {
+                
+                if (investment.state === "4" && !this.state.pastInvestmentsFilter) {
+                  return null
+                }
+
+                if (investment.state !== "4" && !this.state.currentInvestmentsFilter) {
+                  return null
+                }
+        
                 return (
                   <InvestorInvestment investment={investment} key={investment.id}/>
                 )
@@ -57,6 +92,14 @@ class InvestorInvestments extends Component {
       </Container>
     )
   }
+}
+
+function switchFilterPastInvestments (event, component) {
+  component.setState({pastInvestmentsFilter: event.target.checked})
+}
+
+function switchFilterCurrentInvestments (event, component) {
+  component.setState({currentInvestmentsFilter: event.target.checked})
 }
 
 function mapStateToProps(state) {

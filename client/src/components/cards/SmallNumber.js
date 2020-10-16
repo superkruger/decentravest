@@ -13,10 +13,10 @@ class SmallNumber extends Component {
             <div className="row no-gutters align-items-center">
               <div className="col mr-2">
                 <div className="text-xs font-weight-bold text-primary text-uppercase mb-1">{title}</div>
-                <div class="h5 mb-0 font-weight-bold text-gray-800">{amount}</div>
+                <div className="h5 mb-0 font-weight-bold text-gray-800">{amount}</div>
               </div>
-              <div class="col-auto">
-                <i class={`fas ${icon} fa-2x text-gray-300`}></i>
+              <div className="col-auto">
+                <i className={`fas ${icon} fa-2x text-gray-300`}></i>
               </div>
             </div>
           </div>

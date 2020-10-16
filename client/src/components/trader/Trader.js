@@ -3,11 +3,14 @@ import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
 import { Alert, Form, Button, Container, Row, Col, Tabs, Tab } from 'react-bootstrap'
-import Rating from '../Rating'
 import Spinner from '../Spinner'
+import Rating from '../Rating'
 import Level from '../cards/Level'
+import SmallStars from '../cards/SmallStars'
 import ExplodingPieChart from '../cards/ExplodingPieChart'
 import DateLineChart from '../cards/DateLineChart'
+import RelativeRatings from '../cards/RelativeRatings'
+import SmallCurrencyAmounts from '../cards/SmallCurrencyAmounts'
 
 import { 
   networkSelector,
@@ -16,9 +19,11 @@ import {
   traderPairedSelector,
   tradersSelector,
   tradesSelector,
-  traderStatisticsSelector
+  traderStatisticsSelector,
+  traderAllocationsSelector
 } from '../../store/selectors'
 import { 
+  loadTraderAllocations,
   loadTraderStatistics,
   loadTrades
 } from '../../store/interactions'
@@ -26,14 +31,14 @@ import { ZERO_ADDRESS, displaySymbol } from '../../helpers'
 
 class Trader extends Component {
   componentDidMount() {
-    const { network, account, dispatch } = this.props
-    
+    const { network, account, traderPaired, dispatch } = this.props
+    loadTraderAllocations(network, account, traderPaired, dispatch)
     loadTrades(network, account, dispatch)
     loadTraderStatistics(account, network, dispatch)
   }
 
   render() {
-    const {traderStatistics} = this.props
+    const {traderStatistics, traderAllocations, trades} = this.props
 
     if (!traderStatistics) {
       return (
@@ -50,6 +55,46 @@ class Trader extends Component {
             </Col>
           </Row>
           <Row>
+            <Col sm={4}>
+            {
+              traderStatistics.trustRating
+              ? <SmallStars title="Trust" value={traderStatistics.trustRating} icon="fa-thumbs-up"/>
+              : <span>Not enough data yet. Needs at least one settlement</span>
+            }
+            </Col>
+            <Col sm={4}>
+              <RelativeRatings title="Trading Ratings" ratings={mapNameValueObject(traderStatistics.tradingRatings.ratings)} icon="fa-chart-line" />
+            </Col>
+            <Col sm={4}>
+              <RelativeRatings title="Profit Ratings" ratings={mapNameValueObject(traderStatistics.profitRatings.ratings)} icon="fa-hand-holding-usd" />
+            </Col>
+          </Row>
+          <br/>
+          <Row>
+            <Col sm={4}>
+              <SmallCurrencyAmounts title="Collateral Allocations" amounts={mapAllocations(traderAllocations, "formattedTotal")} icon="fa-university" />
+            </Col>
+            <Col sm={4}>
+              <SmallCurrencyAmounts title="Collateral Investments" amounts={mapAllocations(traderAllocations, "formattedInvested")} icon="fa-university" />
+            </Col>
+            <Col sm={4}>
+              <SmallCurrencyAmounts title="Collateral Available" amounts={mapAllocations(traderAllocations, "formattedAvailable")} icon="fa-university" />
+            </Col>
+          </Row>
+          <br/>
+          <Row>
+            <Col sm={4}>
+              <SmallCurrencyAmounts title="Direct Allocations" amounts={mapNameValueObject(traderStatistics.limits.formattedDirectLimits)} icon="fa-handshake" />
+            </Col>
+            <Col sm={4}>
+              <SmallCurrencyAmounts title="Direct Investments" amounts={mapNameValueObject(traderStatistics.limits.formattedDirectInvested)} icon="fa-handshake" />
+            </Col>
+            <Col sm={4}>
+              <SmallCurrencyAmounts title="Direct Available" amounts={mapNameValueObject(traderStatistics.limits.formattedDirectAvailable)} icon="fa-handshake" />
+            </Col>
+          </Row>
+          <br/>
+          <Row>
             <Col sm={6}>
               <ExplodingPieChart title="All Investments" data={mapStatisticsToAllInvestments(traderStatistics)}/>
             </Col>
@@ -57,9 +102,20 @@ class Trader extends Component {
               <ExplodingPieChart title="Active Investments" data={mapStatisticsToActiveInvestments(traderStatistics)}/>
             </Col>
           </Row>
+          
           <Row>
             <Col sm={12}>
-              <DashboardTabs props={this.props}/>
+              { showTrades("ETH Trades", trades["ETH"]) }
+            </Col>
+          </Row>
+          <Row>
+            <Col sm={12}>
+              { showTrades("DAI Trades", trades["DAI"]) }
+            </Col>
+          </Row>
+          <Row>
+            <Col sm={12}>
+              { showTrades("USDC Trades", trades["USDC"]) }
             </Col>
           </Row>
         </Container>
@@ -99,10 +155,11 @@ function mapStatisticsToAllInvestments(traderStatistics) {
         }
       }
     }
-
-    asset.value = assetTotal
-    asset.subData = [{ name: "Collateral", value: collateralTotal }, { name: "Direct", value: directTotal }]
-    data.push(asset)
+    if (assetTotal > 0) {
+      asset.value = assetTotal
+      asset.subData = [{ name: "Collateral", value: collateralTotal }, { name: "Direct", value: directTotal }]
+      data.push(asset)
+    }
   }
 
   return data
@@ -144,9 +201,11 @@ function mapStatisticsToActiveInvestments(traderStatistics) {
       }
     }
 
-    asset.value = assetTotal
-    asset.subData = [{ name: "Collateral", value: collateralTotal }, { name: "Direct", value: directTotal }]
-    data.push(asset)
+    if (assetTotal > 0) {
+      asset.value = assetTotal
+      asset.subData = [{ name: "Collateral", value: collateralTotal }, { name: "Direct", value: directTotal }]
+      data.push(asset)
+    }
   }
 
   return data
@@ -159,169 +218,21 @@ function mapTrades(trades) {
   return data
 }
 
-function DashboardTabs(props) {
-  const [key, setKey] = React.useState('ratings')
-  const {trader, trades, traderStatistics, page, section} = props.props
-
-  const tradingRatingKeys = Object.keys(traderStatistics.tradingRatings.ratings)
-  const profitRatingKeys = Object.keys(traderStatistics.profitRatings.ratings)
-
-  return (
-    <Tabs id="trader_dashboard"
-        activeKey={section || key}
-        onSelect={(k) => {setKey(k); props.props.history.push(`/${page}/${k}`)}}>
-        
-        <Tab eventKey="ratings" title="Ratings">
-          <div className="card shadow mb-4">
-            <div className="card-body">
-              <div className="card shadow mb-4" key='ratings_trading'>
-                <a href='#ratings_trading' className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls='ratings_trading'>
-                  <h6>Trading Ratings</h6>
-                </a>
-                <div className="collapse" id="ratings_trading">
-                  <div className="card-body">
-                    <Container>
-                      <Row>
-                        <Col sm={4}>
-                          <Alert variant="info">
-                            Your trading rating is based on trade profits relative to other traders on this platform.
-                          </Alert>
-                        </Col>
-                        <Col sm={8}>
-                          <table className="table">
-                            <thead>
-                              <tr>
-                                <th></th><th>Rating</th><th>Average Profit</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                            {
-                              tradingRatingKeys.map((key) => {
-                                return (
-                                  <tr key={`${key}`}>
-                                    <td><h6>{displaySymbol(key)}</h6></td>
-                                    <td><Rating ratingKey={`trading_${key}`} rating={traderStatistics.tradingRatings.ratings[key]}/></td>
-                                    <td><h6>{traderStatistics.tradingRatings.formattedAverageProfits[key]}</h6></td>
-                                  </tr>
-                                )
-                              })
-                            }
-                            </tbody>
-                          </table>
-                        </Col>
-                      </Row>
-                    </Container>
-                  </div>
-                </div>
-              </div>
-              <div className="card shadow mb-4" key='ratings_profit'>
-                <a href='#ratings_profit' className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls='ratings_profit'>
-                  <h6>Profit Rating</h6>
-                </a>
-                <div className="collapse" id="ratings_profit">
-                  <div className="card-body">
-                    <Container>
-                      <Row>
-                        <Col sm={4}>
-                          <Alert variant="info">
-                            Your profit rating is based on returns to your investors relative to the returns of other traders
-                          </Alert>
-                        </Col>
-                        <Col sm={8}>
-                          <table className="table">
-                            <thead>
-                              <tr>
-                                <th></th><th>Rating</th><th>Average Profit</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                            {
-                              profitRatingKeys.map((key) => {
-                                return (
-                                  <tr key={`${key}`}>
-                                    <td><h6>{displaySymbol(key)}</h6></td>
-                                    <td><Rating ratingKey={`profit_${key}`} rating={traderStatistics.profitRatings.ratings[key]}/></td>
-                                    <td><h6>{traderStatistics.profitRatings.formattedAverageProfits[key]}</h6></td>
-                                  </tr>
-                                )
-                              })
-                            }
-                            </tbody>
-                          </table>
-                        </Col>
-                      </Row>
-                    </Container>
-                  </div>
-                </div>
-              </div>
-              <div className="card shadow mb-4" key='ratings_trust'>
-                <a href='#ratings_trust' className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls='ratings_trust'>
-                  <h6>Trust Rating</h6>
-                </a>
-                <div className="collapse" id="ratings_trust">
-                  <div className="card-body">
-                    <Container>
-                      <Row>
-                        <Col sm={4}>
-                          <Alert variant="info">
-                            Your trust rating is based on how settlements are handled. Any suspect or fraudulent activity will impact it negatively, as well as waiting more than 48 hours to approve a settlement request
-                          </Alert>
-                        </Col>
-                        <Col sm={8}>
-                          <Row>
-                            <Col sm={3}>
-                              <h6>Trust</h6>
-                            </Col>
-                            <Col sm={9}>
-                            {
-                              traderStatistics.trustRating
-                              ? <Rating ratingKey="trust" rating={traderStatistics.trustRating}/>
-                              : <span>Not enough data yet. Needs at least one settlement</span>
-                            }
-                            </Col>
-                          </Row>
-                        </Col>
-                      </Row>
-                    </Container>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Tab>
-        <Tab eventKey="tradeHistory" title="Trade History">
-          <div className="card shadow mb-4">
-            <div className="card-body">
-              <Container>
-                <Row>
-                  <Col sm={12}>
-                    <Alert variant="info">
-                      Below are your completed trades on dydx.
-                    </Alert>
-                  </Col>
-                </Row>
-                <Row>
-                  <Col sm={12}>
-                    { showTrades("ETH", trades["ETH"]) }
-                  </Col>
-                </Row>
-                <Row>
-                  <Col sm={12}>
-                    { showTrades("DAI", trades["DAI"]) }
-                  </Col>
-                </Row>
-                <Row>
-                  <Col sm={12}>
-                    { showTrades("USDC", trades["USDC"]) }
-                  </Col>
-                </Row>
-              </Container>
-            </div>
-          </div>
-        </Tab>
-      </Tabs>
-  );
+function mapAllocations(allocations, valueKey) {
+  let data = allocations.map(allocation => {
+    return {name: allocation.symbol, value: allocation[valueKey]}
+  })
+  return data
 }
+
+function mapNameValueObject(obj) {
+  const keys = Object.keys(obj)
+  let data = keys.map(key => {
+    return {name: key, value: obj[key]}
+  })
+  return data
+}
+
 
 function showTrades(title, trades) {
   if (trades === undefined || trades.length === 0) {
@@ -334,7 +245,6 @@ function showTrades(title, trades) {
     <DateLineChart title={title} data={mapTrades(trades)} />
   )
 }
-
 
 function mapStateToProps(state, ownProps) {
   const account = accountSelector(state)
@@ -349,7 +259,8 @@ function mapStateToProps(state, ownProps) {
     trader: traderSelector(state, account),
     traders: tradersSelector(state),
     trades: tradesSelector(state),
-    traderStatistics: traderStatisticsSelector(state, account)
+    traderStatistics: traderStatisticsSelector(state, account),
+    traderAllocations: traderAllocationsSelector(state, account)
   }
 }
 

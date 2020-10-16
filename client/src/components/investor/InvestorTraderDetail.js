@@ -48,7 +48,7 @@ class InvestorTraderDetail extends Component {
   render() {
     const {web3, trader, traderAllocations, traderStatistics, investments } = this.props
 
-    if (!web3 || !traderStatistics) {
+    if (!web3 || !trader || !traderStatistics) {
       return (
         <Spinner />
       )

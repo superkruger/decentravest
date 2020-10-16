@@ -37,7 +37,7 @@ class ExplodingPieChart extends Component {
   }
 
   render() {
-    const {title} = this.props
+    const {title, data} = this.props
 
     return (
       <div>
@@ -48,7 +48,13 @@ class ExplodingPieChart extends Component {
           </div>
           {/* Card Body */}
           <div className="card-body">
-            <div id={`${title}-piechartdiv`} style={{ width: "90%", height: "100%" }} />
+            {
+              data.length > 0
+              ?
+                <div id={`${title}-piechartdiv`} style={{ width: "90%", height: "100%" }} />
+              :
+                <div>No data</div>
+            }
           </div>
         </div>
       </div>
@@ -129,6 +135,9 @@ function createPieChart(container, props) {
   let selectedSlice;
 
   function selectSlice(dataItem) {
+    if (!dataItem) {
+      return
+    }
 
     selectedSlice = dataItem.slice;
 

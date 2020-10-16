@@ -69,8 +69,6 @@ class TraderAllocations extends Component {
                 allocationList.map((allocation) => {
                   const traderAllocation = getTraderAllocation(allocation.token, traderAllocations)
 
-                  log("getTraderAllocation", traderAllocation)
-
                   return (
                     <div className="card shadow mb-4" key={`${allocation.symbol}_${account}`}>
                       <a href={`#${allocation.symbol}${account}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`${allocation.symbol}${account}`}>
@@ -87,35 +85,6 @@ class TraderAllocations extends Component {
                               }
                             </Col>
                           </Row>
-                          {
-                            traderAllocation && traderAllocation.directLimit
-                            ? <Row>
-                                <Col sm={4}>
-                                  <h6 className="m-0 font-weight-bold text-primary">Direct {allocation.symbol} Limit:</h6>
-                                </Col>
-                                <Col sm={2}>
-                                  <span>{traderAllocation.formattedDirectLimit} {traderAllocation.symbol}<br/>(Available: {traderAllocation.formattedDirectAvailable})</span>
-                                </Col>
-                                <Col sm={6}>
-                                  <Alert variant="info">
-                                    Direct limit will keep increasing as you get and settle more investments
-                                  </Alert>
-                                </Col>
-                              </Row>
-                            : <Row>
-                                <Col sm={4}>
-                                  <h6 className="m-0 font-weight-bold text-primary">Direct {allocation.symbol} Limit:</h6>
-                                </Col>
-                                <Col sm={2}>
-                                  <span>N/A</span>
-                                </Col>
-                                <Col sm={6}>
-                                  <Alert variant="info">
-                                    To receive direct investments, you first need to settle a collateral investment and have a trust rating of 8
-                                  </Alert>
-                                </Col>
-                              </Row>
-                          }
                         </Container>
                       </a>
                       <div className="collapse" id={`${allocation.symbol}${account}`}>
