@@ -47,8 +47,8 @@
 	},
 	"tradingRatings": {
 		"ratings": {
-			"ETH": "10",
-			"DAI": "10",
+			"ETH": "9",
+			"DAI": "6",
 			"USDC": "0"
 		},
 		"averageProfits": {
@@ -59,8 +59,8 @@
 	},
 	"profitRatings": {
 		"ratings": {
-			"ETH": "10",
-			"DAI": "0",
+			"ETH": "5",
+			"DAI": "10",
 			"USDC": "0"
 		},
 		"averageProfits": {
