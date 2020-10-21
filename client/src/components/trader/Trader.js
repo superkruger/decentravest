@@ -9,7 +9,7 @@ import Level from '../cards/Level'
 import SmallStars from '../cards/SmallStars'
 import ExplodingPieChart from '../cards/ExplodingPieChart'
 import DateLineChart from '../cards/DateLineChart'
-import RelativeRatings from '../cards/RelativeRatings'
+import SmallRelativeRatings from '../cards/SmallRelativeRatings'
 import SmallCurrencyAmounts from '../cards/SmallCurrencyAmounts'
 
 import { 
@@ -51,46 +51,46 @@ class Trader extends Component {
         <Container>
           <Row>
             <Col sm={12}>
-              <Level level={traderStatistics.level}/>
+              <Level level={traderStatistics.level} showInfo={true} />
             </Col>
           </Row>
           <Row>
             <Col sm={4}>
             {
               traderStatistics.trustRating
-              ? <SmallStars title="Trust" value={traderStatistics.trustRating} icon="fa-thumbs-up"/>
+              ? <SmallStars title="Trust" value={traderStatistics.trustRating} icon="fa-thumbs-up" border="primary" />
               : <span>Not enough data yet. Needs at least one settlement</span>
             }
             </Col>
             <Col sm={4}>
-              <RelativeRatings title="Trading Ratings" ratings={mapNameValueObject(traderStatistics.tradingRatings.ratings)} icon="fa-chart-line" />
+              <SmallRelativeRatings title="Trading Ratings" ratings={mapNameValueObject(traderStatistics.tradingRatings.ratings)} icon="fa-chart-line" border="warning" />
             </Col>
             <Col sm={4}>
-              <RelativeRatings title="Profit Ratings" ratings={mapNameValueObject(traderStatistics.profitRatings.ratings)} icon="fa-hand-holding-usd" />
-            </Col>
-          </Row>
-          <br/>
-          <Row>
-            <Col sm={4}>
-              <SmallCurrencyAmounts title="Collateral Allocations" amounts={mapAllocations(traderAllocations, "formattedTotal")} icon="fa-university" />
-            </Col>
-            <Col sm={4}>
-              <SmallCurrencyAmounts title="Collateral Investments" amounts={mapAllocations(traderAllocations, "formattedInvested")} icon="fa-university" />
-            </Col>
-            <Col sm={4}>
-              <SmallCurrencyAmounts title="Collateral Available" amounts={mapAllocations(traderAllocations, "formattedAvailable")} icon="fa-university" />
+              <SmallRelativeRatings title="Profit Ratings" ratings={mapNameValueObject(traderStatistics.profitRatings.ratings)} icon="fa-hand-holding-usd" border="danger" />
             </Col>
           </Row>
           <br/>
           <Row>
             <Col sm={4}>
-              <SmallCurrencyAmounts title="Direct Allocations" amounts={mapNameValueObject(traderStatistics.limits.formattedDirectLimits)} icon="fa-handshake" />
+              <SmallCurrencyAmounts title="Collateral Allocations" amounts={mapAllocations(traderAllocations, "formattedTotal")} icon="fa-university" border="secondary" />
             </Col>
             <Col sm={4}>
-              <SmallCurrencyAmounts title="Direct Investments" amounts={mapNameValueObject(traderStatistics.limits.formattedDirectInvested)} icon="fa-handshake" />
+              <SmallCurrencyAmounts title="Collateral Investments" amounts={mapAllocations(traderAllocations, "formattedInvested")} icon="fa-university" border="secondary" />
             </Col>
             <Col sm={4}>
-              <SmallCurrencyAmounts title="Direct Available" amounts={mapNameValueObject(traderStatistics.limits.formattedDirectAvailable)} icon="fa-handshake" />
+              <SmallCurrencyAmounts title="Collateral Available" amounts={mapAllocations(traderAllocations, "formattedAvailable")} icon="fa-university" border="secondary" />
+            </Col>
+          </Row>
+          <br/>
+          <Row>
+            <Col sm={4}>
+              <SmallCurrencyAmounts title="Direct Allocations" amounts={mapNameValueObject(traderStatistics.limits.formattedDirectLimits)} icon="fa-handshake" border="dark" />
+            </Col>
+            <Col sm={4}>
+              <SmallCurrencyAmounts title="Direct Investments" amounts={mapNameValueObject(traderStatistics.limits.formattedDirectInvested)} icon="fa-handshake" border="dark" />
+            </Col>
+            <Col sm={4}>
+              <SmallCurrencyAmounts title="Direct Available" amounts={mapNameValueObject(traderStatistics.limits.formattedDirectAvailable)} icon="fa-handshake" border="dark" />
             </Col>
           </Row>
           <br/>

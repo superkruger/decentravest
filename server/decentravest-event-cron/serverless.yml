@@ -15,7 +15,8 @@ provider:
     tradingbucket: ${self:custom.tradingbucket}
     eventbucket: ${self:custom.eventbucket}
     eventbucket_queryresults: ${self:custom.eventbucket_queryresults}
-    ratingsbucket: ${self:custom.ratingsbucket}
+    traderstatisticsbucket: ${self:custom.traderstatisticsbucket}
+    investorstatisticsbucket: ${self:custom.investorstatisticsbucket}
     #infura
     INFURA_BASE_URL: ${param:INFURA_BASE_URL}
     INFURA_API_KEY: ${param:INFURA_API_KEY}
@@ -29,7 +30,8 @@ custom:
   tradingbucket: "tradingbucket-${opt:stage, 'dev'}-1"
   eventbucket: "eventbucket-${opt:stage, 'dev'}-1"
   eventbucket_queryresults: "resultbucket-${opt:stage, 'dev'}-1"
-  ratingsbucket: "ratingsbucket-${opt:stage, 'dev'}-1"
+  traderstatisticsbucket: "traderstatisticsbucket-${opt:stage, 'dev'}-1"
+  investorstatisticsbucket: "investorstatisticsbucket-${opt:stage, 'dev'}-1"
   athenadb: "blockchain-events-${opt:stage, 'dev'}"
   VPC_CIDR: 10
 
@@ -40,7 +42,8 @@ resources:
     TradingBucket: ${file(./resource/S3BucketTrades.yml)}
     EventBucket: ${file(./resource/S3BucketEvents.yml)}
     AthenaBucket: ${file(./resource/S3BucketQueryResults.yml)}
-    RatingsBucket: ${file(./resource/S3BucketRatings.yml)}
+    TraderStatisticsBucket: ${file(./resource/S3BucketTraderStatistics.yml)}
+    InvestorStatisticsBucket: ${file(./resource/S3BucketInvestorStatistics.yml)}
     LambdaRole: ${file(./resource/LambdaRole.yml)}
     ServerlessInternetGateway: ${file(./resource/ServerlessInternetGateway.yml)}
     ServerlessVPC: ${file(./resource/ServerlessVPC.yml)}
@@ -91,16 +94,29 @@ functions:
     events:
       - schedule: rate(1 hour)
 
-  calculateStatistics:
-    handler: handler.calculateStatistics
+  calculateTraderStatistics:
+    handler: handler.calculateTraderStatistics
     events:
       - schedule: rate(1 hour)
 
-  getStatistics:
-    handler: handler.statistics
+  calculateInvestorStatistics:
+    handler: handler.calculateInvestorStatistics
+    events:
+      - schedule: rate(1 hour)
+
+  getTraderStatistics:
+    handler: handler.traderStatistics
     events:
       - http:
-          path: statistics
+          path: traderStatistics
+          method: get
+          cors: true
+
+  getInvestorStatistics:
+    handler: handler.investorStatistics
+    events:
+      - http:
+          path: investorStatistics
           method: get
           cors: true
 

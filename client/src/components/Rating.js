@@ -36,7 +36,7 @@ function Stars(props) {
 
   let stars = [];
   for (var i = 0; i < 10; i++) {
-    if (i <= numStars) {
+    if (i < numStars) {
       stars.push(<span className="fas fa-star" key={`rating-${ratingKey}-${i}`}></span>)
     } else {
       stars.push(<span className="far fa-star" key={`rating-${ratingKey}-${i}`}></span>)

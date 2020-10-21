@@ -220,6 +220,14 @@ export function traderStatisticsLoaded(trader, statistics) {
 	}
 }
 
+export function investorStatisticsLoaded(investor, statistics) {
+	return {
+		type: 'INVESTOR_STATISTICS_LOADED',
+		investor,
+		statistics
+	}
+}
+
 export function tradeCountLoaded(count) {
 	return {
 		type: 'TRADE_COUNT_LOADED',

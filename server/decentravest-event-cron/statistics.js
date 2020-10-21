@@ -9,10 +9,9 @@ const requestExitDao = require('./dao/traderpaired/requestExit')
 const rejectExitDao = require('./dao/traderpaired/rejectExit')
 const approveExitDao = require('./dao/traderpaired/approveExit')
 const allocateDao = require('./dao/traderpaired/allocate')
-const stopDao = require('./dao/traderpaired/allocate')
+const stopDao = require('./dao/traderpaired/stop')
 
 const tradesDao = require('./dao/trades')
-const ratingsDao = require('./dao/ratings')
 
 const helpers = require('./helpers')
 
@@ -29,12 +28,24 @@ const levelRequirements = [
 
 const tokenSymbols = ["ETH", "DAI", "USDC"]
 
-module.exports.calculateStatistics = async (account, allTraders) => {
+module.exports.calculateTraderStatistics = async (account, allTraders) => {
 
 	let investments = await investDao.getByTrader(account)
 	for (let i=0; i<investments.length; i++) {
 		investments[i] = await mapInvest(investments[i])
 	}
+
+	const stops = await stopDao.getByTrader(account)
+
+	stops.forEach((stop) => {
+		let index = investments.findIndex(investment => investment.id === stop.id)
+		if (index !== -1) {
+			investments[index] = {
+				...investments[index],
+				...mapStop(stop)
+			}
+		}
+	})
 
 	const requestExits = await requestExitDao.getByTrader(account)
 
@@ -72,9 +83,9 @@ module.exports.calculateStatistics = async (account, allTraders) => {
 		}
 	})
 
-	const counts = await calculateInvestmentCounts(account, investments)
+	const counts = await calculateInvestmentCounts(investments)
 	const trustRating = await calculateTrustRating(account, investments)
-	const level = await calculateLevel(account, investments, trustRating)
+	const level = await calculateLevel(investments, trustRating)
 	const limits = await calculateLimits(account, investments, level)
 	const tradingRatings = await calculateTradingRatings(account, allTraders)
 	const profitRatings = await calculateProfitRatings(account, allTraders)
@@ -89,7 +100,56 @@ module.exports.calculateStatistics = async (account, allTraders) => {
 	}
 }
 
-const calculateInvestmentCounts = async (account, investments) => {
+module.exports.calculateInvestorStatistics = async (account) => {
+	let investments = await investDao.getByInvestor(account)
+	for (let i=0; i<investments.length; i++) {
+		investments[i] = await mapInvest(investments[i])
+	}
+
+	const stops = await stopDao.getByInvestor(account)
+
+	stops.forEach((stop) => {
+		let index = investments.findIndex(investment => investment.id === stop.id)
+		if (index !== -1) {
+			investments[index] = {
+				...investments[index],
+				...mapStop(stop)
+			}
+		}
+	})
+
+	const requestExits = await requestExitDao.getByInvestor(account)
+
+	requestExits.forEach((requestExit) => {
+		let index = investments.findIndex(investment => investment.id === requestExit.id)
+		if (index !== -1) {
+			investments[index] = {
+				...investments[index],
+				...mapRequestExit(requestExit)
+			}
+		}
+	})
+
+	const approveExits = await approveExitDao.getByInvestor(account)
+
+	approveExits.forEach((approveExit) => {
+		let index = investments.findIndex(investment => investment.id === approveExit.id)
+		if (index !== -1) {
+			investments[index] = {
+				...investments[index],
+				...mapApproveExit(approveExit)
+			}
+		}
+	})
+
+	const counts = await calculateInvestmentCounts(investments)
+
+	return {
+		counts: counts
+	}
+}
+
+const calculateInvestmentCounts = async (investments) => {
 	let investmentCounts = {}
 
 	investments.forEach(async (investment) => {
@@ -112,7 +172,7 @@ const calculateInvestmentCounts = async (account, investments) => {
 		} else if (investment.rejectFrom) {
 			// rejected
 			incrementInvestmentCount(counter, "rejected", investment.nettValue.minus(investment.amount))
-		} else if (investment.requestFrom) {
+		} else if (investment.requestFrom || investment.stopFrom) {
 			// pending
 			incrementInvestmentCount(counter, "pending", investment.nettValue.minus(investment.amount))
 		} else {
@@ -133,17 +193,18 @@ const incrementInvestmentCount = (counter, state, amount) => {
 
 	if (amount.lt(0)) {
 		side = "negative"
+		amount = amount.abs()
 	}
 
 	if (!counter[state][side]) {
 		counter[state][side] = {"count": 1, "total": amount.toString()}
 	} else {
 		counter[state][side].count = counter[state][side].count + 1
-		counter[state][side].total = new BigInteger(counter[state][side].total).plus(amount).toString()
+		counter[state][side].total = new BigNumber(counter[state][side].total).plus(amount).toString()
 	}
 }
 
-const calculateLevel = async (account, investments, trustRating) => {
+const calculateLevel = async (investments, trustRating) => {
 	let collateralApprovalCount = 0
 	let directApprovalCount = 0
 
@@ -791,7 +852,7 @@ const getTraderInvestments = async (account, token) => {
 	let result = []
 	try {
 		let investList = await investDao.getByTraderAndToken(account, token)
-		let stopList = await stopDao.getByTraderAndToken(account, token)
+		let stopList = await stopDao.getByTrader(account)
 
 		investList.forEach((investment) => {
 			let index = stopList.findIndex(stopped => stopped.id === investment.id)

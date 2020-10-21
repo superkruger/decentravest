@@ -1,10 +1,15 @@
+import BigNumber from 'bignumber.js'
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Container, Row, Col, Button, Alert } from 'react-bootstrap'
 import Spinner from '../Spinner'
+import ExplodingPieChart from '../cards/ExplodingPieChart'
+import PieChart from '../cards/PieChart'
+import SmallCurrencyAmounts from '../cards/SmallCurrencyAmounts'
 import {
   createWallet,
-  loadMainWalletBalances
+  loadMainWalletBalances,
+  loadInvestorStatistics
 } from '../../store/interactions'
 import { 
   web3Selector,
@@ -15,14 +20,19 @@ import {
   walletFactorySelector,
   walletSelector,
   walletCreatingSelector,
-  tokensSelector
+  tokensSelector,
+  investorStatisticsSelector
 } from '../../store/selectors'
+import { formatBalance } from '../../helpers'
 
 class Investor extends Component {
   componentDidMount() {
-    const { wallet, tokens, dispatch } = this.props
+    const { network, account, wallet, tokens, dispatch } = this.props
     if (wallet) {
+      console.log("loadMainWalletBalances...")
       loadMainWalletBalances(wallet.contract, tokens, dispatch)
+      console.log("loadInvestorStatistics...")
+      loadInvestorStatistics(account, network, dispatch)
     }
   }
 
@@ -33,7 +43,7 @@ class Investor extends Component {
       <div className="col-sm-12">
         {
           wallet && wallet.contract ?
-            <Wallet props={this.props}/> :
+            <Dashboard props={this.props}/> :
             <CreateWallet props={this.props}/>
         }
       </div>
@@ -62,76 +72,262 @@ function CreateWallet(props) {
       </Button>
     </div>
   )
+}
 
+function Dashboard(props) {
+
+  return (
+    <div className="col-sm-12">
+      <Container>
+        <Row>
+          <Col sm={12}>
+            <Collateral props={props.props} />
+          </Col>
+        </Row>
+        <br/>
+        <Row>
+          <Col sm={12}>
+            <Direct props={props.props} />
+          </Col>
+        </Row>
+      </Container>
+    </div>
+  )
+}
+
+function Collateral(props) {
+  const { investorStatistics } = props.props
+
+  return (
+    <div className="card shadow h-100">
+      <div className="card-header">
+        <h4 className="m-0 font-weight-bold text-primary">
+          <Row>
+            <Col sm={1}>
+              <i className="fas fa-university fa-2x text-gray-300"></i>
+            </Col>
+            <Col sm={11}>
+              <div className="h4 mb-0 mr-3 font-weight-bold text-gray-800">Collateral Investments</div>
+            </Col>
+          </Row>
+        </h4>
+      </div>
+      <div className="card-body">
+        <Row>
+          <Col sm={12}>
+            <Wallet props={props.props} />
+          </Col>
+        </Row>
+        <br/>
+        {
+          investorStatistics
+          ?  <Container>
+              <Row>
+                <Col sm={6}>
+                  <PieChart title="Past Investments" chartkey="pci" data={mapStatisticsCount(investorStatistics, "0", "approved", true)}/>
+                </Col>
+                <Col sm={6}>
+                  <PieChart title="Current Investments" chartkey="cci" data={mapStatisticsCount(investorStatistics, "0", "approved", false)}/>
+                </Col>
+              </Row>
+              <Row>
+                <Col sm={6}>
+                  <SmallCurrencyAmounts title="Past Profit" icon="" amounts={mapStatisticsTotal(investorStatistics, "0", "approved", true)}/>
+                </Col>
+                <Col sm={6}>
+                  <SmallCurrencyAmounts title="Current Profit" icon="" amounts={mapStatisticsTotal(investorStatistics, "0", "approved", false)}/>
+                </Col>
+              </Row>
+            </Container>
+          : <div/>
+        }
+      </div>
+    </div>
+  )
+}
+
+function Direct(props) {
+  const { investorStatistics } = props.props
+
+  return (
+    <div className="card shadow h-100">
+      <div className="card-header">
+        <h4 className="m-0 font-weight-bold text-primary">
+          <Row>
+            <Col sm={1}>
+              <i className="fas fa-handshake fa-2x text-gray-300"></i>
+            </Col>
+            <Col sm={11}>
+              <div className="h4 mb-0 mr-3 font-weight-bold text-gray-800">Direct Investments</div>
+            </Col>
+          </Row>
+        </h4>
+      </div>
+      <div className="card-body">
+        {
+          investorStatistics
+          ? <Container> 
+              <Row>
+                <Col sm={6}>
+                  <PieChart title="Past Investments" chartkey="pdi" data={mapStatisticsCount(investorStatistics, "1", "approved", true)}/>
+                </Col>
+                <Col sm={6}>
+                  <PieChart title="Current Investments" chartkey="cdi" data={mapStatisticsCount(investorStatistics, "1", "approved", false)}/>
+                </Col>
+              </Row>
+              <Row>
+                <Col sm={6}>
+                  <SmallCurrencyAmounts title="Past Profit" icon="" amounts={mapStatisticsTotal(investorStatistics, "1", "approved", true)}/>
+                </Col>
+                <Col sm={6}>
+                  <SmallCurrencyAmounts title="Current Profit" icon="" amounts={mapStatisticsTotal(investorStatistics, "1", "approved", false)}/>
+                </Col>
+              </Row>
+            </Container>
+          : <div/>
+        }
+      </div>
+    </div>
+  )
 }
 
 function Wallet(props) {
-  const { wallet, network } = props.props
+  const { wallet } = props.props
 
   return (
-    <div className="card shadow mb-4">
-      <a href={`#wallet_${wallet.contract.options.address}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`wallet_${wallet.contract.options.address}`}>
-        <h6 className="m-0 font-weight-bold text-primary">
-          Your personal multisig wallet
-        </h6>
-      </a>
-      <div className="collapse" id={`wallet_${wallet.contract.options.address}`}>
+    <div>
+      <div className="card border-left-success shadow h-100 py-2">
         <div className="card-body">
-          <Container>
-            <Row>
-              <Col sm={12}>
-                <span>Wallet: <a href={`https://` + process.env['REACT_APP_'+network+'_ETHERSCAN_BASE'] + `.etherscan.io/address/${wallet.contract.options.address}`} target="_blank" rel="noopener">{wallet.contract.options.address}</a></span>
-              </Col>
-            </Row>
-            <Row>
-              <Col sm={12}>
-                <table className="table">
-                  <tbody>
-                    { 
-                      wallet.balances.map((balance) => {
-                        return (
-                          <Balance balance={balance} key={balance.symbol} />
-                        )
-                      })
-                    }
-                  </tbody>
-                </table>
-              </Col>
-            </Row>
-          </Container>
+          <div className="row no-gutters align-items-center">
+            <div className="col mr-2">
+              <div className="text-xs font-weight-bold text-info text-uppercase mb-1">Personal Investment Multisig Wallet Balances</div>
+              {
+                wallet.balances.map((balance) => {
+                  return (
+                    <div key={balance.symbol} className="row no-gutters align-items-center">
+                      <div className="col-sm-4">
+                        <div className="h5 mb-0 mr-3 font-weight-bold text-gray-800">{balance.symbol}</div>
+                      </div>
+                      <div className="col-sm-8">
+                        <div className="h5 mb-0 font-weight-bold text-gray-800">{balance.formatted}</div>
+                      </div>
+                    </div>
+                  )
+                })
+              }
+            </div>
+            <div className="col-auto">
+              <i className="fas fa-wallet fa-2x text-gray-300"></i>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-function Balance(props) {
-  const {balance} = props
+function mapStatisticsCount(statistics, shouldTypeKey, shouldStateKey, equalToState) {
 
-  return (
-    <tr>
-      <td>
-        Wallet {balance.symbol} Balance:
-      </td>
-      <td className="text-right">
-        {balance.formatted}
-      </td>
-    </tr>
-  )
+  let data = []
+  for (let assetKey of Object.keys(statistics.counts)) {
+    let assetObj = statistics.counts[assetKey]
+    let asset = {"category": assetKey}
+    let assetCount = 0
+
+    for (let typeKey of Object.keys(assetObj)) {
+      if (typeKey !== shouldTypeKey) {
+        continue
+      }
+      let typeObj = assetObj[typeKey]
+
+      for (let stateKey of Object.keys(typeObj)) {
+        if (equalToState) {
+          if (stateKey !== shouldStateKey) {
+            continue
+          }
+        } else {
+           if (stateKey === shouldStateKey) {
+            continue
+          } 
+        }
+        let stateObj = typeObj[stateKey]
+
+        for (let sideKey of Object.keys(stateObj)) {
+          let sideObj = stateObj[sideKey]
+          assetCount = assetCount + sideObj.count
+        }
+      }
+    }
+    if (assetCount > 0) {
+      asset.value = assetCount
+      data.push(asset)
+    }
+  }
+
+  return data
+}
+
+function mapStatisticsTotal(statistics, shouldTypeKey, shouldStateKey, equalToState) {
+
+  let data = []
+  for (let assetKey of Object.keys(statistics.counts)) {
+    let assetObj = statistics.counts[assetKey]
+    let asset = {"name": assetKey}
+    let assetCount = 0
+    let assetTotal = new BigNumber(0)
+
+    for (let typeKey of Object.keys(assetObj)) {
+      if (typeKey !== shouldTypeKey) {
+        continue
+      }
+      let typeObj = assetObj[typeKey]
+
+      for (let stateKey of Object.keys(typeObj)) {
+        if (equalToState) {
+          if (stateKey !== shouldStateKey) {
+            continue
+          }
+        } else {
+           if (stateKey === shouldStateKey) {
+            continue
+          } 
+        }
+        let stateObj = typeObj[stateKey]
+
+        for (let sideKey of Object.keys(stateObj)) {
+          let sideObj = stateObj[sideKey]
+          assetCount = assetCount + sideObj.count
+          if (sideKey === "positive") {
+            assetTotal = assetTotal.plus(sideObj.total)
+          } else {
+            assetTotal = assetTotal.minus(sideObj.total)
+          }
+        }
+      }
+    }
+    if (assetCount > 0) {
+      asset.value = formatBalance(assetTotal, assetKey)
+      data.push(asset)
+    }
+  }
+
+  return data
 }
 
 function mapStateToProps(state) {
+  const account = accountSelector(state)
 
   return {
     web3: web3Selector(state),
     network: networkSelector(state),
-    account: accountSelector(state),
+    account: account,
     investor: investorSelector(state),
     traderPaired: traderPairedSelector(state),
     walletFactory: walletFactorySelector(state),
     wallet: walletSelector(state),
     walletCreating: walletCreatingSelector(state),
-    tokens: tokensSelector(state)
+    tokens: tokensSelector(state),
+    investorStatistics: investorStatisticsSelector(state, account)
   }
 }
 

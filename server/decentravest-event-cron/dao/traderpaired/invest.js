@@ -127,6 +127,32 @@ module.exports.getByTrader = async (trader) => {
   return [];
 }
 
+module.exports.getByInvestor = async (investor) => {
+
+  console.log("getting invests for investor", investor)
+
+  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-invest`)) {
+    return []
+  }
+
+  const query = {
+    sql: `SELECT ${select} FROM traderpaired_invest WHERE returnvalues.investor = '${investor}'`
+  };
+
+  try {
+    const results = await s3Common.athenaExpress.query(query);
+    if (results.Items.length > 0) {
+
+      const res = results.Items.map(mapInvest)
+      return res
+    }
+  } catch (error) {
+    console.log("athena error", error);
+  }
+  
+  return [];
+}
+
 module.exports.getByTraderAndToken = async (trader, token) => {
 
   console.log("getting invests for trader and token", trader, token)

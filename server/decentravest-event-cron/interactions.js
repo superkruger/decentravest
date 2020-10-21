@@ -13,9 +13,9 @@ const stopEventHandler = require('./traderpaired/stop')
 
 const positionsHandler = require('./dydx/positions')
 
-const ratingsDao = require('./dao/ratings')
+const traderStatisticsDao = require('./dao/traderStatistics')
+const investorStatisticsDao = require('./dao/investorStatistics')
 
-const ratingsHandler = require('./ratings')
 const statisticsHandler = require('./statistics')
 
 const axios = require('axios');
@@ -234,22 +234,43 @@ const processTrades = async () => {
 }
 exports.processTrades = processTrades
 
-const calculateStatistics = async () => {
+const calculateTraderStatistics = async () => {
 	console.log('env', process.env.NODE_ENV)
 	// Traders
 	//
 	let traders = await traderEventHandler.list();
 
-	console.log("calculateStatistics", traders);
+	console.log("calculateTraderStatistics", traders);
 
 	if (!traders) {
 		return
 	}
 
 	traders.forEach(async (trader) => {
-		const statistics = await statisticsHandler.calculateStatistics(trader.user, traders)
+		const statistics = await statisticsHandler.calculateTraderStatistics(trader.user, traders)
 
-  		await ratingsDao.saveRatings(trader.user, statistics)
+  		await traderStatisticsDao.saveStatistics(trader.user, statistics)
 	})
 }
-exports.calculateStatistics = calculateStatistics
+exports.calculateTraderStatistics = calculateTraderStatistics
+
+const calculateInvestorStatistics = async () => {
+	console.log('env', process.env.NODE_ENV)
+	// Investor
+	//
+	let investors = await investorEventHandler.list();
+
+	console.log("calculateInvestorStatistics", investors);
+
+	if (!investors) {
+		return
+	}
+
+	investors.forEach(async (investor) => {
+		const statistics = await statisticsHandler.calculateInvestorStatistics(investor.user)
+
+  		await investorStatisticsDao.saveStatistics(investor.user, statistics)
+	})
+}
+exports.calculateInvestorStatistics = calculateInvestorStatistics
+

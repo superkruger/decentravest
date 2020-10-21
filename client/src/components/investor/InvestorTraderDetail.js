@@ -2,7 +2,7 @@
 import BigNumber from 'bignumber.js'
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import { Container, Row, Col, Form, Button } from 'react-bootstrap'
+import { Container, Row, Col, Form, Button, Badge } from 'react-bootstrap'
 import AddressImage from '../AddressImage'
 import Rating from '../Rating'
 import Spinner from '../Spinner'
@@ -11,6 +11,10 @@ import PageLink from '../containers/PageLink'
 import { Page } from '../containers/pages'
 
 import AllocationChart from '../trader/AllocationChart'
+import TinyNumber from '../cards/TinyNumber'
+import TinyStars from '../cards/TinyStars'
+import TinyRelativeRatings from '../cards/TinyRelativeRatings'
+
 import { INVESTMENT_COLLATERAL, INVESTMENT_DIRECT, etherToWei, weiToEther, fail } from '../../helpers'
 import { 
   web3Selector,
@@ -54,141 +58,207 @@ class InvestorTraderDetail extends Component {
       )
     }
 
+    const investmentCount = investments.filter(investment => investment.trader === trader.user).length
+
+    const showCollateral = traderAllocations.some(allocation => allocation.symbol && !allocation.total.isZero())
+    const showDirect = Object.keys(traderStatistics.limits.directLimits).some((key) => {
+      let limit = traderStatistics.limits.directLimits[key]
+      return limit.gt(0)
+    })
+
     return (
       <div className="card shadow mb-4">
         <a href={`#trader_${trader.user}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`trader_${trader.user}`}>
           <h6 className="m-0 font-weight-bold text-primary">
             <Row>
               <Col sm={1}>
+                {
+                  investmentCount > 0 &&
+                    <Badge variant="info">{investmentCount}</Badge>
+                }
                 <AddressImage address={trader.user}/>
               </Col>
-              <Col sm={5}>
-                {trader.user}
+              <Col sm={2}>
+                <TinyNumber title="level" amount={traderStatistics.level} border="success" />
               </Col>
-              <Col sm={4}>
-                <Row>
-                  <Col sm={4}>
-                    Trust Rating:
-                  </Col>
-                  <Col sm={8}>
-                  {
-                    traderStatistics.trustRating
-                    ? <Rating ratingKey="trust" rating={traderStatistics.trustRating}/>
-                    : <span>Not enough data yet. Needs at least one settlement</span>
-                  }
-                  </Col>
-                </Row>
+              <Col sm={3}>
+                <TinyStars title="Trust" value={traderStatistics.trustRating} border="primary" />
               </Col>
-              <Col sm={2} className="text-right">
-                {investments.filter(investment => investment.trader === trader.user).length} investments
+              <Col sm={3}>
+                <TinyRelativeRatings title="Trading Ratings" ratings={mapNameValueObject(traderStatistics.tradingRatings.ratings)} border="warning" />
+              </Col>
+              <Col sm={3}>
+                <TinyRelativeRatings title="Profit Ratings" ratings={mapNameValueObject(traderStatistics.profitRatings.ratings)} border="danger" />
               </Col>
             </Row>
           </h6>
         </a>
         <div className="collapse" id={`trader_${trader.user}`}>
           <div className="card-body">
-            <PageLink page={Page.TRADER_PROFILE} section={trader.user} styles="nav-link">
-                <i className="fas fa-fw fa-address-card"></i>
-                <span>Profile</span>
-            </PageLink>
             <Container>
               <Row>
-                <Col sm={12}>
-                  <p>
-                    For collateral investments, you will earn {`${trader.investorCollateralProfitPercent}`}% of the profit<br/>
-                    For direct investments, you will earn {`${trader.investorDirectProfitPercent}`}% of the profit
-                  </p>
-                  { 
-                    traderAllocations.map((allocation) => {
-
-                      if (allocation.symbol && !allocation.total.isZero()) {
-
-                        return (
-                          <div className="card shadow mb-4" key={`${allocation.symbol}_${allocation.trader}`}>
-                            <a href={`#${allocation.symbol}${allocation.trader}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`${allocation.symbol}${allocation.trader}`}>
-                              <h6 className="m-0 font-weight-bold text-primary">{allocation.symbol} <Rating ratingKey={allocation.symbol} rating={`${traderStatistics.tradingRatings.ratings[allocation.symbol]}`}/></h6>
-                            </a>
-                            <div className="collapse" id={`${allocation.symbol}${allocation.trader}`}>
-                              <div className="card-body">
-                                <div className="card shadow mb-4" key={`collateral_${allocation.symbol}_${allocation.trader}`}>
-                                  <a href={`#collateral_${allocation.symbol}${allocation.trader}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`collateral_${allocation.symbol}${allocation.trader}`}>
-                                    <span className="m-0 font-weight-bold text-primary">Collateral Investment (Safer, but lower profits)</span>
-                                  </a>
-                                  <div className="collapse" id={`collateral_${allocation.symbol}${allocation.trader}`}>
-                                    <Container>
-                                      <Row>
-                                        <Col sm={6}>
-                                          <span>Available: {allocation.formattedAvailable}</span>
-                                          <div>
-                                            {
-                                              <AllocationChart trader={trader.user} token={allocation.token}/>
-                                            }
-                                          </div>
-                                        </Col>
-                                        <Col sm={6}>
-                                            <div>
-                                              <Balance props={this.props} symbol={allocation.symbol}/>
-                                              <Form>
-                                                <Form.Group controlId={`collateral_${allocation.symbol}${allocation.trader}_Amount`}>
-                                                  <Form.Control type="number" placeholder={`Enter ${allocation.symbol} Amount`} />
-                                                </Form.Group>
-                                                <Button variant="primary" onClick={(e) => {collateralInvestHandler(allocation, "collateral_"+allocation.symbol + allocation.trader + "_Amount", this.props)}}>
-                                                  Collateral Invest {allocation.symbol}
-                                                </Button>
-                                              </Form>
-                                            </div>
-                                        </Col>
-                                      </Row>
-                                    </Container>
-                                  </div>
-                                </div>
-                                {
-                                  traderStatistics.limits.directLimits[allocation.symbol].gt(0)
-                                  && 
-                                    <div className="card shadow mb-4" key={`direct_${allocation.symbol}_${allocation.trader}`}>
-                                      <a href={`#direct_${allocation.symbol}${allocation.trader}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`direct_${allocation.symbol}${allocation.trader}`}>
-                                        <span className="m-0 font-weight-bold text-primary">Direct Investment (Riskier, but higher profits)</span>
-                                      </a>
-                                      <div className="collapse" id={`direct_${allocation.symbol}${allocation.trader}`}>
-                                        <Container>
-                                          <Row>
-                                            <Col sm={6}>
-                                              <span>Available: {traderStatistics.limits.formattedDirectAvailable[allocation.symbol]}</span>
-                                            </Col>
-                                            <Col sm={6}>
-                                                <div>
-                                                  <Balance props={this.props} symbol={allocation.symbol}/>
-                                                  <Form>
-                                                    <Form.Group controlId={`direct_${allocation.symbol}${allocation.trader}_Amount`}>
-                                                      <Form.Control type="number" placeholder={`Enter ${allocation.symbol} Amount`} />
-                                                    </Form.Group>
-                                                    <Button variant="primary" onClick={(e) => {directInvestHandler(allocation, "direct_"+allocation.symbol + allocation.trader + "_Amount", this.props)}}>
-                                                      Direct Invest {allocation.symbol}
-                                                    </Button>
-                                                  </Form>
-                                                </div>
-                                            </Col>
-                                          </Row>
-                                        </Container>
-                                      </div>
-                                    </div>
-                                }
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      }
-                    })
-                  }
+                <Col sm={3}>
+                  <PageLink page={Page.TRADER_PROFILE} section={trader.user} target="_blank" styles="nav-link">
+                      <i className="fas fa-fw fa-address-card"></i>
+                      <span>Profile</span>
+                  </PageLink>
+                </Col>
+                <Col sm={9}>
+                  <div className="align-right">Favourite</div>
                 </Col>
               </Row>
+              {
+                showCollateral
+                ? <Row>
+                    <Col sm={12}>
+                      <Collateral props={this.props} />
+                    </Col>
+                  </Row>
+                : <div/>
+              }
+              {
+                showDirect
+                ? <Row>
+                    <Col sm={12}>
+                      <Direct props={this.props} />
+                    </Col>
+                  </Row>
+                : <div/>
+              }
             </Container>
+            
           </div>
         </div>
       </div>
       
     )
   }
+}
+
+function Collateral(props) {
+  const {web3, trader, traderAllocations, traderStatistics, investments } = props.props
+
+  return (
+    <div className="card shadow mb-4" key={`collateral-${trader.user}`}>
+      <a href={`#collateral${trader.user}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`collateral${trader.user}`}>
+        <h6 className="m-0 font-weight-bold text-primary">
+          <Row>
+            <Col sm={1}>
+              <i className="fas fa-university fa-2x text-gray-300"></i>
+            </Col>
+            <Col sm={5}>
+              <div className="h6 mb-0 mr-3 font-weight-bold text-gray-800">Collateral Investment</div>
+            </Col>
+            <Col sm={6}>
+              <div className="h6 mb-0 mr-3 text-gray-800">You will earn {`${trader.investorCollateralProfitPercent}`}% of the profit</div>
+            </Col>
+          </Row>
+        </h6>
+      </a>
+      <div className="collapse" id={`collateral${trader.user}`}>
+        <div className="card border-left-primary shadow h-100 py-0">
+          <div className="card-body">
+            <div className="row no-gutters align-items-left">
+              <div className="col mr-2">
+                {
+                  traderAllocations.map((allocation) => {
+                    if (allocation.symbol && !allocation.total.isZero()) {
+                      return (
+                        <div key={`collateral_${allocation.symbol}_${allocation.trader}`} className="row no-gutters align-items-left">
+                          
+                            <div className="col-sm-4">
+                              <div className="h6 mb-0 mr-3 font-weight-bold text-gray-800"><Balance props={props.props} symbol={allocation.symbol}/></div>
+                            </div>
+                            <div className="col-sm-4">
+                              <Form.Group controlId={`collateral_${allocation.symbol}${allocation.trader}_Amount`}>
+                                <Form.Control type="number" placeholder={`Max: ${allocation.formattedAvailable}`} />
+                              </Form.Group>
+                            </div>
+                            <div className="col-sm-4">
+                              <Button variant="primary" onClick={(e) => {collateralInvestHandler(allocation, "collateral_"+allocation.symbol + allocation.trader + "_Amount", props.props)}}>
+                                Invest {allocation.symbol}
+                              </Button>
+                            </div>
+                        </div>
+                      )
+                    }
+                  })
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Direct(props) {
+  const {web3, trader, traderAllocations, traderStatistics, investments } = props.props
+
+  return (
+    <div className="card shadow mb-4" key={`direct-${trader.user}`}>
+      <a href={`#direct${trader.user}`} className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`direct${trader.user}`}>
+        <h6 className="m-0 font-weight-bold text-primary">
+          <Row>
+            <Col sm={1}>
+              <i className="fas fa-handshake fa-2x text-gray-300"></i>
+            </Col>
+            <Col sm={5}>
+              <div className="h6 mb-0 mr-3 font-weight-bold text-gray-800">Direct Investment</div>
+            </Col>
+            <Col sm={6}>
+              <div className="h6 mb-0 mr-3 text-gray-800">You will earn {`${trader.investorDirectProfitPercent}`}% of the profit</div>
+            </Col>
+          </Row>
+        </h6>
+      </a>
+      <div className="collapse" id={`direct${trader.user}`}>
+        <div className="card border-left-primary shadow h-100 py-0">
+          <div className="card-body">
+            <div className="row no-gutters align-items-left">
+              <div className="col mr-2">
+                {
+                  traderAllocations.map((allocation) => {
+                    const limit = traderStatistics.limits.directLimits[allocation.symbol]
+
+                    if (limit && limit.gt(0)) {
+                      return (
+                        <div key={`direct_${allocation.symbol}_${allocation.trader}`} className="row no-gutters align-items-left">
+                          
+                            <div className="col-sm-4">
+                              <div className="h6 mb-0 mr-3 font-weight-bold text-gray-800"><Balance props={props.props} symbol={allocation.symbol}/></div>
+                            </div>
+                            <div className="col-sm-4">
+                              <Form.Group controlId={`direct_${allocation.symbol}${allocation.trader}_Amount`}>
+                                <Form.Control type="number" placeholder={`Max: ${traderStatistics.limits.formattedDirectAvailable[allocation.symbol]}`} />
+                              </Form.Group>
+                            </div>
+                            <div className="col-sm-4">
+                              <Button variant="primary" onClick={(e) => {directInvestHandler(allocation, "direct_"+allocation.symbol + allocation.trader + "_Amount", props.props)}}>
+                                Invest {allocation.symbol}
+                              </Button>
+                            </div>
+                        </div>
+                      )
+                    }
+                  })
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function mapNameValueObject(obj) {
+  const keys = Object.keys(obj)
+  let data = keys.map(key => {
+    return {name: key, value: obj[key]}
+  })
+  return data
 }
 
 function Balance(props) {
@@ -203,7 +273,7 @@ function Balance(props) {
   }
 
   return (
-    <span>Wallet Balance: {balance}</span>
+    <span>{symbol} Wallet Balance: {balance}</span>
   )
 }
 

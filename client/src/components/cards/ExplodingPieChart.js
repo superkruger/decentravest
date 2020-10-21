@@ -51,7 +51,7 @@ class ExplodingPieChart extends Component {
             {
               data.length > 0
               ?
-                <div id={`${title}-piechartdiv`} style={{ width: "90%", height: "100%" }} />
+                <div id={`${title}-expiechartdiv`} style={{ width: "90%", height: "100%" }} />
               :
                 <div>No data</div>
             }
@@ -65,7 +65,7 @@ class ExplodingPieChart extends Component {
 function buildChart(props) {
     const {title} = props;
 
-    let container = am4core.create(title + "-piechartdiv", am4core.Container);
+    let container = am4core.create(title + "-expiechartdiv", am4core.Container);
     container.width = am4core.percent(100);
     container.height = am4core.percent(100);
     container.layout = "horizontal";

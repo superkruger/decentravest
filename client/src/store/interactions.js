@@ -34,6 +34,7 @@ import {
 	investmentChanging,
 	disbursementCreated,
 	traderStatisticsLoaded,
+	investorStatisticsLoaded,
 	tradeCountLoaded,
 	tradeLoaded
 } from './actions.js'
@@ -1081,7 +1082,7 @@ const getTradeInvestmentsAmount = async (trade, traderInvestments) => {
 export const loadTraderStatistics = async (account, network, dispatch) => {
 	try {
 		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
-					process.env['REACT_APP_' + network + '_API_STATISTICS']
+					process.env['REACT_APP_' + network + '_API_TRADERSTATISTICS']
 		url = url.replace('$1', account)
 
 		console.log("loadTraderStatistics", url)
@@ -1090,6 +1091,28 @@ export const loadTraderStatistics = async (account, network, dispatch) => {
 		  	log("loadTraderStatistics success", response)
 		    // handle success
 		    dispatch(traderStatisticsLoaded(account, response.data))
+		  })
+		  .catch(function (error) {
+		    // handle error
+		    log('Could not get statistics', error)
+		  })
+	} catch (error) {
+		log('Could not get statistics', error)
+	}
+}
+
+export const loadInvestorStatistics = async (account, network, dispatch) => {
+	try {
+		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
+					process.env['REACT_APP_' + network + '_API_INVESTORSTATISTICS']
+		url = url.replace('$1', account)
+
+		console.log("loadInvestorStatistics", url)
+		axios.get(url)
+		  .then(function (response) {
+		  	log("loadInvestorStatistics success", response)
+		    // handle success
+		    dispatch(investorStatisticsLoaded(account, response.data))
 		  })
 		  .catch(function (error) {
 		    // handle error

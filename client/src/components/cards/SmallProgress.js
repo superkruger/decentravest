@@ -4,11 +4,11 @@ import { connect } from 'react-redux'
 class SmallProgress extends Component {
 
   render() {
-    const {title, value, icon} = this.props
+    const {title, value, icon, border} = this.props
 
     return (
       <div>
-        <div className="card border-left-info shadow h-100 py-2">
+        <div className={`card border-left-${border} shadow h-100 py-2`}>
           <div className="card-body">
             <div className="row no-gutters align-items-center">
               <div className="col mr-2">
@@ -39,7 +39,8 @@ function mapStateToProps(state, ownProps) {
   return {
     title: ownProps.title,
     value: ownProps.value,
-    icon: ownProps.icon
+    icon: ownProps.icon,
+    border: ownProps.border
   }
 }
 

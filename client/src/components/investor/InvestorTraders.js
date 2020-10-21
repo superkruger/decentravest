@@ -40,25 +40,21 @@ class InvestorTraders extends Component {
 
         switch(this.state.filter) {
           case 'filterRadiosLevel': {
-            console.log('sort', this.state.filter)
-            return a.statistics.level - b.statistics.level
+            return b.statistics.level - a.statistics.level
             break
           }
           case 'filterRadiosTrust': {
-            console.log('sort', this.state.filter)
-            return a.statistics.trustRating - b.statistics.trustRating
+            return b.statistics.trustRating - a.statistics.trustRating
             break
           }
           case 'filterRadiosTrading': {
-            console.log('sort', this.state.filter, this.state.filterTradingAsset)
-            return a.statistics.tradingRatings.ratings[this.state.filterTradingAsset] - 
-              b.statistics.tradingRatings.ratings[this.state.filterTradingAsset]
+            return b.statistics.tradingRatings.ratings[this.state.filterTradingAsset] - 
+              a.statistics.tradingRatings.ratings[this.state.filterTradingAsset]
             break
           }
           case 'filterRadiosProfit': {
-            console.log('sort', this.state.filter, this.state.filterTradingAsset)
-            return a.statistics.profitRatings.ratings[this.state.filterProfitAsset] - 
-              b.statistics.profitRatings.ratings[this.state.filterProfitAsset]
+            return b.statistics.profitRatings.ratings[this.state.filterProfitAsset] - 
+              a.statistics.profitRatings.ratings[this.state.filterProfitAsset]
             break
           }
         }
@@ -136,7 +132,6 @@ class InvestorTraders extends Component {
 }
 
 function changeFilter (event, component) {
-  console.log(event.target.id)
   component.setState({filter: event.target.id})
 }
 

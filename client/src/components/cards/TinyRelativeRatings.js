@@ -1,35 +1,34 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 
-class SmallCurrencyAmounts extends Component {
+class TinyRelativeRatings extends Component {
 
   render() {
-    const {title, amounts, icon, border} = this.props
+    const {title, ratings, border} = this.props
 
     return (
       <div>
         <div className={`card border-left-${border} shadow h-100 py-2`}>
-          <div className="card-body">
+          <div className="pl-1">
             <div className="row no-gutters align-items-center">
               <div className="col mr-2">
                 <div className="text-xs font-weight-bold text-info text-uppercase mb-1">{title}</div>
                 {
-                  amounts.map((amount) => {
+                  ratings.map((rating) => {
                     return (
-                      <div key={amount.name} className="row no-gutters align-items-center">
+                      <div key={rating.name} className="row no-gutters align-items-center">
                         <div className="col-sm-4">
-                          <div className="h5 mb-0 mr-3 font-weight-bold text-gray-800">{amount.name}</div>
+                          <div className="text-xs mb-0 mr-0 font-weight-bold text-gray-800">{rating.name}</div>
                         </div>
                         <div className="col-sm-8">
-                          <div className="h5 mb-0 font-weight-bold text-gray-800">{amount.value}</div>
+                          <div className="progress progress-sm mr-2">
+                            <div className="progress-bar bg-info" role="progressbar" style={{width: `${rating.value * 10}%`}} aria-valuenow={rating.value} aria-valuemin="0" aria-valuemax="10"></div>
+                          </div>
                         </div>
                       </div>
                     )
                   })
                 }
-              </div>
-              <div className="col-auto">
-                <i className={`fas ${icon} fa-2x text-gray-300`}></i>
               </div>
             </div>
           </div>
@@ -42,12 +41,11 @@ class SmallCurrencyAmounts extends Component {
 function mapStateToProps(state, ownProps) {
   return {
     title: ownProps.title,
-    amounts: ownProps.amounts,
-    icon: ownProps.icon,
+    ratings: ownProps.ratings,
     border: ownProps.border
   }
 }
 
-export default connect(mapStateToProps)(SmallCurrencyAmounts)
+export default connect(mapStateToProps)(TinyRelativeRatings)
 
 

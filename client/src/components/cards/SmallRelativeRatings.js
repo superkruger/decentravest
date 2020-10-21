@@ -1,14 +1,14 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 
-class RelativeRatings extends Component {
+class SmallRelativeRatings extends Component {
 
   render() {
-    const {title, ratings, icon} = this.props
+    const {title, ratings, icon, border} = this.props
 
     return (
       <div>
-        <div className="card border-left-info shadow h-100 py-2">
+        <div className={`card border-left-${border} shadow h-100 py-2`}>
           <div className="card-body">
             <div className="row no-gutters align-items-center">
               <div className="col mr-2">
@@ -45,10 +45,11 @@ function mapStateToProps(state, ownProps) {
   return {
     title: ownProps.title,
     ratings: ownProps.ratings,
-    icon: ownProps.icon
+    icon: ownProps.icon,
+    border: ownProps.border
   }
 }
 
-export default connect(mapStateToProps)(RelativeRatings)
+export default connect(mapStateToProps)(SmallRelativeRatings)
 
 

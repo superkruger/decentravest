@@ -192,6 +192,29 @@ function web3 (state = {}, action ) {
 					]
 				}
 			}
+		case 'INVESTOR_STATISTICS_LOADED':
+			{
+				let index, data
+
+				if (!state.investors) {
+					state.investors = [{user: action.investor}]
+				}
+
+				index = state.investors.findIndex(investor => investor.user === action.investor)
+				if (index !== -1) {
+					state.investors[index] = {
+						...state.investors[index],
+						statistics: action.statistics
+					}
+				}
+				data = state.investors
+				return { 
+					...state, 
+					investors: [
+						...data
+					]
+				}
+			}
 		case 'DIRECT_LIMIT_LOADED':
 			{
 				let index, data
@@ -270,7 +293,6 @@ function web3 (state = {}, action ) {
 					]
 				}
 			}
-
 		case 'INVESTMENT_LOADED':
 			{
 				// prevent duplicates

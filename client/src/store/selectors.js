@@ -157,6 +157,15 @@ export const traderStatisticsSelector = createSelector(traderStatistics, (trader
 	}
 })
 
+const investorStatistics = (state, investor) => {
+	const investorObj = find(state.web3.investors, {user: investor})
+	if (investorObj && investorObj.statistics) {
+		return investorObj.statistics
+	}
+	return null
+}
+export const investorStatisticsSelector = createSelector(investorStatistics, s => s)
+
 const traderAllocations = (state, trader) => {
 	const traderObj = find(state.web3.traders, {user: trader})
 	log("traderAllocations", traderObj)

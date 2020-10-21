@@ -19,7 +19,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "processEvents": "node -e 'require(\"./handler\").localProcessEvents()'",
     "processTrades": "node -e 'require(\"./handler\").localProcessTrades()'",
-    "calculateStatistics": "node -e 'require(\"./handler\").localCalculateStatistics()'"
+    "calculateTraderStatistics": "node -e 'require(\"./handler\").localCalculateTraderStatistics()'",
+    "calculateInvestorStatistics": "node -e 'require(\"./handler\").localCalculateInvestorStatistics()'"
   },
   "author": "Jaco Kruger <superkruger@gmail.com>",
   "license": "ISC"

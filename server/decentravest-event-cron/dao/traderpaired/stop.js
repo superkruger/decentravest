@@ -125,6 +125,31 @@ module.exports.getByTrader = async (trader) => {
   return [];
 }
 
+module.exports.getByInvestor = async (investor) => {
+
+  console.log("getting stops for investor", investor)
+
+  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-stop`)) {
+    return []
+  }
+
+  const query = {
+    sql: `SELECT ${select} FROM traderpaired_stop WHERE returnvalues.investor = '${investor}'`
+  };
+
+  try {
+    const results = await s3Common.athenaExpress.query(query);
+    if (results.Items.length > 0) {
+
+      return results.Items.map(mapStop)
+    }
+  } catch (error) {
+    console.log("athena error", error);
+  }
+  
+  return [];
+}
+
 module.exports.getByTraderAndToken = async (trader, token) => {
 
   console.log("getting stops for trader and token", trader, token)

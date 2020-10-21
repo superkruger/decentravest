@@ -2,17 +2,26 @@ import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
 import { Alert, Form, Button, Container, Row, Col, Tabs, Tab } from 'react-bootstrap'
-import Rating from '../Rating'
 import Spinner from '../Spinner'
+import Rating from '../Rating'
+import Level from '../cards/Level'
+import SmallStars from '../cards/SmallStars'
+import ExplodingPieChart from '../cards/ExplodingPieChart'
+import DateLineChart from '../cards/DateLineChart'
+import SmallRelativeRatings from '../cards/SmallRelativeRatings'
+import SmallCurrencyAmounts from '../cards/SmallCurrencyAmounts'
 import AddressLink from '../AddressLink'
 
 import { 
   networkSelector,
+  accountSelector, 
   traderSelector,
   tradesSelector,
-  traderStatisticsSelector
+  traderStatisticsSelector,
+  traderAllocationsSelector
 } from '../../store/selectors'
 import { 
+  loadTraderAllocations,
   loadTraderStatistics,
   loadTrades
 } from '../../store/interactions'
@@ -22,8 +31,6 @@ class Profile extends Component {
   componentDidMount() {
     const { network, dispatch, page, section } = this.props
 
-    console.log("page, section", page, section)
-    
     loadTrades(network, section, dispatch)
     loadTraderStatistics(section, network, dispatch)
   }
@@ -44,252 +51,86 @@ class Profile extends Component {
       <div className="col-sm-12">
         <Container>
           <Row>
-            <Col sm={2}>
-              <AddressLink address={trader.user}/>
+            <Col sm={12}>
+              <Level level={traderStatistics.level} />
             </Col>
-            <Col sm={10}>
-              <h5>Trade profile - {trader.user}</h5>
+          </Row>
+          <Row>
+            <Col sm={4}>
+            {
+              traderStatistics.trustRating
+              ? <SmallStars title="Trust" value={traderStatistics.trustRating} icon="fa-thumbs-up" border="primary"/>
+              : <span>Not enough data yet. Needs at least one settlement</span>
+            }
+            </Col>
+            <Col sm={4}>
+              <SmallRelativeRatings title="Trading Ratings" ratings={mapNameValueObject(traderStatistics.tradingRatings.ratings)} icon="fa-chart-line" border="warning" />
+            </Col>
+            <Col sm={4}>
+              <SmallRelativeRatings title="Profit Ratings" ratings={mapNameValueObject(traderStatistics.profitRatings.ratings)} icon="fa-hand-holding-usd" border="danger" />
+            </Col>
+          </Row>
+          <br/>
+          <Row>
+            <Col sm={12}>
+              { showTrades("ETH Trades", trades["ETH"]) }
+            </Col>
+          </Row>
+          <Row>
+            <Col sm={12}>
+              { showTrades("DAI Trades", trades["DAI"]) }
+            </Col>
+          </Row>
+          <Row>
+            <Col sm={12}>
+              { showTrades("USDC Trades", trades["USDC"]) }
             </Col>
           </Row>
         </Container>
         
-        <div className="card shadow mb-4">
-          <div className="card-header">
-            <h4>Ratings</h4>
-          </div>
-          <div className="card-body">
-            <div className="card shadow mb-4" key='ratings_trading'>
-              <a href='#ratings_trading' className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls='ratings_trading'>
-                <h6>Trading Ratings</h6>
-              </a>
-              <div id="ratings_trading" className="collapse show">
-                <div className="card-body">
-                  <Container>
-                    <Row>
-                      <Col sm={4}>
-                        <Alert variant="info">
-                          Trading rating is based on trade profits relative to other traders on this platform.
-                        </Alert>
-                      </Col>
-                      <Col sm={8}>
-                        <table className="table">
-                          <thead>
-                            <tr>
-                              <th></th><th>Rating</th><th>Average Profit</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                          {
-                            tradingRatingKeys.map((key) => {
-                              return (
-                                <tr key={`${key}`}>
-                                  <td><h6>{displaySymbol(key)}</h6></td>
-                                  <td><Rating ratingKey={`trading_${key}`} rating={traderStatistics.tradingRatings.ratings[key]}/></td>
-                                  <td><h6>{traderStatistics.tradingRatings.formattedAverageProfits[key]}</h6></td>
-                                </tr>
-                              )
-                            })
-                          }
-                          </tbody>
-                        </table>
-                      </Col>
-                    </Row>
-                  </Container>
-                </div>
-              </div>
-            </div>
-            <div className="card shadow mb-4" key='ratings_profit'>
-              <a href='#ratings_profit' className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls='ratings_profit'>
-                <h6>Profit Rating</h6>
-              </a>
-              <div id="ratings_profit" className="collapse show">
-                <div className="card-body">
-                  <Container>
-                    <Row>
-                      <Col sm={4}>
-                        <Alert variant="info">
-                          Profit rating is based on returns to investors relative to the returns of other traders
-                        </Alert>
-                      </Col>
-                      <Col sm={8}>
-                        <table className="table">
-                          <thead>
-                            <tr>
-                              <th></th><th>Rating</th><th>Average Profit</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                          {
-                            profitRatingKeys.map((key) => {
-                              return (
-                                <tr key={`${key}`}>
-                                  <td><h6>{displaySymbol(key)}</h6></td>
-                                  <td><Rating ratingKey={`profit_${key}`} rating={traderStatistics.profitRatings.ratings[key]}/></td>
-                                  <td><h6>{traderStatistics.profitRatings.formattedAverageProfits[key]}</h6></td>
-                                </tr>
-                              )
-                            })
-                          }
-                          </tbody>
-                        </table>
-                      </Col>
-                    </Row>
-                  </Container>
-                </div>
-              </div>
-            </div>
-            <div className="card shadow mb-4" key='ratings_trust'>
-              <a href='#ratings_trust' className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls='ratings_trust'>
-                <h6>Trust Rating</h6>
-              </a>
-              <div id="ratings_trust" className="collapse show">
-                <div className="card-body">
-                  <Container>
-                    <Row>
-                      <Col sm={4}>
-                        <Alert variant="info">
-                          Trust rating is based on how settlements are handled. Any suspect or fraudulent activity will impact it negatively, as well as waiting more than 48 hours to approve a settlement request
-                        </Alert>
-                      </Col>
-                      <Col sm={8}>
-                        <Row>
-                          <Col sm={3}>
-                            <h6>Trust</h6>
-                          </Col>
-                          <Col sm={9}>
-                          {
-                            traderStatistics.trustRating
-                            ? <Rating ratingKey="trust" rating={traderStatistics.trustRating}/>
-                            : <span>Not enough data yet. Needs at least one settlement</span>
-                          }
-                          </Col>
-                        </Row>
-                      </Col>
-                    </Row>
-                  </Container>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="card shadow mb-4">
-          <div className="card-header">
-            <h4>Trades</h4>
-          </div>
-          <div className="card-body">
-            <Container>
-              <Row>
-                <Col sm={12}>
-                  <Alert variant="info">
-                    Below are the completed trades on dydx.
-                  </Alert>
-                </Col>
-              </Row>
-              <Row>
-                <Col sm={12}>
-                  <div className="card shadow mb-4">
-                    <a href="#WETH_Trades" className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="WETH_Trades">
-                      <h6 className="m-0 font-weight-bold text-primary">ETH Trades</h6>
-                    </a>
-                    <div id="WETH_Trades" className="collapse show">
-                      <div className="card-body">
-                        <table className="table table-bordered table-light table-sm small" id="dataTable" width="100%">
-                          <thead>
-                            <tr>
-                              <th>Date</th>
-                              <th>Profit</th>
-                            </tr>
-                          </thead>
-                          { showTrades(trades["WETH"]) }
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                </Col>
-              </Row>
-              <Row>
-                <Col sm={12}>
-                  <div className="card shadow mb-4">
-                    <a href="#DAI_Trades" className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="DAI_Trades">
-                      <h6 className="m-0 font-weight-bold text-primary">DAI Trades</h6>
-                    </a>
-                    <div id="DAI_Trades" className="collapse show">
-                      <div className="card-body">
-                        <table className="table table-bordered table-light table-sm small" id="dataTable" width="100%">
-                          <thead>
-                            <tr>
-                              <th>Date</th>
-                              <th>Profit</th>
-                            </tr>
-                          </thead>
-                          { showTrades(trades["DAI"]) }
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                </Col>
-              </Row>
-              <Row>
-                <Col sm={12}>
-                  <div className="card shadow mb-4">
-                    <a href="#USDC_Trades" className="d-block card-header py-3 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="USDC_Trades">
-                      <h6 className="m-0 font-weight-bold text-primary">USDC Trades</h6>
-                    </a>
-                    <div id="USDC_Trades" className="collapse show">
-                      <div className="card-body">
-                        <table className="table table-bordered table-light table-sm small" id="dataTable" width="100%">
-                          <thead>
-                            <tr>
-                              <th>Date</th>
-                              <th>Profit</th>
-                            </tr>
-                          </thead>
-                          { showTrades(trades["USDC"]) }
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                </Col>
-              </Row>
-            </Container>
-          </div>
-        </div>
       </div>
     )
   }
 }
 
-function showTrades(trades) {
+function mapNameValueObject(obj) {
+  const keys = Object.keys(obj)
+  let data = keys.map(key => {
+    return {name: key, value: obj[key]}
+  })
+  return data
+}
+
+function mapTrades(trades) {
+  let data = trades.map(trade => {
+    return {date: trade.start.toDate(), value: trade.formattedProfit}
+  })
+  return data
+}
+
+function showTrades(title, trades) {
   if (trades === undefined || trades.length === 0) {
     return (
-      <tbody></tbody>
+      <div></div>
     )
   }
 
   return (
-    <tbody>
-    { trades.map((trade) => {
-        return (
-            <tr key={trade.uuid}>
-              <td className="text-muted">{trade.formattedStart}</td>
-              <td className={`text-${trade.profitClass}`}>{trade.formattedProfit}</td>
-            </tr>
-        )
-      })
-    }
-    </tbody>
+    <DateLineChart title={title} data={mapTrades(trades)} />
   )
 }
 
 
 function mapStateToProps(state, ownProps) {
+  const account = accountSelector(state)
 
   return {
     page: ownProps.page,
     section: ownProps.section,
     network: networkSelector(state),
-    trader: traderSelector(state, ownProps.section),
+    account: account,
     trades: tradesSelector(state),
+    trader: traderSelector(state, ownProps.section),
     traderStatistics: traderStatisticsSelector(state, ownProps.section)
   }
 }

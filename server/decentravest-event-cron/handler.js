@@ -2,7 +2,8 @@ require('dotenv').config()
 
 const encode = require('./common/encode')
 const interactions = require('./interactions')
-const ratingsDao = require('./dao/ratings')
+const traderStatisticsDao = require('./dao/traderStatistics')
+const investorStatisticsDao = require('./dao/investorStatistics')
 const positionsDao = require('./dao/dydx/positions')
 const tradesDao = require('./dao/trades')
 
@@ -24,24 +25,45 @@ module.exports.processTrades = (event, context) => {
 	return "processed trades";
 }
 
-module.exports.calculateStatistics = (event, context) => {
+module.exports.calculateTraderStatistics = (event, context) => {
 	const time = new Date();
 	console.log(`Your cron function "${context.functionName}" ran at ${time}`);
 
-	localCalculateStatistics();
+	localCalculateTraderStatistics();
 
 	return "calculated statistics";
 }
 
-module.exports.statistics = async (event, context) => {
-  console.log("statistics", event, context)
+module.exports.calculateInvestorStatistics = (event, context) => {
+  const time = new Date();
+  console.log(`Your cron function "${context.functionName}" ran at ${time}`);
+
+  localCalculateInvestorStatistics();
+
+  return "calculated statistics";
+}
+
+module.exports.traderStatistics = async (event, context) => {
+  console.log("traderStatistics", event, context)
 
   try {
-  	const result = await ratingsDao.getRatings(event.queryStringParameters.trader)
+  	const result = await traderStatisticsDao.getStatistics(event.queryStringParameters.trader)
   	return encode.success(result);
   } catch (error) {
-  	console.error("could not get ratings", error)
-  	return encode.error(error, "could not get ratings");
+  	console.error("could not get statistics", error)
+  	return encode.error(error, "could not get statistics");
+  }
+}
+
+module.exports.investorStatistics = async (event, context) => {
+  console.log("investorStatistics", event, context)
+
+  try {
+    const result = await investorStatisticsDao.getStatistics(event.queryStringParameters.investor)
+    return encode.success(result);
+  } catch (error) {
+    console.error("could not get statistics", error)
+    return encode.error(error, "could not get statistics");
   }
 }
 
@@ -82,7 +104,12 @@ const localProcessTrades = async () => {
 }
 module.exports.localProcessTrades = localProcessTrades
 
-const localCalculateStatistics = async () => {
-	await interactions.calculateStatistics();
+const localCalculateTraderStatistics = async () => {
+	await interactions.calculateTraderStatistics();
 }
-module.exports.localCalculateStatistics = localCalculateStatistics
+module.exports.localCalculateTraderStatistics = localCalculateTraderStatistics
+
+const localCalculateInvestorStatistics = async () => {
+  await interactions.calculateInvestorStatistics();
+}
+module.exports.localCalculateInvestorStatistics = localCalculateInvestorStatistics
