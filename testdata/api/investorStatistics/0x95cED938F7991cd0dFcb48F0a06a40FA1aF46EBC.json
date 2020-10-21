@@ -1,0 +1,96 @@
+{
+	"counts": {
+		"ETH": {
+			"0": {
+				"approved": {
+					"positive": {
+						"count": 1,
+						"total": "60000000000000000"
+					},
+					"negative": {
+						"count": 4,
+						"total": "1000000000000000"
+					}
+				},
+				"active": {
+					"positive": {
+						"count": 2,
+						"total": "90000000000000000"
+					},
+					"negative": {
+						"count": 5,
+						"total": "7000000000000000"
+					}
+				}
+			},
+			"1": {
+				"approved": {
+					"positive": {
+						"count": 2,
+						"total": "2000000000000000"
+					}
+				}
+			}
+		},
+		"DAI": {
+			"0": {
+				"approved": {
+					"positive": {
+						"count": 9,
+						"total": "90000000000000000"
+					},
+					"negative": {
+						"count": 2,
+						"total": "2000000000000000"
+					}
+				},
+				"active": {
+					"positive": {
+						"count": 1,
+						"total": "80000000000000000"
+					},
+					"negative": {
+						"count": 3,
+						"total": "1000000000000000"
+					}
+				}
+			},
+			"1": {
+				"approved": {
+					"positive": {
+						"count": 5,
+						"total": "4000000000000000"
+					}
+				}
+			}
+		},
+		"USDC": {
+			"0": {
+				"approved": {
+					"positive": {
+						"count": 6,
+						"total": "150000000000"
+					}
+				},
+				"active": {
+					"positive": {
+						"count": 1,
+						"total": "50000000000"
+					},
+					"negative": {
+						"count": 4,
+						"total": "1000000000"
+					}
+				}
+			},
+			"1": {
+				"approved": {
+					"positive": {
+						"count": 6,
+						"total": "300000000"
+					}
+				}
+			}
+		}
+	}
+}
