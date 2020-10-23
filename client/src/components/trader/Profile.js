@@ -11,6 +11,8 @@ import DateLineChart from '../cards/DateLineChart'
 import SmallRelativeRatings from '../cards/SmallRelativeRatings'
 import SmallCurrencyAmounts from '../cards/SmallCurrencyAmounts'
 import AddressLink from '../AddressLink'
+import PageLink from '../containers/PageLink'
+import { Page } from '../containers/pages'
 
 import { 
   networkSelector,
@@ -51,7 +53,13 @@ class Profile extends Component {
       <div className="col-sm-12">
         <Container>
           <Row>
-            <Col sm={12}>
+            <Col sm={1}>
+              <PageLink page={Page.INVESTOR_TRADERS} section={section} target="_blank" styles="nav-link">
+                  <i className="fas fa-fw fa-external-link-alt"></i>
+                  <div className="text-xs font-weight-bold text-primary text-uppercase mb-1">Invest</div>
+              </PageLink>
+            </Col>
+            <Col sm={11}>
               <Level level={traderStatistics.level} />
             </Col>
           </Row>

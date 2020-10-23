@@ -91,6 +91,15 @@ module.exports.trades = async (event, context) => {
   }
 }
 
+module.exports.updateTrades = (event, context) => {
+  const time = new Date();
+  console.log(`Your cron function "${context.functionName}" ran at ${time}`);
+
+  localUpdateTrades();
+
+  return "updated trades";
+}
+
 const localProcessEvents = async () => {
 	let {web3, networkId} = await interactions.loadWeb3();
 	console.log("loaded web3: ", web3, networkId);
@@ -103,6 +112,19 @@ const localProcessTrades = async () => {
 	await interactions.processTrades();
 }
 module.exports.localProcessTrades = localProcessTrades
+
+const localUpdateTrades = async () => {
+  
+  try {
+    await interactions.updateTrades(event.queryStringParameters.trader);
+    const result = await tradesDao.getByOwner(event.queryStringParameters.trader)
+    return encode.success(result);
+  } catch (error) {
+    console.error("could not update trades", error)
+    return encode.error(error, "could not update trades")
+  }
+}
+module.exports.localUpdateTrades = localUpdateTrades
 
 const localCalculateTraderStatistics = async () => {
 	await interactions.calculateTraderStatistics();

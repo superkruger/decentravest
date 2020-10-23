@@ -621,22 +621,30 @@ const investInTrader = async (account, trader, tokenAddress, token, amount, wall
 	}
 }
 
-export const stopInvestment = (account, investment, wallet, dispatch) => {
+export const stopInvestment = async (network, account, investment, wallet, dispatch) => {
 	try {
 		dispatch(investmentChanging(investment, true))
+
+		const success = await updateTrades(network, investment.trader, dispatch)
+
+		if (!success) {
+			dispatch(notificationAdded(fail("Investment", "Could not update trades to stop investment. Please try again later.")))
+			throw "could not update trades"
+		}
+
 		wallet.methods.stop(investment.trader, investment.id).send({from: account})
-		.on('transactionHash', async (hash) => {
-			dispatch(notificationAdded(info("Investment", "Stopping investment...", hash)))
-		})
-		.on('receipt', async (receipt) => {
-			dispatch(notificationRemoved(receipt.transactionHash))
-			dispatch(notificationAdded(info("Investment", "Stopped investment")))
-		})
-		.on('error', (err) => {
-			log('Could not stopInvestment', err)
-			dispatch(investmentChanging(investment, false))
-			dispatch(notificationAdded(fail("Investment", "Could not stop investment")))
-		})
+			.on('transactionHash', async (hash) => {
+				dispatch(notificationAdded(info("Investment", "Stopping investment...", hash)))
+			})
+			.on('receipt', async (receipt) => {
+				dispatch(notificationRemoved(receipt.transactionHash))
+				dispatch(notificationAdded(info("Investment", "Stopped investment")))
+			})
+			.on('error', (err) => {
+				log('Could not stopInvestment', err)
+				dispatch(investmentChanging(investment, false))
+				dispatch(notificationAdded(fail("Investment", "Could not stop investment")))
+			})
 	} catch (err) {
 		log('Could not stopInvestment', err)
 		return null
@@ -1129,18 +1137,42 @@ export const loadTradeCount = async (network, account, dispatch) => {
 					process.env['REACT_APP_' + network + '_API_TRADES']
 		url = url.replace('$1', account)
 
-		axios.get(url)
-		  .then(function (response) {
-		    // handle success
-		    dispatch(tradeCountLoaded(response.data.length))
-		  })
-		  .catch(function (error) {
-		    // handle error
-		    log(error)
-		  })
+		const response = await axios.get(url)
+		dispatch(tradeCountLoaded(response.data.length))
+		  
+		return true
 	} catch (error) {
 		log('Could not get trades', error)
-		return null
+		return false
+	}
+}
+
+export const updateTrades = async (network, account, dispatch) => {
+	log("updateTrades", network, account)
+
+	try {
+		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
+					process.env['REACT_APP_' + network + '_API_UPDATETRADES']
+		url = url.replace('$1', account)
+
+		console.log("updateTrades", url)
+
+		let response
+
+		if (process.env.NODE_ENV === 'development') {
+			response = await axios.get(url)
+		} else {
+			response = await axios.post(url)
+		}
+	    const trades = response.data.map(mapTrade)
+
+	    trades.forEach((trade, index) => dispatch(tradeLoaded(trade)))
+
+	    return true
+
+	} catch (error) {
+		log('Could not get trades', error)
+		return false
 	}
 }
 
@@ -1151,10 +1183,11 @@ export const loadTrades = async (network, account, dispatch) => {
 		let trades = await getTrades(network, account)
 
 		trades.forEach((trade, index) => dispatch(tradeLoaded(trade)))
+		return true
 
 	} catch (error) {
 		log('Could not get trader trades', error)
-		return null
+		return false
 	}
 }
 

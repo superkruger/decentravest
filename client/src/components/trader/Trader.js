@@ -32,9 +32,22 @@ import { ZERO_ADDRESS, displaySymbol } from '../../helpers'
 class Trader extends Component {
   componentDidMount() {
     const { network, account, traderPaired, dispatch } = this.props
-    loadTraderAllocations(network, account, traderPaired, dispatch)
-    loadTrades(network, account, dispatch)
-    loadTraderStatistics(account, network, dispatch)
+    if (network && account && traderPaired) {
+      loadTraderAllocations(network, account, traderPaired, dispatch)
+      loadTrades(network, account, dispatch)
+      loadTraderStatistics(account, network, dispatch)
+    }
+  }
+
+
+  componentDidUpdate(prevProps) {
+    const { account, network, traderPaired, dispatch } = this.props
+
+    if (account !== prevProps.account || network !== prevProps.network && traderPaired !== prevProps.traderPaired) {
+      loadTraderAllocations(network, account, traderPaired, dispatch)
+      loadTrades(network, account, dispatch)
+      loadTraderStatistics(account, network, dispatch)
+    }
   }
 
   render() {

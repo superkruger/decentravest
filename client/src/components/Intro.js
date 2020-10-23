@@ -25,34 +25,15 @@ class Intro extends Component {
           <Row>
             <Col sm={12}>
               <div>
+              { 
+                traderPairedLoaded && (!joined && !isAdmin) ?
+                
+                <JoinSelection props={this.props} /> :
+
                 <div>
                   <h3>Welcome to the Decentravest portal for traders and investors</h3>
                 </div>
-              </div>
-            </Col>
-          </Row>
-          <Row>
-            <Col sm={12}>
-              <div>
-                { !traderPairedLoaded ? 
-                  <div>
-                    <div>
-                    {
-                      (typeof window.ethereum !== 'undefined') ?
-                        <ConnectButton props={this.props} /> :
-                      <span>
-                        Please install <a href="https://metamask.io" target="_blank" rel="noopener">Metamask</a> first.
-                      </span>
-                    }
-                    </div>
-                  </div> : 
-                  
-                    !joined && !isAdmin ?
-                    
-                    <JoinSelection props={this.props} /> :
-
-                    <div/>
-                }
+              }
               </div>
             </Col>
           </Row>
@@ -66,54 +47,29 @@ class Intro extends Component {
   }
 }
 
-
-
-function ConnectButton(props) {
-  const { dispatch } = props.props
-
-  const handleClick = () => {
-    dispatch(notificationAdded(info("metamask", "Connecting...")))
-    window.ethereum.request({ method: 'eth_requestAccounts' })
-  }
-
-  return (
-    <div>
-      <Button
-        variant="primary"
-        onClick={handleClick}
-        >
-        Connect Metamask
-      </Button>
-    </div>
-  );
-}
-
 function JoinSelection(props) {
   return (
     <Container>
       <Row>
-        <Col sm={5} className="text-align-center">
-          <div className="card bg-light text-dark">
-            <div className="card-header">
-              Are you an experienced trader?
-            </div>
-            <div className="card-body">
-              <JoinTraderButton props={props.props} />
+        <Col sm={12}>
+          <div className="row no-gutters align-items-center">
+            <div className="col mr-2">
+              <div className="text-align-center text-xl h3 font-weight-bold text-info text-uppercase mb-1">Which one of these types describe you best?</div>
             </div>
           </div>
         </Col>
+      </Row>
+      <br/><br/>
+      <Row>
+        <Col sm={5} className="text-align-center">
+          <JoinTraderButton props={props.props} />
+        </Col>
         <Col sm={2} className="text-align-center">
+          <br/><br/>
           <h1>OR</h1>
         </Col>
         <Col sm={5} className="text-align-center">
-          <div className="card bg-light text-dark">
-            <div className="card-header">
-              Would you just like to invest?
-            </div>
-            <div className="card-body">
-              <JoinInvestorButton props={props.props} />
-            </div>
-          </div>
+          <JoinInvestorButton props={props.props} />
         </Col>
       </Row>
     </Container>
@@ -121,23 +77,37 @@ function JoinSelection(props) {
 }
 
 function JoinTraderButton(props) {
-  // const handleClick = () => props.props.dispatch(pageSelected('jointrader'));
 
   return (
-    <div>
-      <PageLink page={Page.JOIN_TRADER}>
-        Join Now as a Trader!
-      </PageLink>
+    <div className="card shadow mb-4">
+      <div className="card-header py-3">
+        <h6 className="m-0 font-weight-bold text-primary">Experienced trader looking for investors</h6>
+      </div>
+      <div className="card-body">
+        <div className="text-center">
+          <PageLink page={Page.JOIN_TRADER}>
+            <img className="img-fluid px-3 px-sm-4 mt-3 mb-4" style={{height: "10rem"}} src="/img/trader.jpg" alt=""/>
+          </PageLink>
+        </div>
+      </div>
     </div>
   );
 }
 
 function JoinInvestorButton(props) {
+
   return (
-    <div>
-      <PageLink page={Page.JOIN_INVESTOR}>
-        Join Now as an Investor!
-      </PageLink>
+    <div className="card shadow mb-4">
+      <div className="card-header py-3">
+        <h6 className="m-0 font-weight-bold text-primary">Investor looking to invest in good traders</h6>
+      </div>
+      <div className="card-body">
+        <div className="text-center">
+          <PageLink page={Page.JOIN_INVESTOR}>
+            <img className="img-fluid px-3 px-sm-4 mt-3 mb-4" style={{height: "10rem"}} src="/img/investor.jpg" alt=""/>
+          </PageLink>
+        </div>
+      </div>
     </div>
   );
 }

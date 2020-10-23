@@ -234,6 +234,13 @@ const processTrades = async () => {
 }
 exports.processTrades = processTrades
 
+const updateTrades = async (account) => {
+	console.log("updateTrades", account);
+
+	await positionsHandler.loadTraderPositions(account)
+}
+exports.updateTrades = updateTrades
+
 const calculateTraderStatistics = async () => {
 	console.log('env', process.env.NODE_ENV)
 	// Traders

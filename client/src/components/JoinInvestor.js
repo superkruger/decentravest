@@ -28,30 +28,123 @@ class JoinInvestor extends Component {
       <div>
       {
         ready ?
-        <div className="vertical-split">
-          <h1>Investor registration</h1>
-          <Alert variant="info">
-            Investors enjoy the benefit of choice between traders, based of performance and reputation<br/><br/>
-            You can choose between <b>collateral</b> and <b>direct</b> investments.<br/><br/>
-            The only fees you pay are a 1% fee on any profits made.
-          </Alert>
-          <div className="card bg-light text-dark">
-      
-            <div className="card-body">
-              <InvestorButton props={this.props} />
-            </div>
-            <div className="card-footer">
-              If you have ETH, DAI or USDC to invest, join here.<br/>
-              Once you've joined, you can find traders to invest in.
-            </div>
-          </div>
-                    
-        </div>
-        : <Spinner type="div" />
+            <InvestorJourney props={this.props} />
+          : <Spinner type="div" />
       }
       </div>
     )
   }
+}
+
+function InvestorJourney(props) {
+  return (
+    <Container>
+      <Row>
+        <Col sm={12}>
+          <div id="timeline" className="details">
+            <div className="container">
+              <div className="section-title">
+                <h2>Investor Journey</h2>
+                <p>Once you've registered as an investor, this is what your journey will look like</p>
+              </div>
+              <hr/>
+              <div className="row content">
+                <div className="col-md-12 order-1 order-md-1" data-aos="fade-up">
+                  <div className="tl">
+                      <div className="tl-container tl-left" data-aos="fade-right">
+                        <div className="tl-content">
+                          <div className="row no-gutters">
+                            <div className="col mr-2">
+                              <i className={`fas fa-wallet fa-2x text-gray-300`}></i>
+                            </div>
+                            <div className="col-auto">
+                              <div className="h5 mb-0 font-weight-bold text-uppercase text-gray-300">Create Wallet</div>
+                            </div>
+                          </div>
+                          <div className="row no-gutters">
+                            <div className="col mr-2">
+                              <div className="mb-0 text-gray-100">
+                                You'll create your own personal multisig wallet, for which only you and the traders you invest in have access. 
+                                All <em>collateral</em> investments are kept safely in this wallet. 
+                                <em>Direct</em> investments however are transfered directly to the trader
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="tl-container tl-right" data-aos="fade-left">
+                        <div className="tl-content">
+                          <div className="row no-gutters">
+                            <div className="col mr-2">
+                              <div className="h5 mb-0 font-weight-bold text-uppercase text-gray-300">Find Traders</div>
+                            </div>
+                            <div className="col-auto">
+                              <i className={`fas fa-search-dollar fa-2x text-gray-300`}></i>
+                            </div>
+                          </div>
+                          <div className="row no-gutters">
+                            <div className="col mr-2">
+                              <div className="mb-0 text-gray-100">
+                                You can use the <em>Traders</em> page to search for the best performing traders based on their level, trust, trading and profit ratings.
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="tl-container tl-left" data-aos="fade-right">
+                        <div className="tl-content">
+                          <div className="row no-gutters">
+                            <div className="col mr-2">
+                              <i className={`fas fa-handshake fa-2x text-gray-300`}></i>
+                            </div>
+                            <div className="col-auto">
+                              <div className="h5 mb-0 font-weight-bold text-uppercase text-gray-300">Invest</div>
+                            </div>
+                          </div>
+                          <div className="row no-gutters">
+                            <div className="col mr-2">
+                              <div className="mb-0 text-gray-100">
+                                Once you've found suitable traders, invest in them with either a collateral or direct investment. It's strongly advised to spread your investments across as many traders as you can.
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="tl-container tl-right" data-aos="fade-left">
+                        <div className="tl-content">
+                          <div className="row no-gutters">
+                            <div className="col mr-2">
+                              <div className="h5 mb-0 font-weight-bold text-uppercase text-gray-300">Disbursement</div>
+                            </div>
+                            <div className="col-auto">
+                              <i className={`fas fa-hand-holding-usd fa-2x text-gray-300`}></i>
+                            </div>
+                          </div>
+                          <div className="row no-gutters">
+                            <div className="col mr-2">
+                              <div className="mb-0 text-gray-100">
+                                You can keep investments going for as long or short as you like. It's strongly advised to disburse them perdiodically and re-invest with another or the same trader. This helps to keep the traders honest and improves the rating system.
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Col>
+      </Row>
+      <hr/>
+      <br/>
+      <Row>
+        <Col sm={12}>
+          <InvestorButton props={props.props} />
+        </Col>
+      </Row>
+    </Container>
+  )
 }
 
 function InvestorButton(props) {
@@ -59,15 +152,21 @@ function InvestorButton(props) {
   const handleClick = () => investorJoin(props.props)
 
   return (
-    investorJoining ?
-    <Spinner />
-    :
-    <Button
-      variant="primary"
-      onClick={handleClick}
-      >
-      Join as Investor
-    </Button>
+    <div className="row-center">
+    {
+      investorJoining ?
+      <Spinner />
+      :
+      <Button
+        className="row-center"
+        variant="success"
+        size="lg"
+        onClick={handleClick}
+        >
+        Join as Investor (Just one click!)
+      </Button>
+    }
+    </div>
   )
 }
 

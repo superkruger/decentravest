@@ -104,7 +104,7 @@ class InvestorTraderDetail extends Component {
                   </PageLink>
                 </Col>
                 <Col sm={9}>
-                  <div className="align-right">Favourite</div>
+                  <div className="align-right"></div>
                 </Col>
               </Row>
               {

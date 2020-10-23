@@ -1,20 +1,24 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
+import { Button } from 'react-bootstrap'
 import AddressLink from './AddressLink'
 import PageLink from './containers/PageLink'
 import { Page } from './containers/pages'
+import { info } from '../helpers'
 import {
   accountSelector,
-  mainTraderSelector
+  mainTraderSelector,
+  traderPairedLoadedSelector
 } from '../store/selectors'
 import { 
-  sidebarToggled
+  sidebarToggled,
+  notificationAdded
 } from '../store/actions'
 
 class Topbar extends Component {
 
   render() {
-    const { account, mainTrader } = this.props
+    const { account, traderPairedLoaded, mainTrader } = this.props
 
     return (
       <nav className="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
@@ -39,10 +43,28 @@ class Topbar extends Component {
               <div/>
           }
           <li className="nav-item">
-            { account
-                ? <AddressLink address={account}/>
-                : <span></span>
-              }
+            
+            { 
+              !traderPairedLoaded
+              ? 
+                <div>
+                {
+                  (typeof window.ethereum !== 'undefined') ?
+                    <ConnectButton props={this.props} /> :
+                  <span>
+                    Please install <a href="https://metamask.io" target="_blank" rel="noopener">Metamask</a> first.
+                  </span>
+                }
+                </div>
+               :
+                <div>
+                {
+                  account
+                  ? <AddressLink address={account}/>
+                  : <span></span>
+                }
+                </div>
+            }
           </li>
 
         </ul>
@@ -50,6 +72,26 @@ class Topbar extends Component {
       </nav>
     )
   }
+}
+
+function ConnectButton(props) {
+  const { dispatch } = props.props
+
+  const handleClick = () => {
+    dispatch(notificationAdded(info("metamask", "Connecting...")))
+    window.ethereum.request({ method: 'eth_requestAccounts' })
+  }
+
+  return (
+    <div>
+      <Button
+        variant="primary"
+        onClick={handleClick}
+        >
+        Connect Metamask
+      </Button>
+    </div>
+  );
 }
 
 function SidebarToggleTop(props) {
@@ -65,7 +107,8 @@ function SidebarToggleTop(props) {
 function mapStateToProps(state) {
   return {
     account: accountSelector(state),
-    mainTrader: mainTraderSelector(state)
+    mainTrader: mainTraderSelector(state),
+    traderPairedLoaded: traderPairedLoadedSelector(state)
   }
 }
 

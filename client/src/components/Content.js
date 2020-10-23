@@ -33,11 +33,11 @@ class Content extends Component {
   render() {
     const { network, account, web3, sidebarClosed, page, section } = this.props
 
-    if (requiresWeb3(page) && (!network || !account || !web3)) {
-      return (
-        <Spinner/>
-      )
-    }
+    // if (requiresWeb3(page) && (!network || !account || !web3)) {
+    //   return (
+    //     <Spinner/>
+    //   )
+    // }
 
     return (
       <div id="content-wrapper" className="d-flex flex-column">
@@ -65,7 +65,7 @@ class Content extends Component {
                   'trader_allocations': <TraderAllocations />,
                   'trader_investments': <TraderInvestments />,
                   'investor_dashboard': <Investor page={page} section={section} />,
-                  'investor_traders': <InvestorTraders />,
+                  'investor_traders': <InvestorTraders page={page} section={section} />,
                   'investor_investments': <InvestorInvestments />,
                   undefined: <Intro />
                 }[this.props.page]

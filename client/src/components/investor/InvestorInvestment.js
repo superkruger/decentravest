@@ -159,9 +159,9 @@ function StopButton (props) {
 }
 
 function stopHandler (props) {
-  const { investment, investor, wallet, dispatch } = props.props
+  const { network, investment, investor, wallet, dispatch } = props.props
 
-  stopInvestment(investor.user, investment, wallet.contract, dispatch)
+  stopInvestment(network, investor.user, investment, wallet.contract, dispatch)
 }
 
 function DisburseButton (props) {
