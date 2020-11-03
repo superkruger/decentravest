@@ -9,11 +9,6 @@ import {
   loadWebApp,
 } from '../store/interactions'
 import {
-  web3Selector,
-  networkSelector,
-  accountSelector, 
-  traderPairedSelector,
-  traderPairedLoadedSelector,
   sidebarClosedSelector
 } from '../store/selectors'
 
@@ -27,13 +22,7 @@ class App extends Component {
   }
 
   render() {
-    const { network, account, web3, sidebarClosed, page, section } = this.props
-
-    // if (!network || !account || !web3) {
-    //   return (
-    //     <Spinner/>
-    //   )
-    // }
+    const { sidebarClosed, page, section } = this.props
 
     return (
       <div id="page-top" className={ sidebarClosed ? 'sidebar-toggled' : ''}>
@@ -53,11 +42,6 @@ function mapStateToProps(state, ownProps) {
   return {
     page: ownProps.match.params.page,
     section: ownProps.match.params.section,
-    web3: web3Selector(state),
-    network: networkSelector(state),
-    account: accountSelector(state),
-    traderPaired: traderPairedSelector(state),
-    traderPairedLoaded: traderPairedLoadedSelector(state),
     sidebarClosed: sidebarClosedSelector(state)
   }
 }

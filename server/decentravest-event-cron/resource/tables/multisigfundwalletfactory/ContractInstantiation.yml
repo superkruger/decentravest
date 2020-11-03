@@ -14,7 +14,7 @@ Properties:
       OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
       Columns:
       - Name: blockNumber
-        Type: bigint
+        Type: int
       - Name: id
         Type: string
       - Name: returnValues

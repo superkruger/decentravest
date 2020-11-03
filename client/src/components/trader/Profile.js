@@ -31,10 +31,21 @@ import { ZERO_ADDRESS, displaySymbol } from '../../helpers'
 
 class Profile extends Component {
   componentDidMount() {
-    const { network, dispatch, page, section } = this.props
+    const { network, dispatch, section } = this.props
 
-    loadTrades(network, section, dispatch)
-    loadTraderStatistics(section, network, dispatch)
+    if (network) {
+      loadTrades(network, section, dispatch)
+      loadTraderStatistics(section, network, dispatch)
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    const { network, dispatch, section } = this.props
+
+    if (network !== prevProps.network) {
+      loadTrades(network, section, dispatch)
+      loadTraderStatistics(section, network, dispatch)
+    }
   }
 
   render() {

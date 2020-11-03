@@ -18,11 +18,12 @@ module.exports.create = async (event) => {
     }).promise()
 
     console.log("created stop", res)
+    return true
   } catch (error) {
     console.log("could not create stop", error)
   }
 
-  return event.id;
+  return false
 };
 
 module.exports.get = async (id) => {
@@ -35,6 +36,32 @@ module.exports.get = async (id) => {
 
   const query = {
     sql: `SELECT ${select} FROM traderpaired_stop WHERE id = '${id}'`
+  };
+
+  try {
+    const results = await s3Common.athenaExpress.query(query);
+    if (results.Items.length > 0) {
+
+      console.log("got event", results.Items[0])
+      return mapStop(results.Items[0])
+    }
+  } catch (error) {
+    console.log("athena error", error);
+  }
+  
+  return null;
+}
+
+module.exports.getByInvestmentId = async (id) => {
+
+  console.log("getting stop", id)
+
+  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-stop`)) {
+    return null
+  }
+
+  const query = {
+    sql: `SELECT ${select} FROM traderpaired_stop WHERE returnvalues.id = '${id}' ORDER BY returnvalues.mdate desc LIMIT 1`
   };
 
   try {
@@ -150,16 +177,16 @@ module.exports.getByInvestor = async (investor) => {
   return [];
 }
 
-module.exports.getByTraderAndToken = async (trader, token) => {
+module.exports.getByTraderFrom = async (trader, fromDate) => {
 
-  console.log("getting stops for trader and token", trader, token)
+  console.log("getting stops for trader from", trader, fromDate)
 
   if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-stop`)) {
     return []
   }
 
   const query = {
-    sql: `SELECT ${select} FROM traderpaired_stop WHERE returnvalues.trader = '${trader}' AND returnvalues.token = '${token}'`
+    sql: `SELECT ${select} FROM traderpaired_stop WHERE returnvalues.trader = '${trader}' AND returnvalues.mdate > ${fromDate}`
   };
 
   try {

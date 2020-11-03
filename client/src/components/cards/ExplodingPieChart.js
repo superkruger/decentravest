@@ -141,6 +141,10 @@ function createPieChart(container, props) {
 
     selectedSlice = dataItem.slice;
 
+    if (!selectedSlice) {
+      return
+    }
+
     let fill = selectedSlice.fill;
 
     let count = dataItem.dataContext.subData.length;
@@ -205,5 +209,3 @@ function mapStateToProps(state, ownProps) {
 }
 
 export default connect(mapStateToProps)(ExplodingPieChart)
-
-

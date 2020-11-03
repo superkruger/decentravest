@@ -39,8 +39,14 @@ function DashboardButton(props) {
   return (
     <li className="nav-item active">
       <PageLink page={Page.INVESTOR_DASHBOARD} styles="nav-link">
-          <i className="fas fa-fw fa-tachometer-alt"></i>
-          <span>Investor Dashboard</span>
+        <div className="row no-gutters align-items-left">
+          <div className="col-auto">
+            <i className="fas fa-fw fa-tachometer-alt"></i>
+          </div>
+          <div className="col-auto">
+            <div className="font-weight-bold mb-1">Investor Dashboard</div>
+          </div>
+        </div>
       </PageLink>
     </li>
   )
@@ -50,8 +56,14 @@ function TradersButton(props) {
   return (
     <li className="nav-item active">
       <PageLink page={Page.INVESTOR_TRADERS} styles="nav-link">
-          <i className="fas fa-fw fa-users"></i>
-          <span>Traders</span>
+        <div className="row no-gutters align-items-left">
+          <div className="col-auto">
+            <i className="fas fa-fw fa-users"></i>
+          </div>
+          <div className="col-auto">
+            <div className="font-weight-bold mb-1">Traders</div>
+          </div>
+        </div>
       </PageLink>
     </li>
   )
@@ -63,14 +75,20 @@ function InvestmentsButton(props) {
   return (
     <li className="nav-item active">
       <PageLink page={Page.INVESTOR_INVESTMENTS} styles="nav-link">
-          <i className="fas fa-fw fa-coins"></i>
-          <span>
-            Investments
-            {
-              investmentActionRequired && 
-                <Badge variant="danger">!</Badge>
-            }
-          </span>
+        <div className="row no-gutters align-items-left">
+          <div className="col-auto">
+            <i className="fas fa-fw fa-coins"></i>
+          </div>
+          <div className="col-auto">
+            <div className="font-weight-bold mb-1">Investments</div>
+          </div>
+          {
+            investmentActionRequired && 
+              <div className="col ml-2">
+                <Badge variant="warning">!</Badge>
+              </div>
+          }
+        </div>
       </PageLink>
     </li>
   )

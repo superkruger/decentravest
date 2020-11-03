@@ -1,10 +1,21 @@
+import { isEqual, sortBy } from 'lodash'
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
-import { Container, Row, Col, Button, Badge, Form } from 'react-bootstrap'
+import { Container, Row, Col, Button, Badge, Form, Alert } from 'react-bootstrap'
 import AddressImage from '../AddressImage'
 import Token from '../Token'
+import Help from '../containers/Help'
 import InvestorInvestment from './InvestorInvestment'
-import { log, toBN, uniqueByKey } from '../../helpers'
+import { 
+  log, 
+  toBN, 
+  uniqueByKey,
+  INVESTMENT_STATE_INVESTED,
+  INVESTMENT_STATE_STOPPED,
+  INVESTMENT_STATE_EXITREQUESTED_INVESTOR,
+  INVESTMENT_STATE_EXITREQUESTED_TRADER,
+  INVESTMENT_STATE_EXITAPPROVED
+} from '../../helpers'
 import { 
   networkSelector,
   accountSelector,
@@ -13,14 +24,14 @@ import {
   pairedInvestmentsSelector,
   investmentsSelector,
   walletSelector,
-  tokensSelector
+  tokensSelector,
+  investmentActionRequiredSelector
 } from '../../store/selectors'
 import { 
   stopInvestment,
   disburseInvestment,
   approveDisbursement,
   rejectDisbursement,
-  loadInvestmentValues,
   loadTrades
 } from '../../store/interactions'
 
@@ -33,21 +44,47 @@ class InvestorInvestments extends Component {
 
   componentDidMount() {
     const { network, investments, traderPaired, dispatch } = this.props
-    loadInvestmentValues(network, investments, traderPaired, dispatch)
 
     const traderInvestments = uniqueByKey(investments, it => it.trader)
-
-    console.log("traderInvestments", traderInvestments)
 
     traderInvestments.forEach(async (investment) => {
       await loadTrades(network, investment.trader, dispatch)
     })
   }
 
+  componentDidUpdate(prevProps) {
+    const { network, investments, traderPaired, dispatch } = this.props
+
+    if (network !== prevProps.network || traderPaired !== prevProps.traderPaired || !isEqual(sortBy(investments), sortBy(prevProps.investments))) {
+      
+      const traderInvestments = uniqueByKey(investments, it => it.trader)
+
+      traderInvestments.forEach(async (investment) => {
+        await loadTrades(network, investment.trader, dispatch)
+      })
+    }
+  }
+
   render() {
-    const {investments} = this.props
+    const {investments, investmentActionRequired} = this.props
     return (
       <Container>
+        <Row>
+          <Col sm={1}>
+            <Help helpKey="investments" title="Investments" content="All your investments are listed here. Use the filters to control which of them is visible." />
+          </Col>
+          <Col sm={11}>
+            {
+              investmentActionRequired
+              ?
+                <Alert variant="warning">
+                  Some of the investments require your attention
+                </Alert>
+              :
+                <div/>
+            }
+          </Col>
+        </Row>
         <Row>
           <Col sm={12}>  
             <Form>
@@ -74,11 +111,11 @@ class InvestorInvestments extends Component {
             { 
               investments.map((investment) => {
                 
-                if (investment.state === "4" && !this.state.pastInvestmentsFilter) {
+                if (investment.state === INVESTMENT_STATE_EXITAPPROVED && !this.state.pastInvestmentsFilter) {
                   return null
                 }
 
-                if (investment.state !== "4" && !this.state.currentInvestmentsFilter) {
+                if (investment.state !== INVESTMENT_STATE_EXITAPPROVED && !this.state.currentInvestmentsFilter) {
                   return null
                 }
         
@@ -112,7 +149,8 @@ function mapStateToProps(state) {
     pairedInvestments: pairedInvestmentsSelector(state),
     investments: investmentsSelector(state),
     wallet: walletSelector(state),
-    tokens: tokensSelector(state)
+    tokens: tokensSelector(state),
+    investmentActionRequired: investmentActionRequiredSelector(state)
   }
 }
 

@@ -15,11 +15,12 @@ module.exports.create = async (event) => {
     }).promise()
 
     console.log("created investor", res)
+    return true
   } catch (error) {
     console.log("could not create investor", error)
   }
 
-  return event.id;
+  return false
 };
 
 module.exports.get = async (id) => {

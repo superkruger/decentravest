@@ -49,6 +49,19 @@ class InvestorTraderDetail extends Component {
     loadBalances(account, traderPaired, tokens, web3, dispatch)
   }
 
+  componentDidUpdate(prevProps) {
+    const { web3, network, account, trader, traders, traderPaired, tokens, dispatch } = this.props
+
+    if (trader.user !== prevProps.trader.user || network !== prevProps.network || account !== prevProps.account) {
+
+      console.log("InvestorTraderDetail componentDidUpdate", prevProps)
+
+      // loadTraderStatistics(trader.user, network, dispatch)
+      // loadTraderAllocations(network, trader.user, traderPaired, dispatch)
+      // loadBalances(account, traderPaired, tokens, web3, dispatch)
+    }
+  }
+
   render() {
     const {web3, trader, traderAllocations, traderStatistics, investments } = this.props
 
@@ -282,7 +295,7 @@ function getBalance(balances, symbol) {
 }
 
 function collateralInvestHandler (allocation, inputId, props) {
-  const {account, trader, balances, tokens, wallet, dispatch} = props
+  const {network, account, trader, balances, tokens, wallet, web3, dispatch} = props
 
   console.log("collateralInvestHandler tokens", tokens)
 
@@ -305,7 +318,8 @@ function collateralInvestHandler (allocation, inputId, props) {
 
   if (weiAmount.lte(balance)) {
     if (weiAmount.lte(allocation.available)) {
-      invest(account, trader.user, allocation.token, token, weiAmount, wallet.contract, INVESTMENT_COLLATERAL, dispatch)
+      console.log("collateralInvestHandler", wallet.contract)
+      invest(network, account, trader.user, allocation.token, token, weiAmount, wallet.contract, INVESTMENT_COLLATERAL, web3, dispatch)
     } else {
       dispatch(notificationAdded(fail("Invest", `Investment exceeds available amount of ${allocation.formattedAvailable}`)))
     }
@@ -315,7 +329,7 @@ function collateralInvestHandler (allocation, inputId, props) {
 }
 
 function directInvestHandler (allocation, inputId, props) {
-  const {account, trader, traderStatistics, balances, tokens, wallet, dispatch} = props
+  const {network, account, trader, traderStatistics, balances, tokens, wallet, web3, dispatch} = props
 
   console.log("directInvestHandler tokens", tokens)
 
@@ -339,7 +353,7 @@ function directInvestHandler (allocation, inputId, props) {
 
   if (weiAmount.lte(balance)) {
     if (weiAmount.lte(directAvailable)) {
-      invest(account, trader.user, allocation.token, token, weiAmount, wallet.contract, INVESTMENT_DIRECT, dispatch)
+      invest(network, account, trader.user, allocation.token, token, weiAmount, wallet.contract, INVESTMENT_DIRECT, web3, dispatch)
     } else {
       dispatch(notificationAdded(fail("Invest", `Investment exceeds available amount of ${traderStatistics.limits.formattedDirectAvailable[allocation.symbol]}`)))
     }

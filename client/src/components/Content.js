@@ -20,24 +20,10 @@ import InvestorInvestments from './investor/InvestorInvestments'
 
 import { Page } from './containers/pages'
 
-import {
-  web3Selector,
-  networkSelector,
-  accountSelector, 
-  traderPairedSelector,
-  traderPairedLoadedSelector
-} from '../store/selectors'
-
 class Content extends Component {
 
   render() {
-    const { network, account, web3, sidebarClosed, page, section } = this.props
-
-    // if (requiresWeb3(page) && (!network || !account || !web3)) {
-    //   return (
-    //     <Spinner/>
-    //   )
-    // }
+    const { page, section } = this.props
 
     return (
       <div id="content-wrapper" className="d-flex flex-column">
@@ -94,11 +80,6 @@ function requiresWeb3(page) {
 
 function mapStateToProps(state, ownProps) {
   return {
-    web3: web3Selector(state),
-    network: networkSelector(state),
-    account: accountSelector(state),
-    traderPaired: traderPairedSelector(state),
-    traderPairedLoaded: traderPairedLoadedSelector(state),
     page: ownProps.page,
     section: ownProps.section
   }

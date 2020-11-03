@@ -18,11 +18,12 @@ module.exports.create = async (event) => {
     }).promise()
 
     console.log("created trader", res)
+    return true
   } catch (error) {
     console.log("could not create trader", error)
   }
 
-  return event.id;
+  return false
 };
 
 module.exports.get = async (id) => {

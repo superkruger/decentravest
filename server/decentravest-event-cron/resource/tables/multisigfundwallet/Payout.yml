@@ -14,11 +14,11 @@ Properties:
       OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
       Columns:
       - Name: blockNumber
-        Type: bigint
+        Type: int
       - Name: id
         Type: string
       - Name: returnValues
-        Type: struct<token:string,amount:bigint,mto:string>
+        Type: struct<token:string,amount:string,mto:string>
       InputFormat: org.apache.hadoop.mapred.TextInputFormat
       Location: "s3://${self:custom.eventbucket}/multisigfundwallet-payout"
       SerdeInfo:

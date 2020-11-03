@@ -19,11 +19,12 @@ module.exports.create = async (event) => {
     }).promise()
 
     console.log("created invest", res)
+    return true
   } catch (error) {
     console.log("could not create invest", error)
   }
 
-  return event.id;
+  return false
 };
 
 module.exports.get = async (id) => {
@@ -36,6 +37,32 @@ module.exports.get = async (id) => {
 
   const query = {
     sql: `SELECT ${select} FROM traderpaired_invest WHERE id = '${id}'`
+  };
+
+  try {
+    const results = await s3Common.athenaExpress.query(query);
+    if (results.Items.length > 0) {
+
+      console.log("got event", results.Items[0])
+      return mapInvest(results.Items[0])
+    }
+  } catch (error) {
+    console.log("athena error", error);
+  }
+  
+  return null;
+}
+
+module.exports.getByInvestmentId = async (id) => {
+
+  console.log("getting invest", id)
+
+  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-invest`)) {
+    return null
+  }
+
+  const query = {
+    sql: `SELECT ${select} FROM traderpaired_invest WHERE returnvalues.id = '${id}' ORDER BY returnvalues.mdate desc LIMIT 1`
   };
 
   try {
@@ -163,6 +190,31 @@ module.exports.getByTraderAndToken = async (trader, token) => {
 
   const query = {
     sql: `SELECT ${select} FROM traderpaired_invest WHERE returnvalues.trader = '${trader}' AND returnvalues.token = '${token}'`
+  };
+
+  try {
+    const results = await s3Common.athenaExpress.query(query);
+    if (results.Items.length > 0) {
+
+      return results.Items.map(mapInvest)
+    }
+  } catch (error) {
+    console.log("athena error", error);
+  }
+  
+  return [];
+}
+
+module.exports.getByTraderAndTokenBefore = async (trader, token, beforeDate) => {
+
+  console.log("getting invests for trader before", trader, token, beforeDate)
+
+  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-invest`)) {
+    return []
+  }
+
+  const query = {
+    sql: `SELECT ${select} FROM traderpaired_invest WHERE returnvalues.trader = '${trader}' AND returnvalues.token = '${token}' AND returnvalues.mdate < ${beforeDate}`
   };
 
   try {

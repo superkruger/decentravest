@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js'
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Container, Row, Col, Button, Alert } from 'react-bootstrap'
+import EtherscanLink from '../containers/EtherscanLink'
 import Spinner from '../Spinner'
 import ExplodingPieChart from '../cards/ExplodingPieChart'
 import PieChart from '../cards/PieChart'
@@ -28,10 +29,20 @@ import { formatBalance } from '../../helpers'
 class Investor extends Component {
   componentDidMount() {
     const { network, account, wallet, tokens, dispatch } = this.props
-    if (wallet) {
-      console.log("loadMainWalletBalances...")
+    if (wallet && wallet.contract && account && network) {
       loadMainWalletBalances(wallet.contract, tokens, dispatch)
-      console.log("loadInvestorStatistics...")
+      loadInvestorStatistics(account, network, dispatch)
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    const { network, account, wallet, tokens, dispatch } = this.props
+
+    console.log("componentDidUpdate", wallet, network, account)
+
+    if (wallet && wallet.contract && 
+        ((!prevProps.wallet && wallet.contract) || wallet.contract !== prevProps.wallet.contract || account !== prevProps.account || network !== prevProps.network)) {
+      loadMainWalletBalances(wallet.contract, tokens, dispatch)
       loadInvestorStatistics(account, network, dispatch)
     }
   }
@@ -200,7 +211,10 @@ function Wallet(props) {
         <div className="card-body">
           <div className="row no-gutters align-items-center">
             <div className="col mr-2">
-              <div className="text-xs font-weight-bold text-info text-uppercase mb-1">Personal Investment Multisig Wallet Balances</div>
+              <div className="text-xs font-weight-bold text-info text-uppercase mb-1">
+                Personal Investment Multisig Wallet Balances:&nbsp;
+                <EtherscanLink address={wallet.contract.options.address} />
+              </div>
               {
                 wallet.balances.map((balance) => {
                   return (

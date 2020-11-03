@@ -7,7 +7,7 @@ import PairedInvestments from '../abis/PairedInvestments.json'
 import MultiSigFundWalletFactory from '../abis/MultiSigFundWalletFactory.json'
 import MultiSigFundWallet from '../abis/MultiSigFundWallet.json'
 import ERC20 from '../abis/IERC20.json'
-import { log, ZERO_ADDRESS, INVESTMENT_COLLATERAL, INVESTMENT_DIRECT, setTokens, userTokens, toBN, etherToWei, tokenAddressForSymbol, tokenSymbolForAddress, info, fail } from '../helpers'
+import { log, ZERO_ADDRESS, INVESTMENT_COLLATERAL, INVESTMENT_DIRECT, INVESTMENT_STATE_INVESTED, setTokens, userTokens, toBN, etherToWei, tokenAddressForSymbol, tokenSymbolForAddress, info, fail } from '../helpers'
 import {
 	notificationAdded,
 	notificationRemoved,
@@ -192,7 +192,7 @@ const loadTraderPaired = async (network, account, web3, networkId, dispatch) => 
 			}
 
 			if (investor && investor.user !== ZERO_ADDRESS) {
-				await loadMainInvestor(investor, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
+				await loadMainInvestor(network, investor, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
 			}
 
 			if (account === process.env['REACT_APP_'+network+'_FACC']) {
@@ -209,14 +209,14 @@ const loadTraderPaired = async (network, account, web3, networkId, dispatch) => 
 }
 
 const loadMainTrader = async (network, trader, traderPaired, pairedInvestments, walletFactory, web3, dispatch) => {
-	await loadTraderInvestments(trader, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
+	await loadTraderInvestments(network, trader.user, web3, dispatch)
 	await loadTraderAllocations(network, trader.user, traderPaired, dispatch)
 
 	dispatch(mainTraderLoaded(trader))
 }
 
-const loadMainInvestor = async (investor, traderPaired, pairedInvestments, walletFactory, web3, dispatch) => {
-	await loadInvestorInvestments(investor, traderPaired, pairedInvestments, dispatch)
+const loadMainInvestor = async (network, investor, traderPaired, pairedInvestments, walletFactory, web3, dispatch) => {
+	await loadInvestorInvestments(network, investor.user, web3, dispatch)
 	await loadMainWallet(investor.user, walletFactory, web3, dispatch)
 	
 	dispatch(mainInvestorLoaded(investor))
@@ -278,37 +278,26 @@ export const setProfitPercentages = async (account, collateralPercentage, direct
 	}
 }
 
-const loadTraderInvestments = async (trader, traderPaired, pairedInvestments, walletFactory, web3, dispatch) => {
+const loadTraderInvestments = async (network, account, web3, dispatch) => {
 
-	for (let i = 1; i <= trader.investmentCount; i++) {
-		const investmentId = await traderPaired.methods.traderInvestments(trader.user, i).call()
-		const investment = await pairedInvestments.methods.investments(investmentId).call()
-		const wallets = await walletFactory.methods.getInstantiations(investment.investor).call()
-		investment.wallet = wallets[0]
-		investment.walletContract = await getInvestmentWallet(investment, web3, dispatch)
-		dispatch(investmentLoaded(mapInvestment(investment)))
-		await registerWalletEvents(investment.walletContract, dispatch)
+	try {
+		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
+					process.env['REACT_APP_' + network + '_API_TRADERINVESTMENTS']
+		url = url.replace('$1', account)
+
+		log("loadTraderInvestments", url)
+
+		const response = await axios.get(url)
+	    const investments = response.data
+
+	    investments.forEach(async (investment) => {
+	    	const inv = await mapInvestment(investment, web3)
+	    	dispatch(investmentLoaded(inv))
+	    })
+
+	} catch (error) {
+		log('Could not get trader investments', error)
 	}
-
-	traderPaired.events.Invest({filter: {trader: trader.user}}, (err, event) => {
-		dispatch(investmentLoaded(mapInvest(event.returnValues)))
-	})
-
-	traderPaired.events.Stop({filter: {trader: trader.user}}, (err, event) => {
-		dispatch(investmentLoaded(mapStop(event.returnValues)))
-	})
-
-	traderPaired.events.RequestExit({filter: {trader: trader.user}}, (err, event) => {
-		dispatch(investmentLoaded(mapRequestExit(event.returnValues)))
-	})
-	
-	traderPaired.events.ApproveExit({filter: {trader: trader.user}}, (err, event) => {
-		dispatch(investmentLoaded(mapApproveExit(event.returnValues)))
-	})
-
-	traderPaired.events.RejectExit({filter: {trader: trader.user}}, (err, event) => {
-		dispatch(investmentLoaded(mapRejectExit(event.returnValues)))
-	})
 }
 
 export const joinAsTrader = async (network, account, traderPaired, pairedInvestments, walletFactory, web3, dispatch, history) => {
@@ -340,7 +329,7 @@ export const joinAsTrader = async (network, account, traderPaired, pairedInvestm
 	}
 }
 
-export const joinAsInvestor = async (account, traderPaired, pairedInvestments, walletFactory, web3, dispatch, history) => {
+export const joinAsInvestor = async (network, account, traderPaired, pairedInvestments, walletFactory, web3, dispatch, history) => {
 	try {
 		traderPaired.methods.joinAsInvestor().send({from: account})
 		.on('transactionHash', async (hash) => {
@@ -353,7 +342,7 @@ export const joinAsInvestor = async (account, traderPaired, pairedInvestments, w
 			const investor = await traderPaired.methods.investors(account).call()
 
 			if (investor.user !== ZERO_ADDRESS) {
-				await loadMainInvestor(investor, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
+				await loadMainInvestor(network, investor, traderPaired, pairedInvestments, walletFactory, web3, dispatch)
 				dispatch(notificationAdded(info("Investor", "Successfully registered as an investor")))
 				history.push('investor_dashboard')
 			}
@@ -461,7 +450,6 @@ const loadMainWallet = async (account, walletFactory, web3, dispatch) => {
 	const wallets = await walletFactory.methods.getInstantiations(account).call()
 	if (wallets.length > 0) {
 		wallet = await new web3.eth.Contract(MultiSigFundWallet.abi, wallets[0], {handleRevert: true})
-		await registerWalletEvents(wallet, dispatch)
 		dispatch(mainWalletLoaded(wallet))
 	}
 }
@@ -476,80 +464,29 @@ const getInvestmentWallet = async (investment, web3, dispatch) => {
 	}
 }
 
-const registerWalletEvents = async (wallet, dispatch) => {
-    const stream = await wallet.getPastEvents(
-		'DisbursementCreated',
-		{
-			filter: {},
-			fromBlock: 0
-		}
-	)
-	const disbursements = stream.map(event => event.returnValues)
-	disbursements.forEach(disbursement => dispatch(disbursementCreated(disbursement)))
+const loadInvestorInvestments = async (network, account, web3, dispatch) => {
 
-	wallet.events.DisbursementCreated({filter: {}}, (err, event) => {
-		log("DisbursementCreated.value", event.returnValues['value'])
-		dispatch(disbursementCreated(event.returnValues))
-	})
-}
+	try {
+		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
+					process.env['REACT_APP_' + network + '_API_INVESTORINVESTMENTS']
+		url = url.replace('$1', account)
 
-const loadInvestorInvestments = async (investor, traderPaired, pairedInvestments, dispatch) => {
+		log("loadInvestorInvestments", url)
 
-	for (let i = 1; i <= investor.investmentCount; i++) {
-		const investmentId = await traderPaired.methods.investorInvestments(investor.user, i).call()
-		const investment = await pairedInvestments.methods.investments(investmentId).call()
-		// const wallets = await walletFactory.methods.getInstantiations(investment.investor).call()
-		// investment.wallet = wallets[0]
-		// investment.walletContract = await getInvestmentWallet(investment, web3, dispatch)
-		dispatch(investmentLoaded(mapInvestment(investment)))
-		// await registerWalletEvents(investment.walletContract, dispatch)
+		const response = await axios.get(url)
+	    const investments = response.data
+
+	    investments.forEach(async (investment) => {
+	    	let inv = await mapInvestment(investment, web3)
+	    	dispatch(investmentLoaded(inv))
+	    })
+
+	} catch (error) {
+		log('Could not get trader investments', error)
 	}
-
-	traderPaired.events.Invest({filter: {investor: investor.user}}, (err, event) => {
-		dispatch(investmentLoaded(mapInvest(event.returnValues)))
-
-		// load allocation
-		dispatch(traderAllocationLoaded(
-			event.returnValues['trader'],
-			mapAllocation({
-				invested: event.returnValues['allocationInvested'],
-				total: event.returnValues['allocationTotal'],
-				token: event.returnValues['token'],
-				date: event.returnValues['date']
-			})
-		))
-	})
-
-	traderPaired.events.Stop({filter: {investor: investor.user}}, (err, event) => {
-		dispatch(investmentLoaded(mapStop(event.returnValues)))
-	})
-
-	traderPaired.events.RequestExit({filter: {investor: investor.user}}, (err, event) => {
-		dispatch(investmentLoaded(mapRequestExit(event.returnValues)))
-	})
-
-	traderPaired.events.ApproveExit({filter: {investor: investor.user}}, (err, event) => {
-		dispatch(investmentLoaded(mapApproveExit(event.returnValues)))
-
-		// load allocation
-		dispatch(traderAllocationLoaded(
-			event.returnValues['trader'],
-			mapAllocation({
-				invested: event.returnValues['allocationInvested'],
-				total: event.returnValues['allocationTotal'],
-				token: event.returnValues['token'],
-				date: event.returnValues['date']
-			})
-		))
-	})
-
-	traderPaired.events.RejectExit({filter: {investor: investor.user}}, (err, event) => {
-		dispatch(investmentLoaded(mapRejectExit(event.returnValues)))
-	})
-
 }
 
-export const invest = async (account, trader, tokenAddress, token, amount, wallet, investmentType, dispatch) => {
+export const invest = async (network, account, trader, tokenAddress, token, amount, wallet, investmentType, web3, dispatch) => {
 	try {
 		const isTrader = await wallet.methods.traders(trader).call()
 		if (!isTrader) {
@@ -557,13 +494,13 @@ export const invest = async (account, trader, tokenAddress, token, amount, walle
 			.on('transactionHash', async (hash) => {
 			})
 			.on('receipt', async (receipt) => {
-				await investInTrader(account, trader, tokenAddress, token, amount, wallet, investmentType, dispatch)
+				await investInTrader(network, account, trader, tokenAddress, token, amount, wallet, investmentType, web3, dispatch)
 			})
 			.on('error', (err) => {
 				log('Could not invest', err)
 			})
 		} else {
-			await investInTrader(account, trader, tokenAddress, token, amount, wallet, investmentType, dispatch)
+			await investInTrader(network, account, trader, tokenAddress, token, amount, wallet, investmentType, web3, dispatch)
 		}
 		
 	} catch (err) {
@@ -572,7 +509,7 @@ export const invest = async (account, trader, tokenAddress, token, amount, walle
 	}
 }
 
-const investInTrader = async (account, trader, tokenAddress, token, amount, wallet, investmentType, dispatch) => {
+const investInTrader = async (network, account, trader, tokenAddress, token, amount, wallet, investmentType, web3, dispatch) => {
 	try {
 		if (tokenAddress === ZERO_ADDRESS) {
 
@@ -583,6 +520,10 @@ const investInTrader = async (account, trader, tokenAddress, token, amount, wall
 			.on('receipt', async (receipt) => {
 				dispatch(notificationRemoved(receipt.transactionHash))
 				dispatch(notificationAdded(info("Investment", "Invested ether")))
+
+				let investmentId = receipt.events.Fund.returnValues.investmentId
+				// don't have to wait
+				createdInvestment(network, investmentId, web3, dispatch)
 			})
 			.on('error', (err) => {
 				log('Could not fundEther', err)
@@ -603,6 +544,10 @@ const investInTrader = async (account, trader, tokenAddress, token, amount, wall
 				.on('receipt', async (receipt) => {
 					dispatch(notificationRemoved(receipt.transactionHash))
 					dispatch(notificationAdded(info("Investment", "Invested tokens")))
+
+					let investmentId = receipt.events.Fund.returnValues.investmentId
+					// don't have to wait
+					createdInvestment(network, investmentId, web3, dispatch)
 				})
 				.on('error', (err) => {
 					log('Could not fundToken', err)
@@ -621,16 +566,10 @@ const investInTrader = async (account, trader, tokenAddress, token, amount, wall
 	}
 }
 
-export const stopInvestment = async (network, account, investment, wallet, dispatch) => {
+export const stopInvestment = async (network, account, investment, wallet, web3, dispatch) => {
 	try {
 		dispatch(investmentChanging(investment, true))
 
-		const success = await updateTrades(network, investment.trader, dispatch)
-
-		if (!success) {
-			dispatch(notificationAdded(fail("Investment", "Could not update trades to stop investment. Please try again later.")))
-			throw "could not update trades"
-		}
 
 		wallet.methods.stop(investment.trader, investment.id).send({from: account})
 			.on('transactionHash', async (hash) => {
@@ -639,6 +578,9 @@ export const stopInvestment = async (network, account, investment, wallet, dispa
 			.on('receipt', async (receipt) => {
 				dispatch(notificationRemoved(receipt.transactionHash))
 				dispatch(notificationAdded(info("Investment", "Stopped investment")))
+
+				// don't have to wait
+				stoppedInvestment(network, investment.id, web3, dispatch)
 			})
 			.on('error', (err) => {
 				log('Could not stopInvestment', err)
@@ -651,7 +593,7 @@ export const stopInvestment = async (network, account, investment, wallet, dispa
 	}
 }
 
-export const disburseInvestment = async (account, investment, wallet, token, pairedInvestments, dispatch) => {
+export const disburseInvestment = async (network, account, investment, wallet, token, pairedInvestments, web3, dispatch) => {
 	try {
 		let profitsAndFees = await pairedInvestments.methods.calculateProfitsAndFees(toBN(investment.grossValue), toBN(investment.amount), 100, 100, investment.investorProfitPercent).call()
 		log("profitsAndFees", profitsAndFees)
@@ -686,6 +628,9 @@ export const disburseInvestment = async (account, investment, wallet, token, pai
 			.on('receipt', async (receipt) => {
 				dispatch(notificationRemoved(receipt.transactionHash))
 				dispatch(notificationAdded(info("Investment", "Disbursement requested")))
+
+				// don't have to wait
+				exitRequested(network, investment.id, web3, dispatch)
 			})
 			.on('error', (err) => {
 				log('Could not disburseInvestment', err)
@@ -707,6 +652,9 @@ export const disburseInvestment = async (account, investment, wallet, token, pai
 				.on('receipt', async (receipt) => {
 					dispatch(notificationRemoved(receipt.transactionHash))
 					dispatch(notificationAdded(info("Investment", "Disbursement requested")))
+
+					// don't have to wait
+					exitRequested(network, investment.id, web3, dispatch)
 				})
 				.on('error', (err) => {
 					log('Could not disburseInvestment', err)
@@ -727,7 +675,7 @@ export const disburseInvestment = async (account, investment, wallet, token, pai
 	}
 }
 
-export const approveDisbursement = async (account, investment, wallet, token, pairedInvestments, dispatch) => {
+export const approveDisbursement = async (network, account, investment, wallet, token, pairedInvestments, web3, dispatch) => {
 	try {
 		let profitsAndFees = await pairedInvestments.methods.calculateProfitsAndFees(toBN(investment.grossValue), toBN(investment.amount), 100, 100, investment.investorProfitPercent).call()
 		log("profitsAndFees", profitsAndFees)
@@ -764,6 +712,9 @@ export const approveDisbursement = async (account, investment, wallet, token, pa
 			.on('receipt', async (receipt) => {
 				dispatch(notificationRemoved(receipt.transactionHash))
 				dispatch(notificationAdded(info("Investment", "Disbursement approved")))
+
+				// don't have to wait
+				exitApproved(network, investment.id, web3, dispatch)
 			})
 			.on('error', (err) => {
 				log('Could not approveDisbursement', err)
@@ -782,6 +733,9 @@ export const approveDisbursement = async (account, investment, wallet, token, pa
 				.on('receipt', async (receipt) => {
 					dispatch(notificationRemoved(receipt.transactionHash))
 					dispatch(notificationAdded(info("Investment", "Disbursement approved")))
+
+					// don't have to wait
+					exitApproved(network, investment.id, web3, dispatch)
 				})
 				.on('error', (err) => {
 					log('Could not approveDisbursement', err)
@@ -802,7 +756,7 @@ export const approveDisbursement = async (account, investment, wallet, token, pa
 	}
 }
 
-export const rejectDisbursement = async (account, investment, wallet, pairedInvestments, dispatch) => {
+export const rejectDisbursement = async (network, account, investment, wallet, pairedInvestments, web3, dispatch) => {
 	try {
 		log("reject disburseInvestment", account, investment.trader, investment.disbursementId, toBN(investment.grossValue))
 
@@ -814,6 +768,9 @@ export const rejectDisbursement = async (account, investment, wallet, pairedInve
 		.on('receipt', async (receipt) => {
 			dispatch(notificationRemoved(receipt.transactionHash))
 			dispatch(notificationAdded(info("Investment", "Disbursement rejected")))
+
+			// don't have to wait
+			exitRejected(network, investment.id, web3, dispatch)
 		})
 		.on('error', (err) => {
 			log('Could not rejectDisbursement', err)
@@ -860,19 +817,22 @@ const mapInvest = (event) => {
 	}
 }
 
-const mapInvestment = (investment) => {
+const mapInvestment = async (investment, web3) => {
+	const walletContract = await new web3.eth.Contract(MultiSigFundWallet.abi, investment.wallet, {handleRevert: true})
+
 	return {
 		...investment,
 		amount: new BigNumber(investment.amount),
 		value: new BigNumber(investment.value),
-		grossValue: new BigNumber(investment.amount),
-		nettValue: new BigNumber(investment.amount),
+		grossValue: new BigNumber(investment.grossValue),
+		nettValue: new BigNumber(investment.nettValue),
 		investorProfitPercent: new BigNumber(investment.investorProfitPercent),
 		investmentType: parseInt(investment.investmentType, 10),
-		start: moment.unix(investment.start).utc(),
-		end: moment.unix(investment.end).utc(),
-		startUnix: investment.start,
-		endUnix: investment.end
+		start: moment.unix(investment.startDate).utc(),
+		end: moment.unix(investment.endDate).utc(),
+		startUnix: investment.startDate,
+		endUnix: investment.endDate,
+		walletContract: walletContract
 	}
 }
 
@@ -930,98 +890,6 @@ const mapTrade = (trade) => {
 	}
 }
 
-export const loadInvestmentValues = (network, investments, traderPaired, dispatch) => {
-	investments.forEach(async (investment) => {
-		investment = await getInvestmentValue(network, investment, traderPaired)
-		dispatch(investmentLoaded(investment))
-	})
-}
-
-const getInvestmentValue = async (network, investment, traderPaired) => {
-	let investmentToken = tokenSymbolForAddress(investment.token)
-	log("getInvestmentValue", investment, investmentToken)
-
-	console.log("investment start", investment.start.toString())
-
-	let investorProfitPercent = investment.investorProfitPercent.dividedBy(10000)
-
-	// get all trades for this investment
-	let trades = await getTrades(network, investment.trader)
-	console.log("trades", trades)
-	trades = trades.filter(
-		(trade) => trade.asset === investmentToken)
-
-	trades = trades.filter(trade => {
-		console.log("trade start", trade.start.toString())
-		console.log("investment end unix", investment.end.unix())
-		return trade.start.isAfter(investment.start) 
-			&& (
-				(investment.end.unix() === 0 || investment.state === "0") 
-					|| trade.end.isBefore(investment.end))
-	})
-	
-
-	log("T", trades)
-
-	const allocations = await getTraderAllocations(investment.trader, investment.token, traderPaired)
-
-
-	log("A", allocations)
-
-
-	const traderInvestments = await getTraderInvestments(investment.trader, investment.token, traderPaired)
-
-	log("traderInvestments", traderInvestments)
-
-	// for each trade get all investments that it should be split over
-	// and calculate profit/loss
-	let grossProfit = new BigNumber(0)
-	await trades.forEach(async (trade) => {
-
-		// find the allocation just before the start of this trade
-		let allocation = allocations.find(allocation => allocation.date.isBefore(trade.start))
-
-		// Fallback to the last allocation made, but there should be an allocation made before the trade started
-		// TODO: maybe remove?
-		if (!allocation) {
-			allocation = allocations[0]
-		}
-
-		log("allocation total", allocation.total.toString())
-
-		log("trade.profit", trade.profit.toString())
-		let totalAmount = await getTradeInvestmentsAmount(trade, traderInvestments)
-		log("totalAmount", totalAmount.toString())
-
-		let investorsShare = totalAmount.dividedBy(allocation.total)
-		log("investorsShare", investorsShare.toString())
-
-		// split profit according to share of total amount
-		let sharePercentage = investment.amount.dividedBy(totalAmount)
-		log("sharePercentage", sharePercentage.toString())
-
-		let tradeProfit = trade.profit.multipliedBy(sharePercentage).multipliedBy(investorsShare)
-		log("tradeProfit", tradeProfit.toString())
-
-		grossProfit = grossProfit.plus(tradeProfit)
-	})
-
-	if (investment.amount.plus(grossProfit).isNegative()) {
-		// if losses would amount to a negative valuation, just make the loss equal to the investment amount
-		grossProfit = investment.amount.negated()
-	}
-
-	let nettProfit = grossProfit
-	if (nettProfit.isPositive()) {
-		nettProfit = nettProfit.multipliedBy(investorProfitPercent).multipliedBy(0.99)
-	}
-	log("grossProfit", grossProfit.toString())
-	log("nettProfit", nettProfit.toString())
-	investment.grossValue = investment.amount.plus(grossProfit)
-	investment.nettValue = investment.amount.plus(nettProfit)
-	return investment
-}
-
 const getTraderAllocations = async (account, token, traderPaired) => {
 	let stream = await traderPaired.getPastEvents(
 		'Allocate',
@@ -1037,50 +905,13 @@ const getTraderAllocations = async (account, token, traderPaired) => {
 	return allocations
 }
 
-const getTraderInvestments = async (account, token, traderPaired) => {
-	let result = []
-	try {
-		let stream = await traderPaired.getPastEvents(
-			'Invest',
-			{
-				filter: {trader: account, token: token},
-				fromBlock: 0
-			}
-		)
-		let investList = stream.map(event => mapInvest(event.returnValues))
-
-		stream = await traderPaired.getPastEvents(
-			'Stop',
-			{
-				filter: {trader: account, token: token},
-				fromBlock: 0
-			}
-		)
-		let stopList = stream.map(event => mapStop(event.returnValues))
-
-		investList.forEach((investment) => {
-			let index = stopList.findIndex(stopped => stopped.id === investment.id)
-			if (index !== -1) {
-				investment.state = stopList[index].state
-				investment.end = stopList[index].end
-			}
-			return investment
-		})
-		result = investList
-
-	} catch (err) {
-		log('Could not getTraderInvestments', err)
-	}
-	return result
-}
-
 const getTradeInvestmentsAmount = async (trade, traderInvestments) => {
 	let investments = traderInvestments.filter((investment) => tokenAddressForSymbol(trade.asset) === investment.token)
 	
 	investments = investments.filter(investment =>
 		trade.start.isAfter(investment.start) 
 			&& (
-				(investment.end.unix() === 0 || investment.state === "0") 
+				(investment.end.unix() === 0 || investment.state === INVESTMENT_STATE_INVESTED) 
 					|| trade.end.isBefore(investment.end)))
 	
 	let totalAmount = investments.reduce((total, investment) => total.plus(investment.amount), new BigNumber(0))
@@ -1147,31 +978,152 @@ export const loadTradeCount = async (network, account, dispatch) => {
 	}
 }
 
-export const updateTrades = async (network, account, dispatch) => {
-	log("updateTrades", network, account)
+export const createdInvestment = async (network, investmentId, web3, dispatch) => {
+	log("createdInvestment", network, investmentId)
 
 	try {
 		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
-					process.env['REACT_APP_' + network + '_API_UPDATETRADES']
-		url = url.replace('$1', account)
+					process.env['REACT_APP_' + network + '_API_CREATEDINVESTMENT']
 
-		console.log("updateTrades", url)
+		console.log("createdInvestment", url)
 
 		let response
 
-		if (process.env.NODE_ENV === 'development') {
+		if (network === 'DEV') {
+			url = url.replace('$1', investmentId)
 			response = await axios.get(url)
 		} else {
-			response = await axios.post(url)
+			const data = {investmentId: investmentId}
+			response = await axios.post(url, JSON.stringify(data))
 		}
-	    const trades = response.data.map(mapTrade)
+	    const investment = await mapInvestment(response.data, web3)
 
-	    trades.forEach((trade, index) => dispatch(tradeLoaded(trade)))
+	    dispatch(investmentLoaded(investment))
 
 	    return true
 
 	} catch (error) {
-		log('Could not get trades', error)
+		log('Could not create investment', error)
+		return false
+	}
+}
+
+export const stoppedInvestment = async (network, investmentId, web3, dispatch) => {
+	log("stoppedInvestment", network, investmentId)
+
+	try {
+		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
+					process.env['REACT_APP_' + network + '_API_STOPPEDINVESTMENT']
+
+		console.log("stoppedInvestment", url)
+
+		let response
+
+		if (network === 'DEV') {
+			url = url.replace('$1', investmentId)
+			response = await axios.get(url)
+		} else {
+			const data = {investmentId: investmentId}
+			response = await axios.post(url, JSON.stringify(data))
+		}
+	    const investment = await mapInvestment(response.data, web3)
+
+	    dispatch(investmentLoaded(investment))
+
+	    return true
+
+	} catch (error) {
+		log('Could not stop investment', error)
+		return false
+	}
+}
+
+export const exitRequested = async (network, investmentId, web3, dispatch) => {
+	log("exitRequested", network, investmentId)
+
+	try {
+		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
+					process.env['REACT_APP_' + network + '_API_EXITREQUESTED']
+
+		console.log("exitRequested", url)
+
+		let response
+
+		if (network === 'DEV') {
+			url = url.replace('$1', investmentId)
+			response = await axios.get(url)
+		} else {
+			const data = {investmentId: investmentId}
+			response = await axios.post(url, JSON.stringify(data))
+		}
+	    const investment = await mapInvestment(response.data, web3)
+
+	    dispatch(investmentLoaded(investment))
+
+	    return true
+
+	} catch (error) {
+		log('Could not request exit', error)
+		return false
+	}
+}
+
+export const exitRejected = async (network, investmentId, web3, dispatch) => {
+	log("exitRejected", network, investmentId)
+
+	try {
+		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
+					process.env['REACT_APP_' + network + '_API_EXITREJECTED']
+
+		console.log("exitRejected", url)
+
+		let response
+
+		if (network === 'DEV') {
+			url = url.replace('$1', investmentId)
+			response = await axios.get(url)
+		} else {
+			const data = {investmentId: investmentId}
+			response = await axios.post(url, JSON.stringify(data))
+		}
+	    const investment = await mapInvestment(response.data, web3)
+
+	    dispatch(investmentLoaded(investment))
+
+	    return true
+
+	} catch (error) {
+		log('Could not reject exit', error)
+		return false
+	}
+}
+
+export const exitApproved = async (network, investmentId, web3, dispatch) => {
+	log("exitApproved", network, investmentId)
+
+	try {
+		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
+					process.env['REACT_APP_' + network + '_API_EXITAPPROVED']
+
+		console.log("exitApproved", url)
+
+		let response
+
+		if (network === 'DEV') {
+			url = url.replace('$1', investmentId)
+			response = await axios.get(url)
+		} else {
+			const data = {investmentId: investmentId}
+			response = await axios.post(url, JSON.stringify(data))
+		}
+	    const investment = await mapInvestment(response.data, web3)
+
+	    dispatch(investmentLoaded(investment))
+
+	    return true
+
+	} catch (error) {
+		log('Could not approve exit', error)
 		return false
 	}
 }

@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Container, Row, Col, Form, Button, Alert } from 'react-bootstrap'
 import AllocationChart from './AllocationChart'
+import Help from '../containers/Help'
 import { log, ZERO_ADDRESS, tokenDecimalsForAddress } from '../../helpers'
 import { 
   web3Selector,
@@ -11,7 +12,8 @@ import {
   traderPairedSelector,
   traderAllocationsSelector,
   tokensSelector,
-  balancesSelector
+  balancesSelector,
+  hasValidAllocationSelector
 } from '../../store/selectors'
 import { 
   loadTraderAllocations,
@@ -27,13 +29,26 @@ class TraderAllocations extends Component {
     loadTraderAllocations(network, account, traderPaired, dispatch)
     loadBalances(account, traderPaired, tokens, web3, dispatch)
 
-    if (!trader.statistics) {
+    if (trader && !trader.statistics) {
       loadTraderStatistics(trader.user, network, dispatch)
     }
   }
 
+  componentDidUpdate(prevProps) {
+    const { network, account, trader, traderPaired, tokens, web3, dispatch } = this.props
+
+    if (network !== prevProps.network || account !== prevProps.account || traderPaired !== prevProps.traderPaired) {
+      loadTraderAllocations(network, account, traderPaired, dispatch)
+      loadBalances(account, traderPaired, tokens, web3, dispatch)
+
+      if (trader && !trader.statistics) {
+        loadTraderStatistics(trader.user, network, dispatch)
+      }
+    }
+  }
+
   render() {
-    const {network, account, trader, traderAllocations} = this.props
+    const {network, account, trader, hasValidAllocation, traderAllocations} = this.props
 
     const allocationList = [
       {
@@ -53,14 +68,27 @@ class TraderAllocations extends Component {
     return (
         <Container>
           <Row>
-            <Col sm={12}>
-              <Alert variant="info">
-                Investors will only see you when you have allocations greater than 0<br/><br/>
-                An allocation is an indication of how much you trade with.<br/>
-                Setting it too high will result in more investments, lower returns for investors, and fewer losses per investor in case of trading losses.<br/>
-                Setting it too low will result in fewer investments, higher returns for investors, and larger losses per investor in case of trading losses.<br/><br/>
-                Set it to 0 any time to stop receiving investments.
-              </Alert>
+            <Col sm={1}>
+              <Help helpKey="allocation" title="Allocation" content="Investors will only see you when you have allocations greater than 0.
+
+                An allocation is an indication of how much you trade with.
+
+                Setting it too high will result in more investments, lower returns for investors, and fewer losses per investor in case of trading losses.
+
+                Setting it too low will result in fewer investments, higher returns for investors, and larger losses per investor in case of trading losses.
+
+                Set it to 0 any time to stop receiving investments." />
+            </Col>
+            <Col sm={11}>
+              {
+                !hasValidAllocation
+                ?
+                  <Alert variant="warning">
+                    You need to set an allocation for at least one currency in order to be visible to investors
+                  </Alert>
+                :
+                  <div/>
+              }
             </Col>
           </Row>
           <Row>
@@ -160,6 +188,7 @@ function allocationSubmitHandler (tokenAddress, inputId, props) {
 
 function mapStateToProps(state) {
   const account = accountSelector(state)
+
   return {
     web3: web3Selector(state),
     network: networkSelector(state),
@@ -168,7 +197,8 @@ function mapStateToProps(state) {
     traderPaired: traderPairedSelector(state),
     traderAllocations: traderAllocationsSelector(state, account),
     tokens: tokensSelector(state),
-    balances: balancesSelector(state)
+    balances: balancesSelector(state),
+    hasValidAllocation: hasValidAllocationSelector(state, account)
   }
 }
 

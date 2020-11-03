@@ -1,0 +1,19 @@
+{
+	"startBlockNumber": 8586069,
+	"endBlockNumber": 0,
+	"id": "1",
+	"wallet": "0XCDBE8B52A6C60A5F101D4A0F1F049F19A9E1D35F",
+	"trader": "0x22d491Bde2303f2f43325b2108D26f1eAbA1e32b",
+	"investor": "0xd03ea8624C8C5987235048901fB614fDcA89b117",
+	"token": "0x0000000000000000000000000000000000000000",
+	"amount": "100000000000000000",
+	"value": "100000000000000000",
+	"investorProfitPercent": "2000",
+	"investmentType": "0",
+	"state": 2,
+	"traderLimit": "500000000000000000",
+	"startDate": 1598864376,
+	"endDate": 0,
+	"grossValue": "100000000000000000",
+	"nettValue": "100000000000000000"
+}

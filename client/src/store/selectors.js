@@ -2,7 +2,17 @@ import { find, get, groupBy } from 'lodash'
 import BigNumber from 'bignumber.js'
 import moment from 'moment'
 import { createSelector } from 'reselect'
-import { NEUTRAL, RED, GREEN, formatBalance, tokenSymbolForAddress, log } from '../helpers'
+import { 
+		NEUTRAL, 
+		RED, 
+		GREEN, 
+		INVESTMENT_STATE_INVESTED, 
+		INVESTMENT_STATE_EXITREQUESTED_INVESTOR, 
+		INVESTMENT_STATE_EXITREQUESTED_TRADER, 
+		formatBalance, 
+		tokenSymbolForAddress, 
+		log 
+	} from '../helpers'
 
 const notifications = (state) => get(state, 'app.notifications', [])
 export const notificationsSelector = createSelector(notifications, a => a)
@@ -75,11 +85,9 @@ export const tradersSelector = createSelector(traders, e => e)
 
 export const investableTradersSelector = createSelector(traders, (traders) => {
 	const res = traders.filter((trader) => {
-		log('traders.filter', trader.allocations)
 		return (trader.allocations && trader.allocations.length !== 0 && trader.allocations.some(allocation => !allocation.total.isZero()))
 	})
 
-	log('investableTradersSelector', res)
 	return res
 })
 
@@ -166,9 +174,14 @@ const investorStatistics = (state, investor) => {
 }
 export const investorStatisticsSelector = createSelector(investorStatistics, s => s)
 
+const hasValidAllocation = (state, account) => {
+	const trader = find(state.web3.traders, {user: account})
+	return (trader && trader.allocations && trader.allocations.length !== 0 && trader.allocations.some(allocation => !allocation.total.isZero()))
+}
+export const hasValidAllocationSelector = createSelector(hasValidAllocation, v => v)
+
 const traderAllocations = (state, trader) => {
 	const traderObj = find(state.web3.traders, {user: trader})
-	log("traderAllocations", traderObj)
 	if (traderObj && traderObj.allocations) {
 		return traderObj.allocations
 	}
@@ -249,7 +262,7 @@ const tradesForInvestment = (state, investment) => {
 		trades = trades.filter(trade =>
 			trade.start.isAfter(investment.start) 
 				&& (
-					(investment.end.unix() === 0 || investment.state === "0") 
+					(investment.end.unix() === 0 || investment.state === INVESTMENT_STATE_INVESTED) 
 						|| trade.end.isBefore(investment.end)))
 
 		return trades
@@ -302,11 +315,11 @@ const investmentActionRequired = (state) => {
 	}
 	return state.web3.investments.some((investment) => {
 
-		if (investment.state === "2" && investment.investor !== state.web3.account) {
+		if (investment.state === INVESTMENT_STATE_EXITREQUESTED_INVESTOR && investment.investor !== state.web3.account) {
 			return true
 		}
 
-		if (investment.state === "3" && investment.trader !== state.web3.account) {
+		if (investment.state === INVESTMENT_STATE_EXITREQUESTED_TRADER && investment.trader !== state.web3.account) {
 			return true
 		}
 		

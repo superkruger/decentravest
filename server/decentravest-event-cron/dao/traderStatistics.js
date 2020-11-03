@@ -22,6 +22,11 @@ module.exports.getStatistics = async (account) => {
     "Key": account
   }
 
-  const data = await s3Common.s3.getObject(options).promise()
-  return JSON.parse(data.Body)
+  try {
+    const data = await s3Common.s3.getObject(options).promise()
+    return JSON.parse(data.Body)
+  } catch (error) {
+    console.error(`could not get statistics for ${account}`, error)
+  }
+  return null
 }

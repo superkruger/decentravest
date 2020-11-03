@@ -12,18 +12,19 @@ const allocateDao = require('./dao/traderpaired/allocate')
 const stopDao = require('./dao/traderpaired/stop')
 
 const tradesDao = require('./dao/trades')
+const investmentsDao = require('./dao/investments')
 
 const helpers = require('./helpers')
 
 const levelRequirements = [
-	{collateralReq: 0,   directReq: 0, 	   trustReq: 0,  directLimit: 0},	// 0 - intern
-	{collateralReq: 5,   directReq: 0, 	   trustReq: 7,  directLimit: 0.5},	// 1 - junior
-	{collateralReq: 10,  directReq: 10,    trustReq: 8,  directLimit: 1},	// 2 - analyst
-	{collateralReq: 20,  directReq: 50,    trustReq: 8,  directLimit: 2},	// 3 - specialist
-	{collateralReq: 50,  directReq: 100,   trustReq: 9,  directLimit: 5},	// 4 - associate
-	{collateralReq: 100, directReq: 500,   trustReq: 9,  directLimit: 10},	// 5 - entrepreneur
-	{collateralReq: 200, directReq: 1000,  trustReq: 10, directLimit: 20},	// 6 - tycoon
-	{collateralReq: 500, directReq: 10000, trustReq: 10, directLimit: 50}	// 7 - elite
+	{collateralReq: 0,   directReq: 0, 	  trustReq: 0,  directLimit: 0},	// 0 - intern
+	{collateralReq: 5,   directReq: 0, 	  trustReq: 7,  directLimit: 2},	// 1 - junior
+	{collateralReq: 10,  directReq: 10,   trustReq: 8,  directLimit: 5},	// 2 - analyst
+	{collateralReq: 20,  directReq: 50,   trustReq: 8,  directLimit: 10},	// 3 - specialist
+	{collateralReq: 50,  directReq: 100,  trustReq: 9,  directLimit: 20},	// 4 - associate
+	{collateralReq: 100, directReq: 500,  trustReq: 9,  directLimit: 50},	// 5 - entrepreneur
+	{collateralReq: 200, directReq: 1000, trustReq: 10, directLimit: 100},	// 6 - tycoon
+	{collateralReq: 500, directReq: 5000, trustReq: 10, directLimit: 500}	// 7 - elite
 ]
 
 const tokenSymbols = ["ETH", "DAI", "USDC"]

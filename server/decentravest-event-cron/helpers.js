@@ -8,6 +8,12 @@ module.exports.INVESTMENT_COLLATERAL = INVESTMENT_COLLATERAL
 const INVESTMENT_DIRECT = 1
 module.exports.INVESTMENT_DIRECT = INVESTMENT_DIRECT
 
+module.exports.INVESTMENT_STATE_INVESTED = 0
+module.exports.INVESTMENT_STATE_STOPPED = 1
+module.exports.INVESTMENT_STATE_EXITREQUESTED_INVESTOR = 2
+module.exports.INVESTMENT_STATE_EXITREQUESTED_TRADER = 3
+module.exports.INVESTMENT_STATE_EXITAPPROVED = 4
+
 const userTokens = [
 		{ symbol: 'ETH', decimals: 18, address: ZERO_ADDRESS },
 	    { symbol: 'DAI', decimals: 18, address: process.env.DAI_ADDRESS },

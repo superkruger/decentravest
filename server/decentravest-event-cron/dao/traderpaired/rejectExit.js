@@ -18,11 +18,12 @@ module.exports.create = async (event) => {
     }).promise()
 
     console.log("created rejectExit", res)
+    return true
   } catch (error) {
     console.log("could not create rejectExit", error)
   }
 
-  return event.id;
+  return false
 };
 
 module.exports.get = async (id) => {
@@ -35,6 +36,32 @@ module.exports.get = async (id) => {
 
   const query = {
     sql: `SELECT ${select} FROM traderpaired_rejectexit WHERE id = '${id}'`
+  };
+
+  try {
+    const results = await s3Common.athenaExpress.query(query);
+    if (results.Items.length > 0) {
+
+      console.log("got event", results.Items[0])
+      return mapRejectExit(results.Items[0])
+    }
+  } catch (error) {
+    console.log("athena error", error);
+  }
+  
+  return null;
+}
+
+module.exports.getByInvestmentId = async (id) => {
+
+  console.log("getting rejectExit", id)
+
+  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-rejectexit`)) {
+    return null
+  }
+
+  const query = {
+    sql: `SELECT ${select} FROM traderpaired_rejectexit WHERE returnvalues.id = '${id}' ORDER BY returnvalues.mdate desc LIMIT 1`
   };
 
   try {
@@ -110,6 +137,31 @@ module.exports.getByTrader = async (trader) => {
 
   const query = {
     sql: `SELECT ${select} FROM traderpaired_rejectexit WHERE returnvalues.trader = '${trader}'`
+  };
+
+  try {
+    const results = await s3Common.athenaExpress.query(query);
+    if (results.Items.length > 0) {
+
+      return results.Items.map(mapRejectExit)
+    }
+  } catch (error) {
+    console.log("athena error", error);
+  }
+  
+  return [];
+}
+
+module.exports.getByTraderFrom = async (trader, fromDate) => {
+
+  console.log("getting rejectExits for trader from", trader, fromDate)
+
+  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-rejectexit`)) {
+    return []
+  }
+
+  const query = {
+    sql: `SELECT ${select} FROM traderpaired_rejectexit WHERE returnvalues.trader = '${trader}' AND returnvalues.mdate > ${fromDate}`
   };
 
   try {

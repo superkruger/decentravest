@@ -8,7 +8,7 @@ provider:
   memorySize: 256
   runtime: nodejs12.x
   role: LambdaRole
-  timeout: 20
+  timeout: 120
   environment:
     STAGE: ${opt:stage, 'dev'}
     #s3
@@ -17,6 +17,7 @@ provider:
     eventbucket_queryresults: ${self:custom.eventbucket_queryresults}
     traderstatisticsbucket: ${self:custom.traderstatisticsbucket}
     investorstatisticsbucket: ${self:custom.investorstatisticsbucket}
+    investmentbucket: ${self:custom.investmentbucket}
     #infura
     INFURA_BASE_URL: ${param:INFURA_BASE_URL}
     INFURA_API_KEY: ${param:INFURA_API_KEY}
@@ -32,6 +33,7 @@ custom:
   eventbucket_queryresults: "resultbucket-${opt:stage, 'dev'}-1"
   traderstatisticsbucket: "traderstatisticsbucket-${opt:stage, 'dev'}-1"
   investorstatisticsbucket: "investorstatisticsbucket-${opt:stage, 'dev'}-1"
+  investmentbucket: "investmentbucket-${opt:stage, 'dev'}-1"
   athenadb: "blockchain-events-${opt:stage, 'dev'}"
   VPC_CIDR: 10
 
@@ -44,6 +46,7 @@ resources:
     AthenaBucket: ${file(./resource/S3BucketQueryResults.yml)}
     TraderStatisticsBucket: ${file(./resource/S3BucketTraderStatistics.yml)}
     InvestorStatisticsBucket: ${file(./resource/S3BucketInvestorStatistics.yml)}
+    InvestmentBucket: ${file(./resource/S3BucketInvestments.yml)}
     LambdaRole: ${file(./resource/LambdaRole.yml)}
     ServerlessInternetGateway: ${file(./resource/ServerlessInternetGateway.yml)}
     ServerlessVPC: ${file(./resource/ServerlessVPC.yml)}
@@ -82,6 +85,8 @@ resources:
     AthenaTableMultiSigFundWalletStopped: ${file(./resource/tables/multisigfundwallet/Stopped.yml)}
 
     AthenaTableDydxPosition: ${file(./resource/tables/dydx/Position.yml)}
+
+    AthenaTableInvestment: ${file(./resource/tables/Investment.yml)}
 
 functions:
   processEvents:
@@ -128,12 +133,52 @@ functions:
           method: get
           cors: true
 
-  updateTrades:
-    handler: handler.updateTrades
+  createdInvestment:
+    handler: handler.createdInvestment
     events:
       - http:
-          path: updateTrades
+          path: createdInvestment
           method: post
+          cors: true
+
+  stoppedInvestment:
+    handler: handler.stoppedInvestment
+    events:
+      - http:
+          path: stoppedInvestment
+          method: post
+          cors: true
+
+  exitRequested:
+    handler: handler.exitRequested
+    events:
+      - http:
+          path: exitRequested
+          method: post
+          cors: true
+
+  exitRejected:
+    handler: handler.exitRejected
+    events:
+      - http:
+          path: exitRejected
+          method: post
+          cors: true
+
+  exitApproved:
+    handler: handler.exitApproved
+    events:
+      - http:
+          path: exitApproved
+          method: post
+          cors: true
+
+  getInvestments:
+    handler: handler.investments
+    events:
+      - http:
+          path: investments
+          method: get
           cors: true
 
   listTraderpairedTrader:

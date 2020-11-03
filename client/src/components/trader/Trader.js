@@ -39,7 +39,6 @@ class Trader extends Component {
     }
   }
 
-
   componentDidUpdate(prevProps) {
     const { account, network, traderPaired, dispatch } = this.props
 

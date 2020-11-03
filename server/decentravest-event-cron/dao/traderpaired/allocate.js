@@ -18,11 +18,12 @@ module.exports.create = async (event) => {
     }).promise()
 
     console.log("created allocate", res)
+    return true
   } catch (error) {
     console.log("could not create allocate", error)
   }
 
-  return event.id;
+  return false
 };
 
 module.exports.get = async (id) => {
@@ -131,9 +132,9 @@ const mapAllocate = (event) => {
     blockNumber: event.blockNumber,
     trader: event.trader, 
     token: event.token,
-	total: new BigNumber(event.total), 
-	invested: new BigNumber(event.invested), 
-	eventDate: event.mdate
+  	total: new BigNumber(event.total), 
+  	invested: new BigNumber(event.invested), 
+  	eventDate: event.mdate
   }
 }
 

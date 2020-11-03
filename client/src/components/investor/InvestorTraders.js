@@ -140,7 +140,7 @@ class InvestorTraders extends Component {
                       <Col sm={6}>
                         <InputGroup>
                           <InputGroup.Prepend>
-                            <InputGroup.Text id="searchPrepend"><i class="fas fa-search"></i></InputGroup.Text>
+                            <InputGroup.Text id="searchPrepend"><i className="fas fa-search"></i></InputGroup.Text>
                           </InputGroup.Prepend>
                           <Form.Group controlId="filtersearch">
                             <Form.Control aria-describedby="searchPrepend" type="text" value={this.state.filterSearch} placeholder="Filter on address" onChange={(e) => {changeFilterSearch(e, this)}}/>

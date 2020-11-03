@@ -27,8 +27,14 @@ function DashboardButton(props) {
   return (
     <li className="nav-item active">
       <PageLink page={Page.ADMIN_DASHBOARD} styles="nav-link">
-          <i className="fas fa-fw fa-tachometer-alt"></i>
-          <span>Admin Dashboard</span>
+        <div className="row no-gutters align-items-left">
+          <div className="col-auto">
+            <i className="fas fa-fw fa-tachometer-alt"></i>
+          </div>
+          <div className="col-auto">
+            <div className="font-weight-bold mb-1">Admin Dashboard</div>
+          </div>
+        </div>
       </PageLink>
     </li>
   )
@@ -38,8 +44,14 @@ function TradersButton(props) {
   return (
     <li className="nav-item active">
       <PageLink page={Page.ADMIN_TRADERS} styles="nav-link">
-          <i className="fas fa-fw fa-chart-pie"></i>
-          <span>Traders</span>
+        <div className="row no-gutters align-items-left">
+          <div className="col-auto">
+            <i className="fas fa-fw fa-chart-pie"></i>
+          </div>
+          <div className="col-auto">
+            <div className="font-weight-bold mb-1">Traders</div>
+          </div>
+        </div>
       </PageLink>
     </li>
   )
@@ -49,8 +61,14 @@ function InvestorsButton(props) {
   return (
     <li className="nav-item active">
       <PageLink page={Page.ADMIN_INVESTORS} styles="nav-link">
-          <i className="fas fa-fw fa-coins"></i>
-          <span>Investors</span>
+        <div className="row no-gutters align-items-left">
+          <div className="col-auto">
+            <i className="fas fa-fw fa-coins"></i>
+          </div>
+          <div className="col-auto">
+            <div className="font-weight-bold mb-1">Investors</div>
+          </div>
+        </div>
       </PageLink>
     </li>
   )

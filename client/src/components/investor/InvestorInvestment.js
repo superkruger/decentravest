@@ -3,8 +3,18 @@ import { connect } from 'react-redux'
 import { Container, Row, Col, Button, Badge, Alert } from 'react-bootstrap'
 import AddressImage from '../AddressImage'
 import Token from '../Token'
-import { log, toBN, INVESTMENT_COLLATERAL } from '../../helpers'
 import { 
+  log, 
+  toBN, 
+  INVESTMENT_COLLATERAL,
+  INVESTMENT_STATE_INVESTED,
+  INVESTMENT_STATE_STOPPED,
+  INVESTMENT_STATE_EXITREQUESTED_INVESTOR,
+  INVESTMENT_STATE_EXITREQUESTED_TRADER,
+  INVESTMENT_STATE_EXITAPPROVED
+} from '../../helpers'
+import {
+  web3Selector,
   networkSelector,
   accountSelector,
   investorSelector,
@@ -25,7 +35,7 @@ class InvestorInvestment extends Component {
 
   render() {
     const { network, investment, tradesForInvestment } = this.props
-    const headerClass = investment.state === "4" ? "disbursed" : ""
+    const headerClass = investment.state === INVESTMENT_STATE_EXITAPPROVED ? "disbursed" : ""
 
     const dydxUrl = process.env['REACT_APP_'+network+'_DYDX_CLOSED_URL'].replace('$1', investment.trader)
 
@@ -36,8 +46,8 @@ class InvestorInvestment extends Component {
             <Row>
               <Col sm={1}>
                 {
-                  investment.state === "3" &&
-                    <Badge variant="danger">!</Badge>
+                  investment.state === INVESTMENT_STATE_EXITREQUESTED_TRADER &&
+                    <Badge variant="warning">!</Badge>
                 }
                 <AddressImage address={investment.trader}/>
               </Col>
@@ -159,9 +169,11 @@ function StopButton (props) {
 }
 
 function stopHandler (props) {
-  const { network, investment, investor, wallet, dispatch } = props.props
+  const { network, investment, investor, wallet, web3, dispatch } = props.props
 
-  stopInvestment(network, investor.user, investment, wallet.contract, dispatch)
+  console.log("stopHandler", network, investor.user, investment, wallet.contract)
+
+  stopInvestment(network, investor.user, investment, wallet.contract, web3, dispatch)
 }
 
 function DisburseButton (props) {
@@ -182,19 +194,19 @@ function DisburseButton (props) {
 }
 
 function disburseHandler (props) {
-  const { investment, investor, wallet, tokens, pairedInvestments, dispatch } = props.props
+  const { network, investment, investor, wallet, tokens, pairedInvestments, web3, dispatch } = props.props
 
   log("--investment disburse--", investment)
 
   const token = tokens.find(t => t.contract.options.address === investment.token)
 
-  disburseInvestment(investor.user, investment, wallet.contract, token, pairedInvestments, dispatch)
+  disburseInvestment(network, investor.user, investment, wallet.contract, token, pairedInvestments, web3, dispatch)
 }
 
 function ApproveButton (props) {
   const { investment } = props.props
 
-  if (investment.state === "2") {
+  if (investment.state === INVESTMENT_STATE_EXITREQUESTED_INVESTOR) {
     return (
       <span>waiting for approval...</span>
     )
@@ -234,26 +246,27 @@ function ApproveButton (props) {
 }
 
 function approveHandler (props) {
-  const { investment, investor, wallet, tokens, pairedInvestments, dispatch } = props.props
+  const { network, investment, investor, wallet, tokens, pairedInvestments, web3, dispatch } = props.props
 
   log("--investment approve--", investment)
 
   const token = tokens.find(t => t.contract.options.address === investment.token)
 
-  approveDisbursement(investor.user, investment, wallet.contract, token, pairedInvestments, dispatch)
+  approveDisbursement(network, investor.user, investment, wallet.contract, token, pairedInvestments, web3, dispatch)
 }
 
 function rejectHandler (props) {
-  const { investment, investor, wallet, pairedInvestments, dispatch } = props.props
+  const { network, investment, investor, wallet, pairedInvestments, web3, dispatch } = props.props
 
   log("--investment reject--", investment)
 
-  rejectDisbursement(investor.user, investment, wallet.contract, pairedInvestments, dispatch)
+  rejectDisbursement(network, investor.user, investment, wallet.contract, pairedInvestments, web3, dispatch)
 }
 
 function mapStateToProps(state, props) {
 
   return {
+    web3: web3Selector(state),
     network: networkSelector(state),
     account: accountSelector(state),
     investor: investorSelector(state),

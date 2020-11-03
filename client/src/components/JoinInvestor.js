@@ -1,10 +1,11 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
-import { Button, Container, Row, Col, Alert } from 'react-bootstrap'
+import { Button, Container, Row, Col, Alert, Form, Nav } from 'react-bootstrap'
 import Spinner from './Spinner'
 import {
   web3Selector,
+  networkSelector,
   accountSelector, 
   traderPairedSelector,
   pairedInvestmentsSelector,
@@ -18,8 +19,10 @@ import {
 
 class JoinInvestor extends Component {
 
-  componentDidMount() {
-    const { account, dispatch } = this.props
+  constructor(props) {
+    super(props);
+
+    this.state = {termsAccepted: false}
   }
 
   render() {
@@ -28,7 +31,7 @@ class JoinInvestor extends Component {
       <div>
       {
         ready ?
-            <InvestorJourney props={this.props} />
+            <InvestorJourney props={this.props} component={this} />
           : <Spinner type="div" />
       }
       </div>
@@ -37,6 +40,8 @@ class JoinInvestor extends Component {
 }
 
 function InvestorJourney(props) {
+  const {component} = props
+
   return (
     <Container>
       <Row>
@@ -139,15 +144,39 @@ function InvestorJourney(props) {
       <hr/>
       <br/>
       <Row>
-        <Col sm={12}>
-          <InvestorButton props={props.props} />
+        <Col sm={4}>
+          <Terms props={props.props} component={component} />
+        </Col>
+        <Col sm={8}>
+          <InvestorButton props={props.props} component={component} />
         </Col>
       </Row>
     </Container>
   )
 }
 
+function Terms(props) {
+  const {component} = props
+
+  const handleChange = (event) => component.setState({termsAccepted: event.target.checked})
+
+  const label = ( <div>I accept the <a href="https://www.decentravest.com/terms.html" target="_blank" rel="noopener">terms & conditions</a></div> )
+
+  return (
+    <Form>
+      <Form.Check 
+        inline
+        type="checkbox"
+        id="accept_terms"
+        label={label}
+        onChange={(e) => {handleChange(e)}}
+      />
+    </Form>
+  )
+}
+
 function InvestorButton(props) {
+  const { component } = props
   const { investorJoining } = props.props
   const handleClick = () => investorJoin(props.props)
 
@@ -157,23 +186,36 @@ function InvestorButton(props) {
       investorJoining ?
       <Spinner />
       :
-      <Button
-        className="row-center"
-        variant="success"
-        size="lg"
-        onClick={handleClick}
-        >
-        Join as Investor (Just one click!)
-      </Button>
+      <div>
+      {
+        component.state.termsAccepted
+        ? <Button
+            className="row-center"
+            variant="success"
+            size="lg"
+            onClick={handleClick}
+            >
+            Join as Investor (Just one click!)
+          </Button>
+        : <Button
+            className="row-center"
+            variant="success"
+            size="lg"
+            disabled
+            >
+            Join as Investor (Just one click!)
+          </Button>
+      }
+      </div>
     }
     </div>
   )
 }
 
 const investorJoin = async (props) => {
-  const { account, traderPaired, pairedInvestments, walletFactory, web3, dispatch, history } = props
+  const { network, account, traderPaired, pairedInvestments, walletFactory, web3, dispatch, history } = props
 
-  await joinAsInvestor(account, traderPaired, pairedInvestments, walletFactory, web3, dispatch, history)
+  await joinAsInvestor(network, account, traderPaired, pairedInvestments, walletFactory, web3, dispatch, history)
 
 }
 
@@ -183,6 +225,7 @@ function mapStateToProps(state) {
 
   return {
     web3: web3Selector(state),
+    network: networkSelector(state),
     account: account,
     traderPaired: traderPaired,
     pairedInvestments: pairedInvestmentsSelector(state),

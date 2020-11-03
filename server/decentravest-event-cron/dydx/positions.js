@@ -38,9 +38,11 @@ module.exports.loadTraderPositions = async (account) => {
 
 		await tradesDao.addAll(account, positions.map(positionToTrade))
 
+		return true
+
 	} catch (error) {
 		console.log('Could not load trader positions', error)
-		return null
+		return false
 	}
 }
 

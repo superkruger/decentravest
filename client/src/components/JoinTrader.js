@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
-import { Button, Container, Row, Col, ListGroup, Tab, Alert } from 'react-bootstrap'
+import { Button, Container, Row, Col, ListGroup, Tab, Alert, Form } from 'react-bootstrap'
 import Spinner from './Spinner'
 import {
   web3Selector,
@@ -22,6 +22,12 @@ import {
 import './timeline.css'
 
 class JoinTrader extends Component {
+
+  constructor(props) {
+    super(props);
+
+    this.state = {termsAccepted: false}
+  }
 
   componentDidMount() {
     const { account, network, dispatch } = this.props
@@ -45,7 +51,7 @@ class JoinTrader extends Component {
       <div className="content">
         {
           ready ?
-            <TraderJourney props={this.props} />
+            <TraderJourney props={this.props} component={this} />
           : <Spinner type="div" />
         }
       </div>
@@ -54,6 +60,7 @@ class JoinTrader extends Component {
 }
 
 function TraderJourney(props) {
+  const {component} = props
   const { tradeCount } = props.props
 
   return (
@@ -151,9 +158,7 @@ function TraderJourney(props) {
                       </div>
                     </div>
                 </div>
-                
               </div>
-
             </div>
           </div>
         </Col>
@@ -161,11 +166,14 @@ function TraderJourney(props) {
       <hr/>
       <br/>
       <Row>
-        <Col sm={12}>
+        <Col sm={4}>
+          <Terms props={props.props} component={component} />
+        </Col>
+        <Col sm={8}>
           {
 
             tradeCount > 0 
-            ? <TraderButton props={props.props} />
+            ? <TraderButton props={props.props} component={component} />
             : <p>Before you can join as a trader, you need to have some trades on <a href="https://trade.dydx.exchange/margin/" target="_blank" rel="noopener">dydx.exchange</a></p>
           }
         </Col>
@@ -174,7 +182,28 @@ function TraderJourney(props) {
   )
 }
 
+function Terms(props) {
+  const {component} = props
+
+  const handleChange = (event) => component.setState({termsAccepted: event.target.checked})
+
+  const label = ( <div>I accept the <a href="https://www.decentravest.com/terms.html" target="_blank" rel="noopener">terms & conditions</a></div> )
+
+  return (
+    <Form>
+      <Form.Check 
+        inline
+        type="checkbox"
+        id="accept_terms"
+        label={label}
+        onChange={(e) => {handleChange(e)}}
+      />
+    </Form>
+  )
+}
+
 function TraderButton(props) {
+  const { component } = props
   const { tradeCount, traderJoining } = props.props
 
   const handleClick = () => traderJoin(props.props)
@@ -182,7 +211,7 @@ function TraderButton(props) {
   return (
     <div className="row-center">
       {
-        tradeCount > 0 ? 
+        tradeCount > 0 && component.state.termsAccepted ? 
           traderJoining ?
             <Spinner />
             :
@@ -196,11 +225,12 @@ function TraderButton(props) {
             </Button>
         : 
           <Button
+            className="row-center"
             variant="success"
-            onClick={handleClick}
+            size="lg"
             disabled
             >
-            Join as Trader
+            Join as Trader (Just one click!)
           </Button>
       }
     </div>

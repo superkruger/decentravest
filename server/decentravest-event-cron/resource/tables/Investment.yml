@@ -1,0 +1,61 @@
+DependsOn: AthenaDB
+Type: AWS::Glue::Table
+Properties:
+  CatalogId: !Ref AWS::AccountId
+  DatabaseName: "${self:custom.athenadb}"
+  TableInput:
+    Name: investments
+    Description: Investments
+    TableType: EXTERNAL_TABLE
+    Parameters: {
+      "classification": "json"
+    }
+    StorageDescriptor:
+      OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+      Columns:
+      - Name: investBlockNumber
+        Type: int
+      - Name: stopBlockNumber
+        Type: int
+      - Name: requestBlockNumber
+        Type: int
+      - Name: rejectBlockNumber
+        Type: int
+      - Name: approveBlockNumber
+        Type: int
+      - Name: id
+        Type: string
+      - Name: disbursementId
+        Type: string
+      - Name: wallet
+        Type: string
+      - Name: trader
+        Type: string
+      - Name: investor
+        Type: string
+      - Name: token
+        Type: string
+      - Name: amount
+        Type: string
+      - Name: value
+        Type: string
+      - Name: grossValue
+        Type: string
+      - Name: nettValue
+        Type: string
+      - Name: investorProfitPercent
+        Type: string
+      - Name: investmentType
+        Type: int
+      - Name: state
+        Type: int
+      - Name: traderLimit
+        Type: string
+      - Name: startDate
+        Type: int
+      - Name: endDate
+        Type: int
+      InputFormat: org.apache.hadoop.mapred.TextInputFormat
+      Location: "s3://${self:custom.investmentbucket}/"
+      SerdeInfo:
+        SerializationLibrary: org.openx.data.jsonserde.JsonSerDe

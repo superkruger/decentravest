@@ -3,22 +3,33 @@ import { connect } from 'react-redux'
 import { Container, Row, Col, Button, Badge, Alert, Form } from 'react-bootstrap'
 import AddressImage from '../AddressImage'
 import Token from '../Token'
-import { log, toBN, INVESTMENT_COLLATERAL } from '../../helpers'
+import Help from '../containers/Help'
 import { 
+  log, 
+  toBN, 
+  INVESTMENT_COLLATERAL,
+  INVESTMENT_STATE_INVESTED,
+  INVESTMENT_STATE_STOPPED,
+  INVESTMENT_STATE_EXITREQUESTED_INVESTOR,
+  INVESTMENT_STATE_EXITREQUESTED_TRADER,
+  INVESTMENT_STATE_EXITAPPROVED
+ } from '../../helpers'
+import { 
+  web3Selector,
   networkSelector,
   accountSelector,
   traderSelector,
   traderPairedSelector,
   pairedInvestmentsSelector,
   investmentsSelector,
-  tokensSelector
+  tokensSelector,
+  investmentActionRequiredSelector
 } from '../../store/selectors'
 import { 
   stopInvestment,
   disburseInvestment,
   approveDisbursement,
-  rejectDisbursement,
-  loadInvestmentValues
+  rejectDisbursement
 } from '../../store/interactions'
 
 class TraderInvestments extends Component {
@@ -27,14 +38,27 @@ class TraderInvestments extends Component {
     this.state = {pastInvestmentsFilter: false, currentInvestmentsFilter: true};
   }
 
-  componentDidMount() {
-    const { network, investments, traderPaired, dispatch } = this.props
-    loadInvestmentValues(network, investments, traderPaired, dispatch)
-  }
-
   render() {
+    const {investmentActionRequired} = this.props
+
     return (
       <Container>
+        <Row>
+          <Col sm={1}>
+            <Help helpKey="investments" title="Investments" content="All your investments are listed here. Use the filters to control which of them is visible." />
+          </Col>
+          <Col sm={11}>
+            {
+              investmentActionRequired
+              ?
+                <Alert variant="warning">
+                  Some of the investments require your attention
+                </Alert>
+              :
+                <div/>
+            }
+          </Col>
+        </Row>
         <Row>
           <Col sm={12}>  
             <Form>
@@ -80,13 +104,13 @@ function showInvestments(component) {
   return (
     <div className="col-sm-12">
     { investments.map((investment) => {
-        const headerClass = investment.state === "4" ? "disbursed" : ""
+        const headerClass = investment.state === INVESTMENT_STATE_EXITAPPROVED ? "disbursed" : ""
 
-        if (investment.state === "4" && !component.state.pastInvestmentsFilter) {
+        if (investment.state === INVESTMENT_STATE_EXITAPPROVED && !component.state.pastInvestmentsFilter) {
           return null
         }
         
-        if (investment.state !== "4" && !component.state.currentInvestmentsFilter) {
+        if (investment.state !== INVESTMENT_STATE_EXITAPPROVED && !component.state.currentInvestmentsFilter) {
           return null
         }
         
@@ -97,8 +121,8 @@ function showInvestments(component) {
                 <Row>
                   <Col sm={1}>
                     {
-                      investment.state === "2" &&
-                        <Badge variant="danger">!</Badge>
+                      investment.state === INVESTMENT_STATE_EXITREQUESTED_INVESTOR &&
+                        <Badge variant="warning">!</Badge>
                     }
                     <AddressImage address={investment.investor}/>
                   </Col>
@@ -191,10 +215,10 @@ function StopButton (props) {
 }
 
 function stopHandler (props) {
-  const { network, trader, dispatch } = props.props
+  const { network, trader, web3, dispatch } = props.props
   const { investment } = props
 
-  stopInvestment(network, trader.user, investment, investment.walletContract, dispatch)
+  stopInvestment(network, trader.user, investment, investment.walletContract, web3, dispatch)
 }
 
 function DisburseButton (props) {
@@ -215,20 +239,18 @@ function DisburseButton (props) {
 }
 
 function disburseHandler (props) {
-  const { trader, tokens, pairedInvestments, dispatch } = props.props
+  const { network, trader, tokens, pairedInvestments, web3, dispatch } = props.props
   const { investment } = props
-
-  log("--investment disburse--", investment)
 
   const token = tokens.find(t => t.contract.options.address === investment.token)
 
-  disburseInvestment(trader.user, investment, investment.walletContract, token, pairedInvestments, dispatch)
+  disburseInvestment(network, trader.user, investment, investment.walletContract, token, pairedInvestments, web3, dispatch)
 }
 
 function ApproveButton (props) {
   const { investment } = props
 
-  if (investment.state === "3") {
+  if (investment.state === INVESTMENT_STATE_EXITREQUESTED_TRADER) {
     return (
       <span>waiting for approval...</span>
     )
@@ -268,36 +290,38 @@ function ApproveButton (props) {
 }
 
 function approveHandler (props) {
-  const { trader, tokens, pairedInvestments, dispatch } = props.props
+  const { network, trader, tokens, pairedInvestments, web3, dispatch } = props.props
   const { investment } = props
 
   log("--investment approve--", investment)
 
   const token = tokens.find(t => t.contract.options.address === investment.token)
 
-  approveDisbursement(trader.user, investment, investment.walletContract, token, pairedInvestments, dispatch)
+  approveDisbursement(network, trader.user, investment, investment.walletContract, token, pairedInvestments, web3, dispatch)
 }
 
 function rejectHandler (props) {
-  const { trader, pairedInvestments, dispatch } = props.props
+  const { network, trader, pairedInvestments, web3, dispatch } = props.props
   const { investment } = props
 
   log("--investment reject--", investment)
 
-  rejectDisbursement(trader.user, investment, investment.walletContract, pairedInvestments, dispatch)
+  rejectDisbursement(network, trader.user, investment, investment.walletContract, pairedInvestments, web3, dispatch)
 }
 
 function mapStateToProps(state) {
   const account = accountSelector(state)
 
   return {
+    web3: web3Selector(state),
     network: networkSelector(state),
     account: account,
     trader: traderSelector(state, account),
     traderPaired: traderPairedSelector(state),
     pairedInvestments: pairedInvestmentsSelector(state),
     investments: investmentsSelector(state),
-    tokens: tokensSelector(state)
+    tokens: tokensSelector(state),
+    investmentActionRequired: investmentActionRequiredSelector(state)
   }
 }
 
