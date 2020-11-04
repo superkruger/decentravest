@@ -78,13 +78,77 @@ const loadTraderPaired = async (web3, networkId) => {
 }
 exports.loadTraderPaired = loadTraderPaired
 
-const processEvents = async (web3, traderPaired) => {
-	console.log('processEvents START')
+const processAllEvents = async (web3, traderPaired) => {
+	console.log('processAllEvents START')
 	let lastBlock = 0;
 	let result
 
 	// Trader
 	//
+	result = await processTraderEvents(traderPaired)
+	if (!result) {
+		return false
+	}
+
+	// Investor
+	//
+	result = await processInvestorEvents(traderPaired)
+	if (!result) {
+		return false
+	}
+	
+	// Invest
+	//
+	result = await processInvestEvents(traderPaired)
+	if (!result) {
+		return false
+	}
+
+	// Stop
+	//
+	result = await processStopEvents(traderPaired)
+	if (!result) {
+		return false
+	}
+	
+	// RequestExit
+	//
+	result = await processRequestExitEvents(traderPaired)
+	if (!result) {
+		return false
+	}
+	
+	// RejectExit
+	//
+	result = await processRejectExitEvents(traderPaired)
+	if (!result) {
+		return false
+	}
+
+	// ApproveExit
+	//
+	result = await processApproveExitEvents(traderPaired)
+	if (!result) {
+		return false
+	}
+	
+	// Allocate
+	//
+	result = await processAllocateEvents(traderPaired)
+	if (!result) {
+		return false
+	}
+
+	result = await processEventsForInvestments(web3, traderPaired)
+	if (!result) {
+		return false
+	}
+
+	console.log('processAllEvents END')
+}
+exports.processAllEvents = processAllEvents
+
+const processTraderEvents = async (traderPaired) => {
 	let last = await traderDao.getLast();
 	console.log("Trader last", last);
 	lastBlock = last ? last.blockNumber + 1 : 0;
@@ -103,18 +167,19 @@ const processEvents = async (web3, traderPaired) => {
 			return false
 		}
 	}
+	return true
+}
 
-	// Investor
-	//
-	last = await investorDao.getLast();
+const processInvestorEvents = async (traderPaired) => {
+	let last = await investorDao.getLast();
 	console.log("Investor last", last);
-	lastBlock = last ? last.blockNumber + 1 : 0;
+	let lastBlock = last ? last.blockNumber + 1 : 0;
 	console.log("Investor blockNumber", lastBlock);
 
-	stream = await traderPaired.getPastEvents(
+	let stream = await traderPaired.getPastEvents(
 		'Investor', {filter: {},fromBlock: lastBlock}
 	)
-	events = stream.map(event => event)
+	let events = stream.map(event => event)
 	console.log(`${events.length} Investor Events`)
 	for (let i=0; i<events.length; i++) {
 		console.log("Investor", events[i])
@@ -124,18 +189,19 @@ const processEvents = async (web3, traderPaired) => {
 			return false
 		}
 	}
+	return true
+}
 
-	// Invest
-	//
-	last = await investDao.getLast();
+const processInvestEvents = async (traderPaired) => {
+	let last = await investDao.getLast();
 	console.log("Invest last", last);
-	lastBlock = last ? last.blockNumber + 1 : 0;
+	let lastBlock = last ? last.blockNumber + 1 : 0;
 	console.log("Invest blockNumber", lastBlock);
 
-	stream = await traderPaired.getPastEvents(
+	let stream = await traderPaired.getPastEvents(
 		'Invest', {filter: {},fromBlock: lastBlock}
 	)
-	events = stream.map(event => event)
+	let events = stream.map(event => event)
 	console.log(`${events.length} Invest Events`)
 	for (let i=0; i<events.length; i++) {
 		console.log("Invest", events[i])
@@ -145,18 +211,19 @@ const processEvents = async (web3, traderPaired) => {
 			return false
 		}
 	}
+	return true
+}
 
-	// Stop
-	//
-	last = await stopDao.getLast()
+const processStopEvents = async (traderPaired) => {
+	let last = await stopDao.getLast()
 	console.log("Stop last", last)
-	lastBlock = last ? last.blockNumber + 1 : 0
+	let lastBlock = last ? last.blockNumber + 1 : 0
 	console.log("Stop blockNumber", lastBlock)
 
-	stream = await traderPaired.getPastEvents(
+	let stream = await traderPaired.getPastEvents(
 		'Stop', {filter: {},fromBlock: lastBlock}
 	)
-	events = stream.map(event => event)
+	let events = stream.map(event => event)
 	console.log(`${events.length} Stop Events`)
 	for (let i=0; i<events.length; i++) {
 		console.log("Stop", events[i])
@@ -166,18 +233,19 @@ const processEvents = async (web3, traderPaired) => {
 			return false
 		}
 	}
+	return true
+}
 
-	// RequestExit
-	//
-	last = await requestExitDao.getLast()
+const processRequestExitEvents = async (traderPaired) => {
+	let last = await requestExitDao.getLast()
 	console.log("RequestExit last", last)
-	lastBlock = last ? last.blockNumber + 1 : 0
+	let lastBlock = last ? last.blockNumber + 1 : 0
 	console.log("RequestExit blockNumber", lastBlock)
 
-	stream = await traderPaired.getPastEvents(
+	let stream = await traderPaired.getPastEvents(
 		'RequestExit', {filter: {},fromBlock: lastBlock}
 	)
-	events = stream.map(event => event)
+	let events = stream.map(event => event)
 	console.log(`${events.length} RequestExit Events`)
 	for (let i=0; i<events.length; i++) {
 		console.log("RequestExit", events[i])
@@ -186,47 +254,20 @@ const processEvents = async (web3, traderPaired) => {
 		if (!result) {
 			return false
 		}
-
-		// DisbursementCreated
-		//
-		// const walletAddress = events[i].returnValues.wallet
-
-		// last = await disbursementCreatedDao.getLast(walletAddress)
-		// console.log("DisbursementCreated last", last)
-		// lastBlock = last ? last.blockNumber + 1 : 0
-		// console.log("DisbursementCreated blockNumber", lastBlock)
-
-		// const walletContract = await new web3.eth.Contract(MultiSigFundWallet.abi, walletAddress, {handleRevert: true})
-
-		// stream = await walletContract.getPastEvents(
-		// 	'DisbursementCreated',
-		// 	{
-		// 		filter: {},
-		// 		fromBlock: lastBlock
-		// 	}
-		// )
-		// const walletEvents = stream.map(event => event)
-		// for (let i=0; i<walletEvents.length; i++) {
-		// 	console.log("DisbursementCreated", walletEvents[i])
-
-		// 	let result = await disbursementCreatedDao.create(walletAddress, walletEvents[i])
-		// 	if (!result) {
-		// 		return false
-		// 	}
-		// }
 	}
+	return true
+}
 
-	// RejectExit
-	//
-	last = await rejectExitDao.getLast();
+const processRejectExitEvents = async (traderPaired) => {
+	let last = await rejectExitDao.getLast();
 	console.log("RejectExit last", last);
-	lastBlock = last ? last.blockNumber + 1 : 0;
+	let lastBlock = last ? last.blockNumber + 1 : 0;
 	console.log("RejectExit blockNumber", lastBlock);
 
-	stream = await traderPaired.getPastEvents(
+	let stream = await traderPaired.getPastEvents(
 		'RejectExit', {filter: {},fromBlock: lastBlock}
 	)
-	events = stream.map(event => event)
+	let events = stream.map(event => event)
 	console.log(`${events.length} RejectExit Events`)
 	for (let i=0; i<events.length; i++) {
 		console.log("RejectExit", events[i])
@@ -236,18 +277,19 @@ const processEvents = async (web3, traderPaired) => {
 			return false
 		}
 	}
+	return true
+}
 
-	// ApproveExit
-	//
-	last = await approveExitDao.getLast()
+const processApproveExitEvents = async (traderPaired) => {
+	let last = await approveExitDao.getLast()
 	console.log("ApproveExit last", last)
-	lastBlock = last ? last.blockNumber + 1 : 0
+	let lastBlock = last ? last.blockNumber + 1 : 0
 	console.log("ApproveExit blockNumber", lastBlock)
 
-	stream = await traderPaired.getPastEvents(
+	let stream = await traderPaired.getPastEvents(
 		'ApproveExit', {filter: {},fromBlock: lastBlock}
 	)
-	events = stream.map(event => event)
+	let events = stream.map(event => event)
 	console.log(`${events.length} ApproveExit Events`)
 	for (let i=0; i<events.length; i++) {
 		console.log("ApproveExit", events[i])
@@ -257,18 +299,19 @@ const processEvents = async (web3, traderPaired) => {
 			return false
 		}
 	}
+	return true
+}
 
-	// Allocate
-	//
-	last = await allocateDao.getLast();
+const processAllocateEvents = async (traderPaired) => {
+	let last = await allocateDao.getLast();
 	console.log("Allocate last", last);
-	lastBlock = last ? last.blockNumber + 1 : 0;
+	let lastBlock = last ? last.blockNumber + 1 : 0;
 	console.log("Allocate blockNumber", lastBlock);
 
-	stream = await traderPaired.getPastEvents(
+	let stream = await traderPaired.getPastEvents(
 		'Allocate', {filter: {},fromBlock: lastBlock}
 	)
-	events = stream.map(event => event)
+	let events = stream.map(event => event)
 	console.log(`${events.length} Allocate Events`)
 	for (let i=0; i<events.length; i++) {
 		console.log("Allocate", events[i])
@@ -278,15 +321,8 @@ const processEvents = async (web3, traderPaired) => {
 			return false
 		}
 	}
-
-	result = await processEventsForInvestments(web3, traderPaired)
-	if (!result) {
-		return false
-	}
-
-	console.log('processEvents END')
+	return true
 }
-exports.processEvents = processEvents
 
 const processEventsForInvestments = async (web3, traderPaired) => {
 	console.log('processEventsForInvestments START')
@@ -547,8 +583,16 @@ const processApproveExitEventsForInvestments = async (traderPaired) => {
 	return true
 }
 
-const processTrades = async () => {
-	console.log("processTrades")
+const processTrades = async (trader) => {
+	console.log("processTrades", trader)
+	
+	let result = await positionsHandler.loadTraderPositions(traders)
+
+	return result
+}
+
+const processAllTrades = async () => {
+	console.log("processAllTrades")
 	// Traders
 	//
 	let traders = await traderDao.list()
@@ -565,12 +609,61 @@ const processTrades = async () => {
 
 	return true
 }
-exports.processTrades = processTrades
+exports.processAllTrades = processAllTrades
+
+const joinedTrader = async (trader, traderPaired) => {
+	console.log("joinedTrader", trader)
+
+	let result = await processTraderEvents(traderPaired)
+	if (!result) {
+		return null
+	}
+
+	result = await processTrades(trader)
+	if (!result) {
+		return null
+	}
+
+	result = await calculateTraderStatistics(trader)
+	if (!result) {
+		return null
+	}
+
+	result = await traderDao.getByUser(trader)
+
+	return result
+}
+exports.joinedTrader = joinedTrader
+
+const joinedInvestor = async (investor, traderPaired) => {
+	console.log("joinedInvestor", investor)
+
+	let result = await processInvestorEvents(traderPaired)
+	if (!result) {
+		return null
+	}
+
+	result = await calculateInvestorStatistics(investor)
+	if (!result) {
+		return null
+	}
+
+	result = await investorDao.getByUser(investor)
+
+	return result
+}
+exports.joinedInvestor = joinedInvestor
 
 const createdInvestment = async (investmentId, traderPaired) => {
 	console.log("createdInvestment", investmentId)
 
-	let result = await processInvestEventsForInvestments(traderPaired)
+	let result = await processInvestEvents(traderPaired)
+
+	if (!result) {
+		return null
+	}
+
+	result = await processInvestEventsForInvestments(traderPaired)
 
 	if (!result) {
 		return null
@@ -585,7 +678,13 @@ exports.createdInvestment = createdInvestment
 const stoppedInvestment = async (investmentId, traderPaired) => {
 	console.log("stoppedInvestment", investmentId)
 
-	let result = await processStopEventsForInvestments(traderPaired)
+	let result = await processStopEvents(traderPaired)
+
+	if (!result) {
+		return null
+	}
+
+	result = await processStopEventsForInvestments(traderPaired)
 
 	if (!result) {
 		return null
@@ -600,7 +699,13 @@ exports.stoppedInvestment = stoppedInvestment
 const exitRequested = async (investmentId, web3, traderPaired) => {
 	console.log("exitRequested", investmentId)
 
-	let result = await processRequestExitEventsForInvestments(web3, traderPaired)
+	let result = await processRequestExitEvents(traderPaired)
+
+	if (!result) {
+		return null
+	}
+
+	result = await processRequestExitEventsForInvestments(web3, traderPaired)
 
 	if (!result) {
 		return null
@@ -615,7 +720,13 @@ exports.exitRequested = exitRequested
 const exitRejected = async (investmentId, traderPaired) => {
 	console.log("exitRejected", investmentId)
 
-	let result = await processRejectExitEventsForInvestments(traderPaired)
+	let result = await processRejectExitEvents(traderPaired)
+
+	if (!result) {
+		return null
+	}
+
+	result = await processRejectExitEventsForInvestments(traderPaired)
 
 	if (!result) {
 		return null
@@ -630,7 +741,13 @@ exports.exitRejected = exitRejected
 const exitApproved = async (investmentId, traderPaired) => {
 	console.log("exitApproved", investmentId)
 
-	let result = await processApproveExitEventsForInvestments(traderPaired)
+	let result = await processApproveExitEvents(traderPaired)
+
+	if (!result) {
+		return null
+	}
+
+	result = await processApproveExitEventsForInvestments(traderPaired)
 
 	if (!result) {
 		return null
@@ -642,8 +759,29 @@ const exitApproved = async (investmentId, traderPaired) => {
 }
 exports.exitApproved = exitApproved
 
-const calculateTraderStatistics = async () => {
-	console.log('env', process.env.NODE_ENV)
+const calculateTraderStatistics = async (trader) => {
+	// Traders
+	//
+	let traders = await traderDao.list()
+
+	const statistics = await statisticsHandler.calculateTraderStatistics(trader, traders)
+
+	let result = await traderStatisticsDao.saveStatistics(trader, statistics)
+
+	return result
+	
+}
+
+const calculateInvestorStatistics = async (investor) => {
+	
+	const statistics = await statisticsHandler.calculateInvestorStatistics(investor)
+
+	let result = await investorStatisticsDao.saveStatistics(investor, statistics)
+	
+	return result
+}
+
+const calculateAllTradersStatistics = async () => {
 	// Traders
 	//
 	let traders = await traderDao.list();
@@ -660,10 +798,9 @@ const calculateTraderStatistics = async () => {
   		await traderStatisticsDao.saveStatistics(trader.user, statistics)
 	})
 }
-exports.calculateTraderStatistics = calculateTraderStatistics
+exports.calculateAllTradersStatistics = calculateAllTradersStatistics
 
-const calculateInvestorStatistics = async () => {
-	console.log('env', process.env.NODE_ENV)
+const calculateAllInvestorsStatistics = async () => {
 	// Investor
 	//
 	let investors = await investorDao.list();
@@ -680,5 +817,5 @@ const calculateInvestorStatistics = async () => {
   		await investorStatisticsDao.saveStatistics(investor.user, statistics)
 	})
 }
-exports.calculateInvestorStatistics = calculateInvestorStatistics
+exports.calculateAllInvestorsStatistics = calculateAllInvestorsStatistics
 

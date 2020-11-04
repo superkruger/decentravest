@@ -50,6 +50,30 @@ module.exports.get = async (id) => {
   return null;
 }
 
+module.exports.getByUser = async (id) => {
+
+  console.log("getting trader", id)
+
+  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-trader`)) {
+    return null
+  }
+
+  const query = {
+    sql: `SELECT ${select} FROM traderpaired_trader where returnvalues.user = '${id}'`
+  };
+
+  try {
+    const results = await s3Common.athenaExpress.query(query);
+    if (results.Items.length > 0) {
+      return mapTrader(results.Items[0])
+    }
+  } catch (error) {
+    console.log("athena error", error)
+  }
+  
+  return null;
+}
+
 module.exports.list = async () => {
 
   console.log("getting traders")

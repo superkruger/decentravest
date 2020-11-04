@@ -27,7 +27,8 @@ import {
   traderStatisticsSelector,
   tradersSelector,
   walletSelector,
-  investmentsSelector
+  investmentsSelector,
+  startingInvestmentsSelector
 } from '../../store/selectors'
 import { 
   invest,
@@ -149,7 +150,7 @@ class InvestorTraderDetail extends Component {
 }
 
 function Collateral(props) {
-  const {web3, trader, traderAllocations, traderStatistics, investments } = props.props
+  const {web3, trader, traderAllocations, traderStatistics, investments, startingInvestments } = props.props
 
   return (
     <div className="card shadow mb-4" key={`collateral-${trader.user}`}>
@@ -176,24 +177,36 @@ function Collateral(props) {
                 {
                   traderAllocations.map((allocation) => {
                     if (allocation.symbol && !allocation.total.isZero()) {
-                      return (
-                        <div key={`collateral_${allocation.symbol}_${allocation.trader}`} className="row no-gutters align-items-left">
-                          
-                            <div className="col-sm-4">
-                              <div className="h6 mb-0 mr-3 font-weight-bold text-gray-800"><Balance props={props.props} symbol={allocation.symbol}/></div>
+                      let startingInvestment = startingInvestments.find(si => si.id === `${allocation.trader}_${allocation.token}_0`)
+                      if (startingInvestment) {
+                        return (
+                          <div key={`collateral_${allocation.symbol}_${allocation.trader}`} className="col-sm-12">
+                            <div className="h6 mb-0 mr-3 font-weight-bold text-gray-800">
+                              Please follow the instructions in metamask.<br/>
+                              {startingInvestment.message}
                             </div>
-                            <div className="col-sm-4">
-                              <Form.Group controlId={`collateral_${allocation.symbol}${allocation.trader}_Amount`}>
-                                <Form.Control type="number" placeholder={`Max: ${allocation.formattedAvailable}`} />
-                              </Form.Group>
-                            </div>
-                            <div className="col-sm-4">
-                              <Button variant="primary" onClick={(e) => {collateralInvestHandler(allocation, "collateral_"+allocation.symbol + allocation.trader + "_Amount", props.props)}}>
-                                Invest {allocation.symbol}
-                              </Button>
-                            </div>
-                        </div>
-                      )
+                          </div>
+                        )
+                      } else {
+                        return (
+                          <div key={`collateral_${allocation.symbol}_${allocation.trader}`} className="row no-gutters align-items-left">
+                            
+                              <div className="col-sm-4">
+                                <div className="h6 mb-0 mr-3 font-weight-bold text-gray-800"><Balance props={props.props} symbol={allocation.symbol}/></div>
+                              </div>
+                              <div className="col-sm-4">
+                                <Form.Group controlId={`collateral_${allocation.symbol}${allocation.trader}_Amount`}>
+                                  <Form.Control type="number" placeholder={`Max: ${allocation.formattedAvailable}`} />
+                                </Form.Group>
+                              </div>
+                              <div className="col-sm-4">
+                                <Button variant="primary" onClick={(e) => {collateralInvestHandler(allocation, "collateral_"+allocation.symbol + allocation.trader + "_Amount", props.props)}}>
+                                  Invest {allocation.symbol}
+                                </Button>
+                              </div>
+                          </div>
+                        )
+                      }
                     }
                   })
                 }
@@ -207,7 +220,7 @@ function Collateral(props) {
 }
 
 function Direct(props) {
-  const {web3, trader, traderAllocations, traderStatistics, investments } = props.props
+  const {web3, trader, traderAllocations, traderStatistics, investments, startingInvestments } = props.props
 
   return (
     <div className="card shadow mb-4" key={`direct-${trader.user}`}>
@@ -236,24 +249,36 @@ function Direct(props) {
                     const limit = traderStatistics.limits.directLimits[allocation.symbol]
 
                     if (limit && limit.gt(0)) {
-                      return (
-                        <div key={`direct_${allocation.symbol}_${allocation.trader}`} className="row no-gutters align-items-left">
-                          
-                            <div className="col-sm-4">
-                              <div className="h6 mb-0 mr-3 font-weight-bold text-gray-800"><Balance props={props.props} symbol={allocation.symbol}/></div>
+                      let startingInvestment = startingInvestments.find(si => si.id === `${allocation.trader}_${allocation.token}_1`)
+                      if (startingInvestment) {
+                        return (
+                          <div key={`direct_${allocation.symbol}_${allocation.trader}`} className="col-sm-12">
+                            <div className="h6 mb-0 mr-3 font-weight-bold text-gray-800">
+                              Please follow the instructions in metamask.<br/>
+                              {startingInvestment.message}
                             </div>
-                            <div className="col-sm-4">
-                              <Form.Group controlId={`direct_${allocation.symbol}${allocation.trader}_Amount`}>
-                                <Form.Control type="number" placeholder={`Max: ${traderStatistics.limits.formattedDirectAvailable[allocation.symbol]}`} />
-                              </Form.Group>
-                            </div>
-                            <div className="col-sm-4">
-                              <Button variant="primary" onClick={(e) => {directInvestHandler(allocation, "direct_"+allocation.symbol + allocation.trader + "_Amount", props.props)}}>
-                                Invest {allocation.symbol}
-                              </Button>
-                            </div>
-                        </div>
-                      )
+                          </div>
+                        )
+                      } else {
+                        return (
+                          <div key={`direct_${allocation.symbol}_${allocation.trader}`} className="row no-gutters align-items-left">
+                            
+                              <div className="col-sm-4">
+                                <div className="h6 mb-0 mr-3 font-weight-bold text-gray-800"><Balance props={props.props} symbol={allocation.symbol}/></div>
+                              </div>
+                              <div className="col-sm-4">
+                                <Form.Group controlId={`direct_${allocation.symbol}${allocation.trader}_Amount`}>
+                                  <Form.Control type="number" placeholder={`Max: ${traderStatistics.limits.formattedDirectAvailable[allocation.symbol]}`} />
+                                </Form.Group>
+                              </div>
+                              <div className="col-sm-4">
+                                <Button variant="primary" onClick={(e) => {directInvestHandler(allocation, "direct_"+allocation.symbol + allocation.trader + "_Amount", props.props)}}>
+                                  Invest {allocation.symbol}
+                                </Button>
+                              </div>
+                          </div>
+                        )
+                      }
                     }
                   })
                 }
@@ -297,10 +322,6 @@ function getBalance(balances, symbol) {
 function collateralInvestHandler (allocation, inputId, props) {
   const {network, account, trader, balances, tokens, wallet, web3, dispatch} = props
 
-  console.log("collateralInvestHandler tokens", tokens)
-
-  console.log("collateralInvestHandler allocation", allocation)
-
   let balance = new BigNumber(0)
   let balanceObj = getBalance(balances, allocation.symbol)
 
@@ -310,15 +331,12 @@ function collateralInvestHandler (allocation, inputId, props) {
 
   const token = tokens.find(t => t.contract.options.address === allocation.token)
 
-  console.log("collateralInvestHandler token", token)
-
   const decimals = token ? token.decimals : 18
   const amount = document.getElementById(inputId).value
   const weiAmount = etherToWei(amount, decimals)
 
   if (weiAmount.lte(balance)) {
     if (weiAmount.lte(allocation.available)) {
-      console.log("collateralInvestHandler", wallet.contract)
       invest(network, account, trader.user, allocation.token, token, weiAmount, wallet.contract, INVESTMENT_COLLATERAL, web3, dispatch)
     } else {
       dispatch(notificationAdded(fail("Invest", `Investment exceeds available amount of ${allocation.formattedAvailable}`)))
@@ -331,10 +349,6 @@ function collateralInvestHandler (allocation, inputId, props) {
 function directInvestHandler (allocation, inputId, props) {
   const {network, account, trader, traderStatistics, balances, tokens, wallet, web3, dispatch} = props
 
-  console.log("directInvestHandler tokens", tokens)
-
-  console.log("directInvestHandler allocation", allocation)
-
   let balance = new BigNumber(0)
   let balanceObj = getBalance(balances, allocation.symbol)
 
@@ -343,8 +357,6 @@ function directInvestHandler (allocation, inputId, props) {
   }
 
   const token = tokens.find(t => t.contract.options.address === allocation.token)
-
-  console.log("directInvestHandler token", token)
 
   const decimals = token ? token.decimals : 18
   const amount = document.getElementById(inputId).value
@@ -377,7 +389,8 @@ function mapStateToProps(state, props) {
     tokens: tokensSelector(state),
     balances: balancesSelector(state),
     wallet: walletSelector(state),
-    investments: investmentsSelector(state)
+    investments: investmentsSelector(state),
+    startingInvestments: startingInvestmentsSelector(state)
   }
 }
 

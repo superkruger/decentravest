@@ -318,6 +318,51 @@ function web3 (state = {}, action ) {
 					]
 				}
 			}
+		case 'INVESTMENT_STARTING':
+			{
+				let index, data
+				let id = `${action.trader}_${action.tokenAddress}_${action.investmentType}`
+				let startObj = {id: id, message: action.message}
+
+				if (!state.startingInvestments) {
+					state.startingInvestments = []
+				}
+				index = state.startingInvestments.findIndex(start => start.id === id)
+				if (index === -1) {
+					data = [...state.startingInvestments, startObj]
+				} else {
+					state.startingInvestments[index] = {
+						...state.startingInvestments[index],
+						...startObj
+					}
+					data = state.startingInvestments
+				}
+				return { 
+					...state, 
+					startingInvestments: [
+						...data
+					]
+				}
+			}
+		case 'INVESTMENT_STARTED':
+			{
+				let index, data
+				let id = `${action.trader}_${action.tokenAddress}_${action.investmentType}`
+
+				index = state.startingInvestments.findIndex(start => start.id === id)
+				if (index !== -1) {
+					state.startingInvestments.splice(index, 1)
+					data = state.startingInvestments
+				} else {
+					data = state.startingInvestments
+				}
+				return { 
+					...state, 
+					startingInvestments: [
+						...data
+					]
+				}
+			}
 		case 'DISBURSEMENT_CREATED':
 			{
 				let index, data

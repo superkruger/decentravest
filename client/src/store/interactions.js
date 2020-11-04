@@ -31,6 +31,8 @@ import {
 	mainWalletLoaded,
 	mainWalletBalanceLoaded,
 	investmentLoaded,
+	investmentStarting,
+	investmentStarted,
 	investmentChanging,
 	disbursementCreated,
 	traderStatisticsLoaded,
@@ -282,7 +284,14 @@ const loadTraderInvestments = async (network, account, web3, dispatch) => {
 
 	try {
 		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
-					process.env['REACT_APP_' + network + '_API_TRADERINVESTMENTS']
+					process.env['REACT_APP_' + network + '_API_INVESTMENTS']
+		
+		if (network === 'DEV') {
+			url = url + "/trader/$1.json"
+		} else {
+			url = url + "?trader=$1"
+		}
+
 		url = url.replace('$1', account)
 
 		log("loadTraderInvestments", url)
@@ -311,6 +320,8 @@ export const joinAsTrader = async (network, account, traderPaired, pairedInvestm
 		.on('receipt', async (receipt) => {
 			dispatch(notificationRemoved(receipt.transactionHash))
 
+			await traderJoined(network, account)
+
 			const trader = await traderPaired.methods.traders(account).call()
 
 			if (trader.user !== ZERO_ADDRESS) {
@@ -338,6 +349,8 @@ export const joinAsInvestor = async (network, account, traderPaired, pairedInves
 		})
 		.on('receipt', async (receipt) => {
 			dispatch(notificationRemoved(receipt.transactionHash))
+
+			await investorJoined(network, account)
 
 			const investor = await traderPaired.methods.investors(account).call()
 
@@ -468,7 +481,14 @@ const loadInvestorInvestments = async (network, account, web3, dispatch) => {
 
 	try {
 		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
-					process.env['REACT_APP_' + network + '_API_INVESTORINVESTMENTS']
+					process.env['REACT_APP_' + network + '_API_INVESTMENTS']
+		
+		if (network === 'DEV') {
+			url = url + "/investor/$1.json"
+		} else {
+			url = url + "?investor=$1"
+		}
+
 		url = url.replace('$1', account)
 
 		log("loadInvestorInvestments", url)
@@ -512,12 +532,14 @@ export const invest = async (network, account, trader, tokenAddress, token, amou
 const investInTrader = async (network, account, trader, tokenAddress, token, amount, wallet, investmentType, web3, dispatch) => {
 	try {
 		if (tokenAddress === ZERO_ADDRESS) {
-
+			dispatch(investmentStarting(trader, tokenAddress, investmentType, "You'll be asked to confirm the investment amount plus gas fees"))
+		
 			wallet.methods.fundEther(trader, investmentType).send({from: account, value: amount})
 			.on('transactionHash', async (hash) => {
 				dispatch(notificationAdded(info("Investment", "Investing ether...", hash)))
 			})
 			.on('receipt', async (receipt) => {
+				dispatch(investmentStarted(trader, tokenAddress, investmentType))
 				dispatch(notificationRemoved(receipt.transactionHash))
 				dispatch(notificationAdded(info("Investment", "Invested ether")))
 
@@ -527,21 +549,26 @@ const investInTrader = async (network, account, trader, tokenAddress, token, amo
 			})
 			.on('error', (err) => {
 				log('Could not fundEther', err)
+				dispatch(investmentStarted(trader, tokenAddress, investmentType))
 				dispatch(notificationAdded(fail("Investment", "Could not invest ether")))
 			})
 		} else {
-
+			dispatch(investmentStarting(trader, tokenAddress, investmentType, "You'll be asked to approve wallet access to the token"))
+		
 			token.contract.methods.approve(wallet.options.address, amount).send({from: account})
 			.on('transactionHash', async (hash) => {
 				dispatch(notificationAdded(info("Investment", "Aproving tokens...", hash)))
 			})
 			.on('receipt', async (receipt) => {
+				dispatch(investmentStarting(trader, tokenAddress, investmentType, "You'll be asked to confirm the investment amount plus gas fees"))
+		
 				dispatch(notificationRemoved(receipt.transactionHash))
 				wallet.methods.fundToken(trader, token.contract.options.address, amount, investmentType).send({from: account})
 				.on('transactionHash', async (hash) => {
 					dispatch(notificationAdded(info("Investment", "Investing tokens...", hash)))
 				})
 				.on('receipt', async (receipt) => {
+					dispatch(investmentStarted(trader, tokenAddress, investmentType))
 					dispatch(notificationRemoved(receipt.transactionHash))
 					dispatch(notificationAdded(info("Investment", "Invested tokens")))
 
@@ -551,11 +578,13 @@ const investInTrader = async (network, account, trader, tokenAddress, token, amo
 				})
 				.on('error', (err) => {
 					log('Could not fundToken', err)
+					dispatch(investmentStarted(trader, tokenAddress, investmentType))
 					dispatch(notificationAdded(fail("Investment", "Could not invest token")))
 				})
 			})
 			.on('error', (err) => {
 				log('Could not approve token', err)
+				dispatch(investmentStarted(trader, tokenAddress, investmentType))
 				dispatch(notificationAdded(fail("Investment", "Could not approve token amount")))
 			})
 		}
@@ -568,8 +597,7 @@ const investInTrader = async (network, account, trader, tokenAddress, token, amo
 
 export const stopInvestment = async (network, account, investment, wallet, web3, dispatch) => {
 	try {
-		dispatch(investmentChanging(investment, true))
-
+		dispatch(investmentChanging(investment, true, "You'll need to confirm stopping the investment"))
 
 		wallet.methods.stop(investment.trader, investment.id).send({from: account})
 			.on('transactionHash', async (hash) => {
@@ -619,8 +647,9 @@ export const disburseInvestment = async (network, account, investment, wallet, t
 		}
 		log("disburseInvestment amount", amount.toString())
 
-		dispatch(investmentChanging(investment, true))
 		if (investment.token === ZERO_ADDRESS) {
+			dispatch(investmentChanging(investment, true, "You'll need to confirm disbursing the investment"))
+		
 			wallet.methods.disburseEther(investment.trader, investment.id, toBN(investment.grossValue)).send({from: account, value: amount})
 			.on('transactionHash', async (hash) => {
 				dispatch(notificationAdded(info("Investment", "Requesting disbursement...", hash)))
@@ -638,13 +667,16 @@ export const disburseInvestment = async (network, account, investment, wallet, t
 				dispatch(notificationAdded(fail("Investment", "Could not request disbursement")))
 			})
 		} else {
+			dispatch(investmentChanging(investment, true, "You'll need to approve wallet access to the token"))
 
 			token.contract.methods.approve(wallet.options.address, amount).send({from: account})
 			.on('transactionHash', async (hash) => {
 				dispatch(notificationAdded(info("Investment", "Approving tokens...", hash)))
 			})
 			.on('receipt', async (receipt) => {
+				dispatch(investmentChanging(investment, true, "You'll need to confirm disbursing the investment"))
 				dispatch(notificationRemoved(receipt.transactionHash))
+
 				wallet.methods.disburseToken(investment.trader, investment.id, investment.token, toBN(investment.grossValue), amount).send({from: account})
 				.on('transactionHash', async (hash) => {
 					dispatch(notificationAdded(info("Investment", "Requesting disbursement...", hash)))
@@ -703,8 +735,9 @@ export const approveDisbursement = async (network, account, investment, wallet, 
 
 		log("disburseInvestment", account, investment.trader, investment.disbursementId, amount.toString())
 
-		dispatch(investmentChanging(investment, true))
 		if (investment.token === ZERO_ADDRESS) {
+			dispatch(investmentChanging(investment, true, "You'll need to confirm approving the disbursement"))
+		
 			wallet.methods.approveDisbursementEther(investment.trader, investment.disbursementId).send({from: account, value: amount})
 			.on('transactionHash', async (hash) => {
 				dispatch(notificationAdded(info("Investment", "Approving disbursement...", hash)))
@@ -722,6 +755,8 @@ export const approveDisbursement = async (network, account, investment, wallet, 
 				dispatch(notificationAdded(fail("Investment", "Could not approve disbursement")))
 			})
 		} else {
+			dispatch(investmentChanging(investment, true, "You'll need to approve wallet access to the token"))
+
 			token.contract.methods.approve(wallet.options.address, amount).send({from: account})
 			.on('transactionHash', async (hash) => {
 			})
@@ -731,6 +766,7 @@ export const approveDisbursement = async (network, account, investment, wallet, 
 					dispatch(notificationAdded(info("Investment", "Approving disbursement...", hash)))
 				})
 				.on('receipt', async (receipt) => {
+					dispatch(investmentChanging(investment, true, "You'll need to confirm approving the disbursement"))
 					dispatch(notificationRemoved(receipt.transactionHash))
 					dispatch(notificationAdded(info("Investment", "Disbursement approved")))
 
@@ -760,7 +796,7 @@ export const rejectDisbursement = async (network, account, investment, wallet, p
 	try {
 		log("reject disburseInvestment", account, investment.trader, investment.disbursementId, toBN(investment.grossValue))
 
-		dispatch(investmentChanging(investment, true))
+		dispatch(investmentChanging(investment, true, "You'll need to confirm rejecting the disbursement"))
 		wallet.methods.rejectDisbursement(investment.trader, investment.disbursementId, investment.token, toBN(investment.grossValue)).send({from: account})
 		.on('transactionHash', async (hash) => {
 			dispatch(notificationAdded(info("Investment", "Rejecting disbursement...", hash)))
@@ -921,20 +957,20 @@ const getTradeInvestmentsAmount = async (trade, traderInvestments) => {
 export const loadTraderStatistics = async (account, network, dispatch) => {
 	try {
 		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
-					process.env['REACT_APP_' + network + '_API_TRADERSTATISTICS']
+					process.env['REACT_APP_' + network + '_API_STATISTICS']
+
+		if (network === 'DEV') {
+			url = url + "/trader/$1.json"
+		} else {
+			url = url + "?trader=$1"
+		}
+
 		url = url.replace('$1', account)
 
 		console.log("loadTraderStatistics", url)
-		axios.get(url)
-		  .then(function (response) {
-		  	log("loadTraderStatistics success", response)
-		    // handle success
-		    dispatch(traderStatisticsLoaded(account, response.data))
-		  })
-		  .catch(function (error) {
-		    // handle error
-		    log('Could not get statistics', error)
-		  })
+		const response = await axios.get(url)
+		dispatch(traderStatisticsLoaded(account, response.data))
+
 	} catch (error) {
 		log('Could not get statistics', error)
 	}
@@ -943,20 +979,20 @@ export const loadTraderStatistics = async (account, network, dispatch) => {
 export const loadInvestorStatistics = async (account, network, dispatch) => {
 	try {
 		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
-					process.env['REACT_APP_' + network + '_API_INVESTORSTATISTICS']
+					process.env['REACT_APP_' + network + '_API_STATISTICS']
+		
+		if (network === 'DEV') {
+			url = url + "/investor/$1.json"
+		} else {
+			url = url + "?investor=$1"
+		}
+
 		url = url.replace('$1', account)
 
 		console.log("loadInvestorStatistics", url)
-		axios.get(url)
-		  .then(function (response) {
-		  	log("loadInvestorStatistics success", response)
-		    // handle success
-		    dispatch(investorStatisticsLoaded(account, response.data))
-		  })
-		  .catch(function (error) {
-		    // handle error
-		    log('Could not get statistics', error)
-		  })
+		const response = await axios.get(url)
+		dispatch(investorStatisticsLoaded(account, response.data))
+
 	} catch (error) {
 		log('Could not get statistics', error)
 	}
@@ -978,22 +1014,71 @@ export const loadTradeCount = async (network, account, dispatch) => {
 	}
 }
 
+export const traderJoined = async (network, account) => {
+	log("traderJoined", network, account)
+
+	try {
+		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
+					process.env['REACT_APP_' + network + '_API_USERACTION']
+
+		let response
+
+		if (network === 'DEV') {
+			url = url + "/traderJoined/$1.json"
+			url = url.replace('$1', account)
+			response = await axios.get(url)
+		} else {
+			const data = {action: 'traderJoined', trader: account}
+			response = await axios.post(url, JSON.stringify(data))
+		}
+	    return true
+
+	} catch (error) {
+		log('Could not join trader', error)
+		return false
+	}
+}
+
+export const investorJoined = async (network, account) => {
+	log("investorJoined", network, account)
+
+	try {
+		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
+					process.env['REACT_APP_' + network + '_API_USERACTION']
+
+		let response
+
+		if (network === 'DEV') {
+			url = url + "/investorJoined/$1.json"
+			url = url.replace('$1', account)
+			response = await axios.get(url)
+		} else {
+			const data = {action: 'investorJoined', investor: account}
+			response = await axios.post(url, JSON.stringify(data))
+		}
+	    return true
+
+	} catch (error) {
+		log('Could not join investor', error)
+		return false
+	}
+}
+
 export const createdInvestment = async (network, investmentId, web3, dispatch) => {
 	log("createdInvestment", network, investmentId)
 
 	try {
 		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
-					process.env['REACT_APP_' + network + '_API_CREATEDINVESTMENT']
-
-		console.log("createdInvestment", url)
+					process.env['REACT_APP_' + network + '_API_USERACTION']
 
 		let response
 
 		if (network === 'DEV') {
+			url = url + "/createdInvestment/$1.json"
 			url = url.replace('$1', investmentId)
 			response = await axios.get(url)
 		} else {
-			const data = {investmentId: investmentId}
+			const data = {action: 'createdInvestment', investmentId: investmentId}
 			response = await axios.post(url, JSON.stringify(data))
 		}
 	    const investment = await mapInvestment(response.data, web3)
@@ -1013,17 +1098,16 @@ export const stoppedInvestment = async (network, investmentId, web3, dispatch) =
 
 	try {
 		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
-					process.env['REACT_APP_' + network + '_API_STOPPEDINVESTMENT']
-
-		console.log("stoppedInvestment", url)
+					process.env['REACT_APP_' + network + '_API_USERACTION']
 
 		let response
 
 		if (network === 'DEV') {
+			url = url + "/stoppedInvestment/$1.json"
 			url = url.replace('$1', investmentId)
 			response = await axios.get(url)
 		} else {
-			const data = {investmentId: investmentId}
+			const data = {action: 'stoppedInvestment', investmentId: investmentId}
 			response = await axios.post(url, JSON.stringify(data))
 		}
 	    const investment = await mapInvestment(response.data, web3)
@@ -1043,17 +1127,16 @@ export const exitRequested = async (network, investmentId, web3, dispatch) => {
 
 	try {
 		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
-					process.env['REACT_APP_' + network + '_API_EXITREQUESTED']
-
-		console.log("exitRequested", url)
+					process.env['REACT_APP_' + network + '_API_USERACTION']
 
 		let response
 
 		if (network === 'DEV') {
+			url = url + "/exitRequested/$1.json"
 			url = url.replace('$1', investmentId)
 			response = await axios.get(url)
 		} else {
-			const data = {investmentId: investmentId}
+			const data = {action: 'exitRequested', investmentId: investmentId}
 			response = await axios.post(url, JSON.stringify(data))
 		}
 	    const investment = await mapInvestment(response.data, web3)
@@ -1073,17 +1156,16 @@ export const exitRejected = async (network, investmentId, web3, dispatch) => {
 
 	try {
 		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
-					process.env['REACT_APP_' + network + '_API_EXITREJECTED']
-
-		console.log("exitRejected", url)
+					process.env['REACT_APP_' + network + '_API_USERACTION']
 
 		let response
 
 		if (network === 'DEV') {
+			url = url + "/exitRejected/$1.json"
 			url = url.replace('$1', investmentId)
 			response = await axios.get(url)
 		} else {
-			const data = {investmentId: investmentId}
+			const data = {action: 'exitRejected', investmentId: investmentId}
 			response = await axios.post(url, JSON.stringify(data))
 		}
 	    const investment = await mapInvestment(response.data, web3)
@@ -1103,17 +1185,16 @@ export const exitApproved = async (network, investmentId, web3, dispatch) => {
 
 	try {
 		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
-					process.env['REACT_APP_' + network + '_API_EXITAPPROVED']
-
-		console.log("exitApproved", url)
+					process.env['REACT_APP_' + network + '_API_USERACTION']
 
 		let response
 
 		if (network === 'DEV') {
+			url = url + "/exitApproved/$1.json"
 			url = url.replace('$1', investmentId)
 			response = await axios.get(url)
 		} else {
-			const data = {investmentId: investmentId}
+			const data = {action: 'exitApproved', investmentId: investmentId}
 			response = await axios.post(url, JSON.stringify(data))
 		}
 	    const investment = await mapInvestment(response.data, web3)

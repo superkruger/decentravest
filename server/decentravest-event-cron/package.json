@@ -17,10 +17,10 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "processEvents": "node -e 'require(\"./handler\").localProcessEvents()'",
-    "processTrades": "node -e 'require(\"./handler\").localProcessTrades()'",
-    "calculateTraderStatistics": "node -e 'require(\"./handler\").localCalculateTraderStatistics()'",
-    "calculateInvestorStatistics": "node -e 'require(\"./handler\").localCalculateInvestorStatistics()'"
+    "processAllEvents": "node -e 'require(\"./handler\").localProcessAllEvents()'",
+    "processAllTrades": "node -e 'require(\"./handler\").localProcessAllTrades()'",
+    "calculateAllTradersStatistics": "node -e 'require(\"./handler\").localCalculateAllTradersStatistics()'",
+    "calculateAllInvestorsStatistics": "node -e 'require(\"./handler\").localCalculateAllInvestorsStatistics()'"
   },
   "author": "Jaco Kruger <superkruger@gmail.com>",
   "license": "ISC"

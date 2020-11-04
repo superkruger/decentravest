@@ -11,6 +11,9 @@ provider:
   timeout: 120
   environment:
     STAGE: ${opt:stage, 'dev'}
+    #mysql
+    MYSQL_HOST: ${self:custom.MYSQL.HOST}
+    MYSQL_PORT: ${self:custom.MYSQL.PORT}
     #s3
     tradingbucket: ${self:custom.tradingbucket}
     eventbucket: ${self:custom.eventbucket}
@@ -28,6 +31,15 @@ provider:
     USDC_ADDRESS: ${param:USDC_ADDRESS}
     SAI_ADDRESS: ${param:SAI_ADDRESS}
 custom:
+  DB_NAME: decentravest
+  USERNAME: master
+  PASSWORD: password
+  MYSQL:
+    HOST:
+      Fn::GetAtt: [MySqlRDSInstance, Endpoint.Address]
+    PORT:
+      Fn::GetAtt: [MySqlRDSInstance, Endpoint.Port]
+
   tradingbucket: "tradingbucket-${opt:stage, 'dev'}-1"
   eventbucket: "eventbucket-${opt:stage, 'dev'}-1"
   eventbucket_queryresults: "resultbucket-${opt:stage, 'dev'}-1"
@@ -41,6 +53,7 @@ plugins:
   - serverless-pseudo-parameters
 resources:
   Resources:
+    MySqlRDSInstance: ${file(./resource/mysql/MySqlRDSInstance.yml)}
     TradingBucket: ${file(./resource/S3BucketTrades.yml)}
     EventBucket: ${file(./resource/S3BucketEvents.yml)}
     AthenaBucket: ${file(./resource/S3BucketQueryResults.yml)}
@@ -89,39 +102,31 @@ resources:
     AthenaTableInvestment: ${file(./resource/tables/Investment.yml)}
 
 functions:
-  processEvents:
-    handler: handler.processEvents
+  processAllEvents:
+    handler: handler.processAllEvents
     events:
       - schedule: rate(1 hour)
 
-  processTrades:
-    handler: handler.processTrades
+  processAllTrades:
+    handler: handler.processAllTrades
     events:
       - schedule: rate(1 hour)
 
-  calculateTraderStatistics:
-    handler: handler.calculateTraderStatistics
+  calculateAllTradersStatistics:
+    handler: handler.calculateAllTradersStatistics
     events:
       - schedule: rate(1 hour)
 
-  calculateInvestorStatistics:
-    handler: handler.calculateInvestorStatistics
+  calculateAllInvestorsStatistics:
+    handler: handler.calculateAllInvestorsStatistics
     events:
       - schedule: rate(1 hour)
 
-  getTraderStatistics:
-    handler: handler.traderStatistics
+  getStatistics:
+    handler: handler.statistics
     events:
       - http:
-          path: traderStatistics
-          method: get
-          cors: true
-
-  getInvestorStatistics:
-    handler: handler.investorStatistics
-    events:
-      - http:
-          path: investorStatistics
+          path: statistics
           method: get
           cors: true
 
@@ -133,46 +138,6 @@ functions:
           method: get
           cors: true
 
-  createdInvestment:
-    handler: handler.createdInvestment
-    events:
-      - http:
-          path: createdInvestment
-          method: post
-          cors: true
-
-  stoppedInvestment:
-    handler: handler.stoppedInvestment
-    events:
-      - http:
-          path: stoppedInvestment
-          method: post
-          cors: true
-
-  exitRequested:
-    handler: handler.exitRequested
-    events:
-      - http:
-          path: exitRequested
-          method: post
-          cors: true
-
-  exitRejected:
-    handler: handler.exitRejected
-    events:
-      - http:
-          path: exitRejected
-          method: post
-          cors: true
-
-  exitApproved:
-    handler: handler.exitApproved
-    events:
-      - http:
-          path: exitApproved
-          method: post
-          cors: true
-
   getInvestments:
     handler: handler.investments
     events:
@@ -181,11 +146,11 @@ functions:
           method: get
           cors: true
 
-  listTraderpairedTrader:
-    handler: traderpaired/trader.webList
+  userAction:
+    handler: handler.userAction
     events:
       - http:
-          path: traderpaired/trader
-          method: get
+          path: userAction
+          method: post
           cors: true
-    
+

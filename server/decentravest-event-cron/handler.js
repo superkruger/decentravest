@@ -4,7 +4,6 @@ const encode = require('./common/encode')
 const interactions = require('./interactions')
 const traderStatisticsDao = require('./dao/traderStatistics')
 const investorStatisticsDao = require('./dao/investorStatistics')
-const positionsDao = require('./dao/dydx/positions')
 const tradesDao = require('./dao/trades')
 const investmentsDao = require('./dao/investments')
 
@@ -16,75 +15,59 @@ const loadTraderPaired = async () => {
   return {web3, traderPaired}
 }
 
-module.exports.processEvents = (event, context) => {
+module.exports.processAllEvents = (event, context) => {
 	const time = new Date();
 	console.log(`Your cron function "${context.functionName}" ran at ${time}`);
 
-	localProcessEvents();
+	localProcessAllEvents();
 	
-	return "processed events";
+	return "processed all events";
 }
 
-module.exports.processTrades = (event, context) => {
+module.exports.processAllTrades = (event, context) => {
 	const time = new Date();
 	console.log(`Your cron function "${context.functionName}" ran at ${time}`);
 
-	localProcessTrades();
+	localProcessAllTrades();
 
-	return "processed trades";
+	return "processed all trades";
 }
 
-module.exports.calculateTraderStatistics = (event, context) => {
+module.exports.calculateAllTradersStatistics = (event, context) => {
 	const time = new Date();
 	console.log(`Your cron function "${context.functionName}" ran at ${time}`);
 
-	localCalculateTraderStatistics();
+	localCalculateAllTradersStatistics();
 
 	return "calculated statistics";
 }
 
-module.exports.calculateInvestorStatistics = (event, context) => {
+module.exports.calculateAllInvestorsStatistics = (event, context) => {
   const time = new Date();
   console.log(`Your cron function "${context.functionName}" ran at ${time}`);
 
-  localCalculateInvestorStatistics();
+  localCalculateAllInvestorsStatistics();
 
   return "calculated statistics";
 }
 
-module.exports.traderStatistics = async (event, context) => {
-  console.log("traderStatistics", event, context)
+module.exports.statistics = async (event, context) => {
+  console.log("statistics", event, context)
 
   try {
-  	const result = await traderStatisticsDao.getStatistics(event.queryStringParameters.trader)
+    let result
+    if (event.queryStringParameters.investor) {
+      result = await investorStatisticsDao.getStatistics(event.queryStringParameters.investor)
+    } else if (event.queryStringParameters.trader) {
+      result = await traderStatisticsDao.getStatistics(event.queryStringParameters.trader)
+    } else {
+      throw "unknown query parameter for statistics"
+    }
+
   	return encode.success(result);
   } catch (error) {
   	console.error("could not get statistics", error)
   	return encode.error(error, "could not get statistics");
-  }
-}
-
-module.exports.investorStatistics = async (event, context) => {
-  console.log("investorStatistics", event, context)
-
-  try {
-    const result = await investorStatisticsDao.getStatistics(event.queryStringParameters.investor)
-    return encode.success(result);
-  } catch (error) {
-    console.error("could not get statistics", error)
-    return encode.error(error, "could not get statistics");
-  }
-}
-
-module.exports.positions = async (event, context) => {
-  console.log("positions", event, context)
-
-  try {
-  	const result = await positionsDao.getByOwner(event.queryStringParameters.trader)
-  	return encode.success(result);
-  } catch (error) {
-  	console.error("could not get positions", error)
-  	return encode.error(error, "could not get positions");
   }
 }
 
@@ -100,69 +83,69 @@ module.exports.trades = async (event, context) => {
   }
 }
 
-module.exports.createdInvestment = (event, context) => {
+module.exports.userAction = (event, context) => {
   const time = new Date();
   console.log(`Your cron function "${context.functionName}" ran at ${time}`);
 
   const data = JSON.parse(event.body)
-  if (typeof data.investmentId !== 'string') {
+  if (typeof data.action !== 'string') {
     console.error('Validation Failed')
-    return encode.error(new Error('Couldn\'t createdInvestment.'), "investmentId argument missing")
+    return encode.error(new Error('Couldn\'t createdInvestment.'), "action could not be determined")
   }
 
-  return localCreatedInvestment(data.investmentId)
-}
-
-module.exports.stoppedInvestment = (event, context) => {
-  const time = new Date();
-  console.log(`Your cron function "${context.functionName}" ran at ${time}`);
-
-  const data = JSON.parse(event.body)
-  if (typeof data.investmentId !== 'string') {
-    console.error('Validation Failed')
-    return encode.error(new Error('Couldn\'t createdInvestment.'), "investmentId argument missing")
+  switch(data.action) {
+    case 'traderJoined': {
+      if (typeof data.trader !== 'string') {
+        return encode.error(new Error(`${data.action} error`), "action parameters missing")
+      }
+      return localJoinedTrader(data.trader)
+      break
+    }
+    case 'investorJoined': {
+      if (typeof data.investor !== 'string') {
+        return encode.error(new Error(`${data.action} error`), "action parameters missing")
+      }
+      return localJoinedInvestor(data.investor)
+      break
+    }
+    case 'createdInvestment': {
+      if (typeof data.investmentId !== 'string') {
+        return encode.error(new Error(`${data.action} error`), "action parameters missing")
+      }
+      return localCreatedInvestment(data.investmentId)
+      break
+    }
+    case 'stoppedInvestment': {
+      if (typeof data.investmentId !== 'string') {
+        return encode.error(new Error(`${data.action} error`), "action parameters missing")
+      }
+      return localStoppedInvestment(data.investmentId)
+      break
+    }
+    case 'exitRequested': {
+      if (typeof data.investmentId !== 'string') {
+        return encode.error(new Error(`${data.action} error`), "action parameters missing")
+      }
+      return localExitRequested(data.investmentId)
+      break
+    }
+    case 'exitRejected': {
+      if (typeof data.investmentId !== 'string') {
+        return encode.error(new Error(`${data.action} error`), "action parameters missing")
+      }
+      return localExitRejected(data.investmentId)
+      break
+    }
+    case 'exitApproved': {
+      if (typeof data.investmentId !== 'string') {
+        return encode.error(new Error(`${data.action} error`), "action parameters missing")
+      }
+      return localExitApproved(data.investmentId)
+      break
+    }
+    default:
+      return encode.error(new Error(`Action error`), "action unknown")
   }
-
-  return localStoppedInvestment(data.investmentId)
-}
-
-module.exports.exitRequested = (event, context) => {
-  const time = new Date();
-  console.log(`Your cron function "${context.functionName}" ran at ${time}`);
-
-  const data = JSON.parse(event.body)
-  if (typeof data.investmentId !== 'string') {
-    console.error('Validation Failed')
-    return encode.error(new Error('Couldn\'t createdInvestment.'), "investmentId argument missing")
-  }
-
-  return localExitRequested(data.investmentId)
-}
-
-module.exports.exitRejected = (event, context) => {
-  const time = new Date();
-  console.log(`Your cron function "${context.functionName}" ran at ${time}`);
-
-  const data = JSON.parse(event.body)
-  if (typeof data.investmentId !== 'string') {
-    console.error('Validation Failed')
-    return encode.error(new Error('Couldn\'t createdInvestment.'), "investmentId argument missing")
-  }
-
-  return localExitRejected(data.investmentId)
-}
-
-module.exports.exitApproved = (event, context) => {
-  const time = new Date();
-  console.log(`Your cron function "${context.functionName}" ran at ${time}`);
-
-  const data = JSON.parse(event.body)
-  if (typeof data.investmentId !== 'string') {
-    console.error('Validation Failed')
-    return encode.error(new Error('Couldn\'t createdInvestment.'), "investmentId argument missing")
-  }
-
-  return localExitApproved(data.investmentId)
 }
 
 module.exports.investments = async (event, context) => {
@@ -184,85 +167,122 @@ module.exports.investments = async (event, context) => {
   }
 }
 
-const localProcessEvents = async () => {
+const localProcessAllEvents = async () => {
   const {web3, traderPaired} = await loadTraderPaired()
 	
-	await interactions.processEvents(web3, traderPaired)
+	await interactions.processAllEvents(web3, traderPaired)
 }
-module.exports.localProcessEvents = localProcessEvents
+module.exports.localProcessAllEvents = localProcessAllEvents
 
-const localProcessTrades = async () => {
-	await interactions.processTrades();
+const localProcessAllTrades = async () => {
+	await interactions.processAllTrades();
 }
-module.exports.localProcessTrades = localProcessTrades
+module.exports.localProcessAllTrades = localProcessAllTrades
+
+const localJoinedTrader = async (trader) => {
+  try {
+    const {web3, traderPaired} = await loadTraderPaired()
+    const result = await interactions.joinedTrader(trader, traderPaired)
+    if (!result) {
+      throw "error processing trader"
+    }
+    return encode.success(result)
+  } catch (error) {
+    console.error("could not join trader", error)
+    return encode.error(error, "could not join trader")
+  }
+}
+
+const localJoinedInvestor = async (investor) => {
+  try {
+    const {web3, traderPaired} = await loadTraderPaired()
+    const result = await interactions.joinedInvestor(investor, traderPaired)
+    if (!result) {
+      throw "error processing investor"
+    }
+    return encode.success(result)
+  } catch (error) {
+    console.error("could not join investor", error)
+    return encode.error(error, "could not join investor")
+  }
+}
 
 const localCreatedInvestment = async (investmentId) => {
   try {
     const {web3, traderPaired} = await loadTraderPaired()
     const result = await interactions.createdInvestment(investmentId, traderPaired)
+    if (!result) {
+      throw "error processing investment creation"
+    }
     return encode.success(result)
   } catch (error) {
     console.error("could not create investment", error)
     return encode.error(error, "could not create investment")
   }
 }
-module.exports.localCreatedInvestment = localCreatedInvestment
 
 const localStoppedInvestment = async (investmentId) => {
   try {
     const {web3, traderPaired} = await loadTraderPaired()
     const result = await interactions.stoppedInvestment(investmentId, traderPaired)
+    if (!result) {
+      throw "error processing investment stop"
+    }
     return encode.success(result)
   } catch (error) {
     console.error("could not stop investment", error)
     return encode.error(error, "could not stop investment")
   }
 }
-module.exports.localStoppedInvestment = localStoppedInvestment
 
 const localExitRequested = async (investmentId) => {
   try {
     const {web3, traderPaired} = await loadTraderPaired()
     const result = await interactions.exitRequested(investmentId, web3, traderPaired)
+    if (!result) {
+      throw "error processing investment exit request"
+    }
     return encode.success(result)
   } catch (error) {
     console.error("could not request exit", error)
     return encode.error(error, "could not request exit")
   }
 }
-module.exports.localExitRequested = localExitRequested
 
 const localExitRejected = async (investmentId) => {
   try {
     const {web3, traderPaired} = await loadTraderPaired()
     const result = await interactions.exitRejected(investmentId, traderPaired)
+    if (!result) {
+      throw "error processing investment exit reject"
+    }
     return encode.success(result)
   } catch (error) {
     console.error("could not reject exit", error)
     return encode.error(error, "could not reject exit")
   }
 }
-module.exports.localExitRejected = localExitRejected
 
 const localExitApproved = async (investmentId) => {
   try {
     const {web3, traderPaired} = await loadTraderPaired()
     const result = await interactions.exitApproved(investmentId, traderPaired)
-    console.log("localExitApproved result", result)
+    if (!result) {
+      throw "error processing investment exit approval"
+    }
     return encode.success(result)
   } catch (error) {
     console.error("could not reject approved", error)
     return encode.error(error, "could not reject approved")
   }
 }
-module.exports.localExitApproved = localExitApproved
 
-const localCalculateTraderStatistics = async () => {
-	await interactions.calculateTraderStatistics();
+const localCalculateAllTradersStatistics = async () => {
+	await interactions.calculateAllTradersStatistics();
 }
-module.exports.localCalculateTraderStatistics = localCalculateTraderStatistics
+module.exports.localCalculateAllTradersStatistics = localCalculateAllTradersStatistics
 
-const localCalculateInvestorStatistics = async () => {
-  await interactions.calculateInvestorStatistics();
+const localCalculateAllInvestorsStatistics = async () => {
+  await interactions.calculateAllInvestorsStatistics();
 }
-module.exports.localCalculateInvestorStatistics = localCalculateInvestorStatistics
+module.exports.localCalculateAllInvestorsStatistics = localCalculateAllInvestorsStatistics

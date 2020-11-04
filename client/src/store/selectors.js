@@ -271,6 +271,9 @@ const tradesForInvestment = (state, investment) => {
 }
 export const tradesForInvestmentSelector = createSelector(tradesForInvestment, e => e)
 
+const startingInvestments = state => get(state, 'web3.startingInvestments', [])
+export const startingInvestmentsSelector = createSelector(startingInvestments, i => i)
+
 const investments = state => get(state, 'web3.investments', [])
 export const investmentsSelector = createSelector(investments, (investments) => {
 	if (investments !== undefined) {

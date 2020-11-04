@@ -47,6 +47,30 @@ module.exports.get = async (id) => {
   return null;
 }
 
+module.exports.getByUser = async (id) => {
+
+  console.log("get event", id)
+
+  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-investor`)) {
+    return null
+  }
+
+  const query = {
+    sql: `SELECT ${select} FROM traderpaired_investor where returnvalues.user = '${id}'`
+  };
+
+  try {
+    const results = await s3Common.athenaExpress.query(query);
+    if (results.Items.length > 0) {
+      return mapInvestor(results.Items[0])
+    }
+  } catch (error) {
+    console.log("athena error", error);
+  }
+  
+  return null;
+}
+
 module.exports.list = async () => {
 
   console.log("list events")

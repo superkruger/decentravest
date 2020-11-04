@@ -199,10 +199,29 @@ export function investmentLoaded(investment) {
 	}
 }
 
-export function investmentChanging(investment, changing) {
+export function investmentStarting(trader, tokenAddress, investmentType, message) {
+	return {
+		type: 'INVESTMENT_STARTING',
+		trader, tokenAddress, investmentType, message
+	}
+}
+
+export function investmentStarted(trader, tokenAddress, investmentType) {
+	return {
+		type: 'INVESTMENT_STARTED',
+		trader, tokenAddress, investmentType
+	}
+}
+
+export function investmentChanging(investment, changing, message) {
 
 	investment.changing = changing
-	return investmentLoaded(investment)
+	investment.message = message
+
+	return {
+		type: 'INVESTMENT_LOADED',
+		investment
+	}
 }
 
 export function disbursementCreated(disbursement) {

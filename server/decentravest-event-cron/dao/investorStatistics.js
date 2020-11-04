@@ -11,9 +11,11 @@ module.exports.saveStatistics = async (account, statistics) => {
     }).promise()
 
     console.log("saved statistics", res)
+    return true
   } catch (error) {
     console.log("could not save statistics", error)
   }
+  return false
 }
 
 module.exports.getStatistics = async (account) => {
