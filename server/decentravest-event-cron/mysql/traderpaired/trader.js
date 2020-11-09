@@ -30,7 +30,6 @@ const create = async (event) => {
       event.investordirectprofitpercent,
       event.mdate
     ]);
-  client.quit()
   return resp;
 }
 module.exports.create = create
@@ -48,7 +47,6 @@ const get = async (id) => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 module.exports.get = get
@@ -72,7 +70,6 @@ const update = async (event) => {
       event.mdate,
       event.id
     ]);
-  client.quit()
   return resp;
 }
 module.exports.update = update
@@ -105,7 +102,6 @@ module.exports.getByUser = async (id) => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 
@@ -117,7 +113,6 @@ module.exports.list = async () => {
 
   let dbRes = await client.query(`select * from event_traderpaired_trader`)
 
-  client.quit()
   return dbRes;
 }
 
@@ -134,7 +129,6 @@ module.exports.getLast = async () => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 

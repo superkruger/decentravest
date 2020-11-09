@@ -26,7 +26,7 @@ module.exports.create = async (position) => {
   return false
 };
 
-module.exports.getByOwner = async (uuid) => {
+module.exports.get = async (uuid) => {
 
   console.log("get position", uuid)
 

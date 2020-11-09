@@ -30,7 +30,6 @@ const create = async (trade) => {
       trade.profit,
       trade.initialAmount
     ]);
-  client.quit()
 
   console.log("created trade", resp)
 
@@ -51,7 +50,6 @@ const get = async (id) => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 module.exports.get = get
@@ -74,7 +72,6 @@ const update = async (trade) => {
       trade.initialAmount,
       trade.id
     ]);
-  client.quit()
 
   console.log("updated trade", resp)
 
@@ -100,25 +97,23 @@ module.exports.createOrUpdate = createOrUpdate
 
 module.exports.getByTrader = async (trader) => {
 
-  console.log("getting trade", trader)
+  console.log("getting trades", trader)
 
   const client = mysqlCommon.getClient()
 
   let dbRes = await client.query(`select * from trades where trader = ? order by start`, [trader])
   
-  client.quit()
   return dbRes;
 }
 
 module.exports.getByTraderAndAsset = async (trader, asset) => {
 
-  console.log("getting trade", trader)
+  console.log("getting trades", trader)
 
   const client = mysqlCommon.getClient()
 
   let dbRes = await client.query(`select * from trades where trader = ? and asset = ? order by start`, [trader, asset])
   
-  client.quit()
   return dbRes;
 }
 
@@ -130,13 +125,12 @@ module.exports.list = async () => {
 
   let dbRes = await client.query(`select * from trades`)
 
-  client.quit()
   return dbRes;
 }
 
 module.exports.getLastForTrader = async (trader) => {
 
-  console.log("getting last trade")
+  console.log("getting last trade", trader)
 
   const client = mysqlCommon.getClient()
 
@@ -147,7 +141,6 @@ module.exports.getLastForTrader = async (trader) => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 

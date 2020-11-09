@@ -32,12 +32,14 @@ module.exports.loadTraderPositions = async (account) => {
 		console.log("loadTraderPositions", account)
 
 		let lastDate
-		let last = tradesMysql.getLastForTrader(account)
+		let last = await tradesMysql.getLastForTrader(account)
 		if (last) {
 			lastDate = last.end
 		} else {
 			lastDate = 0
 		}
+
+		console.log("Last trade", lastDate)
 
 		let positions = await getTraderPositions(account)
 		positions = positions.map(decoratePosition)

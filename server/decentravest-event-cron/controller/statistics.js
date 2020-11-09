@@ -62,6 +62,8 @@ const getTraderDirectInvestmentsBefore = async (account, token, startDate) => {
 }
 
 const setInvestmentValue = async (investment) => {
+
+	console.log("setInvestmentValue", investment)
 	
 	let investorProfitPercent = investment.investorProfitPercent.dividedBy(10000)
 

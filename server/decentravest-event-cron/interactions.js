@@ -95,7 +95,7 @@ exports.loadTraderPaired = loadTraderPaired
 const processAllEvents = async (web3, traderPaired) => {
 	console.log('processAllEvents START')
 
-	await mysqlCommon.dropTables() // TODO: remove!!
+	// await mysqlCommon.dropTables() // TODO: remove!!
 
 	await mysqlCommon.createTables()
 
@@ -768,7 +768,7 @@ const processAllTrades = async () => {
 	console.log("processAllTrades")
 	// Traders
 	//
-	let traders = await traderDao.list()
+	let traders = await traderMysql.list()
 
 	console.log("processTrades", traders)
 
@@ -802,7 +802,7 @@ const joinedTrader = async (trader, traderPaired) => {
 		return null
 	}
 
-	result = await traderDao.getByUser(trader)
+	result = await traderMysql.getByUser(trader)
 
 	return result
 }
@@ -821,7 +821,7 @@ const joinedInvestor = async (investor, traderPaired) => {
 		return null
 	}
 
-	result = await investorDao.getByUser(investor)
+	result = await investorMysql.getByUser(investor)
 
 	return result
 }
@@ -842,7 +842,7 @@ const createdInvestment = async (investmentId, traderPaired) => {
 		return null
 	}
 
-	let investment = await investmentsDao.get(investmentId)
+	let investment = await investmentsMysql.get(investmentId)
 
 	result = await calculateTraderStatistics(investment.trader)
 	if (!result) {
@@ -868,7 +868,7 @@ const stoppedInvestment = async (investmentId, traderPaired) => {
 		return null
 	}
 
-	let investment = await investmentsDao.get(investmentId)
+	let investment = await investmentsMysql.get(investmentId)
 
 	result = await calculateTraderStatistics(investment.trader)
 	if (!result) {
@@ -894,7 +894,7 @@ const exitRequested = async (investmentId, web3, traderPaired) => {
 		return null
 	}
 
-	let investment = await investmentsDao.get(investmentId)
+	let investment = await investmentsMysql.get(investmentId)
 
 	return investment
 }
@@ -915,7 +915,7 @@ const exitRejected = async (investmentId, traderPaired) => {
 		return null
 	}
 
-	let investment = await investmentsDao.get(investmentId)
+	let investment = await investmentsMysql.get(investmentId)
 
 	return investment
 }
@@ -936,7 +936,7 @@ const exitApproved = async (investmentId, traderPaired) => {
 		return null
 	}
 
-	let investment = await investmentsDao.get(investmentId)
+	let investment = await investmentsMysql.get(investmentId)
 
 	return investment
 }
@@ -967,7 +967,7 @@ const calculateInvestorStatistics = async (investor) => {
 const calculateAllTradersStatistics = async () => {
 	// Traders
 	//
-	let traders = await traderDao.list();
+	let traders = await traderMysql.list();
 
 	console.log("calculateTraderStatistics", traders);
 
@@ -975,18 +975,18 @@ const calculateAllTradersStatistics = async () => {
 		return
 	}
 
-	traders.forEach(async (trader) => {
-		const statistics = await statisticsHandler.calculateTraderStatistics(trader.user, traders)
+	for (let i=0; i<traders.length; i++) {
+		const statistics = await statisticsHandler.calculateTraderStatistics(traders[i].user, traders)
 
-  		await traderStatisticsDao.saveStatistics(trader.user, statistics)
-	})
+  		await traderStatisticsDao.saveStatistics(traders[i].user, statistics)
+	}
 }
 exports.calculateAllTradersStatistics = calculateAllTradersStatistics
 
 const calculateAllInvestorsStatistics = async () => {
 	// Investor
 	//
-	let investors = await investorDao.list();
+	let investors = await investorMysql.list();
 
 	console.log("calculateInvestorStatistics", investors);
 
@@ -994,11 +994,11 @@ const calculateAllInvestorsStatistics = async () => {
 		return
 	}
 
-	investors.forEach(async (investor) => {
-		const statistics = await statisticsHandler.calculateInvestorStatistics(investor.user)
+	for (let i=0; i<investors.length; i++) {
+		const statistics = await statisticsHandler.calculateInvestorStatistics(investors[i].user)
 
-  		await investorStatisticsDao.saveStatistics(investor.user, statistics)
-	})
+  		await investorStatisticsDao.saveStatistics(investors[i].user, statistics)
+	}
 }
 exports.calculateAllInvestorsStatistics = calculateAllInvestorsStatistics
 
@@ -1012,9 +1012,9 @@ const calculateAllInvestmentValues = async () => {
 		return
 	}
 
-	investments.forEach(async (investment) => {
-		const result = await statisticsController.setInvestmentValue(investment)
+	for (let i=0; i<investments.length; i++) {
+		const result = await statisticsController.setInvestmentValue(investments[i])
 		console.log("setInvestmentValue result", result)
-	})
+	}
 }
 exports.calculateAllInvestmentValues = calculateAllInvestmentValues

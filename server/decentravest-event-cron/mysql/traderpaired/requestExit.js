@@ -34,7 +34,6 @@ const create = async (event) => {
       event.value,
       event.mdate
     ]);
-  client.quit()
   return resp;
 }
 module.exports.create = create
@@ -52,7 +51,6 @@ const get = async (id) => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 module.exports.get = get
@@ -77,7 +75,6 @@ const update = async (event) => {
       event.mdate,
       event.id
     ]);
-  client.quit()
   return resp;
 }
 module.exports.update = update
@@ -110,7 +107,6 @@ module.exports.getByInvestmentId = async (id) => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 
@@ -122,7 +118,6 @@ module.exports.list = async () => {
 
   let dbRes = await client.query(`select * from event_traderpaired_requestexit`)
 
-  client.quit()
   return dbRes;
 }
 
@@ -139,7 +134,6 @@ module.exports.getLast = async () => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 
@@ -150,7 +144,28 @@ module.exports.getEventsFromBlock = async(blockNumber) => {
 
   let dbRes = await client.query(`select * from event_traderpaired_requestexit WHERE blockNumber >= ? ORDER BY blockNumber`, [blockNumber])
 
-  client.quit()
+  return dbRes;
+}
+
+module.exports.getByTrader = async (trader) => {
+
+  console.log("getting requestExits for trader", trader)
+
+  const client = mysqlCommon.getClient()
+
+  let dbRes = await client.query(`select * from event_traderpaired_requestexit WHERE trader = ?`, [trader])
+
+  return dbRes;
+}
+
+module.exports.getByInvestor = async (investor) => {
+
+  console.log("getting requestExits for investor", investor)
+
+  const client = mysqlCommon.getClient()
+
+  let dbRes = await client.query(`select * from event_traderpaired_requestexit WHERE investor = ?`, [investor])
+
   return dbRes;
 }
 

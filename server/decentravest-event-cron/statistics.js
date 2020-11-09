@@ -2,17 +2,17 @@
 const BigNumber = require('bignumber.js')
 const moment = require('moment')
 
-const traderDao = require('./dao/traderpaired/trader')
-const investDao = require('./dao/traderpaired/invest')
-const investorDao = require('./dao/traderpaired/investor')
-const requestExitDao = require('./dao/traderpaired/requestExit')
-const rejectExitDao = require('./dao/traderpaired/rejectExit')
-const approveExitDao = require('./dao/traderpaired/approveExit')
-const allocateDao = require('./dao/traderpaired/allocate')
-const stopDao = require('./dao/traderpaired/stop')
+const traderMysql = require('./mysql/traderpaired/trader')
+const investMysql = require('./mysql/traderpaired/invest')
+const investorMysql = require('./mysql/traderpaired/investor')
+const requestExitMysql = require('./mysql/traderpaired/requestExit')
+const rejectExitMysql = require('./mysql/traderpaired/rejectExit')
+const approveExitMysql = require('./mysql/traderpaired/approveExit')
+const allocateMysql = require('./mysql/traderpaired/allocate')
+const stopMysql = require('./mysql/traderpaired/stop')
 
-const tradesDao = require('./dao/trades')
-const investmentsDao = require('./dao/investments')
+const tradesMysql = require('./mysql/trades')
+const investmentsMysql = require('./mysql/investments')
 
 const helpers = require('./helpers')
 
@@ -31,15 +31,15 @@ const tokenSymbols = ["ETH", "DAI", "USDC"]
 
 module.exports.calculateTraderStatistics = async (account, allTraders) => {
 
-	let investments = await investDao.getByTrader(account)
+	let investments = await investMysql.getByTrader(account)
 	for (let i=0; i<investments.length; i++) {
 		investments[i] = await mapInvest(investments[i])
 	}
 
-	const stops = await stopDao.getByTrader(account)
+	const stops = await stopMysql.getByTrader(account)
 
 	stops.forEach((stop) => {
-		let index = investments.findIndex(investment => investment.id === stop.id)
+		let index = investments.findIndex(investment => investment.investmentId === stop.investmentId)
 		if (index !== -1) {
 			investments[index] = {
 				...investments[index],
@@ -48,10 +48,10 @@ module.exports.calculateTraderStatistics = async (account, allTraders) => {
 		}
 	})
 
-	const requestExits = await requestExitDao.getByTrader(account)
+	const requestExits = await requestExitMysql.getByTrader(account)
 
 	requestExits.forEach((requestExit) => {
-		let index = investments.findIndex(investment => investment.id === requestExit.id)
+		let index = investments.findIndex(investment => investment.investmentId === requestExit.investmentId)
 		if (index !== -1) {
 			investments[index] = {
 				...investments[index],
@@ -60,10 +60,10 @@ module.exports.calculateTraderStatistics = async (account, allTraders) => {
 		}
 	})
 
-	const approveExits = await approveExitDao.getByTrader(account)
+	const approveExits = await approveExitMysql.getByTrader(account)
 
 	approveExits.forEach((approveExit) => {
-		let index = investments.findIndex(investment => investment.id === approveExit.id)
+		let index = investments.findIndex(investment => investment.investmentId === approveExit.investmentId)
 		if (index !== -1) {
 			investments[index] = {
 				...investments[index],
@@ -72,10 +72,10 @@ module.exports.calculateTraderStatistics = async (account, allTraders) => {
 		}
 	})
 
-	const rejectExits = await rejectExitDao.getByTrader(account)
+	const rejectExits = await rejectExitMysql.getByTrader(account)
 
 	rejectExits.forEach((rejectExit) => {
-		let index = investments.findIndex(investment => investment.id === rejectExit.id)
+		let index = investments.findIndex(investment => investment.investmentId === rejectExit.investmentId)
 		if (index !== -1) {
 			investments[index] = {
 				...investments[index],
@@ -102,15 +102,15 @@ module.exports.calculateTraderStatistics = async (account, allTraders) => {
 }
 
 module.exports.calculateInvestorStatistics = async (account) => {
-	let investments = await investDao.getByInvestor(account)
+	let investments = await investMysql.getByInvestor(account)
 	for (let i=0; i<investments.length; i++) {
 		investments[i] = await mapInvest(investments[i])
 	}
 
-	const stops = await stopDao.getByInvestor(account)
+	const stops = await stopMysql.getByInvestor(account)
 
 	stops.forEach((stop) => {
-		let index = investments.findIndex(investment => investment.id === stop.id)
+		let index = investments.findIndex(investment => investment.investmentId === stop.investmentId)
 		if (index !== -1) {
 			investments[index] = {
 				...investments[index],
@@ -119,10 +119,10 @@ module.exports.calculateInvestorStatistics = async (account) => {
 		}
 	})
 
-	const requestExits = await requestExitDao.getByInvestor(account)
+	const requestExits = await requestExitMysql.getByInvestor(account)
 
 	requestExits.forEach((requestExit) => {
-		let index = investments.findIndex(investment => investment.id === requestExit.id)
+		let index = investments.findIndex(investment => investment.investmentId === requestExit.investmentId)
 		if (index !== -1) {
 			investments[index] = {
 				...investments[index],
@@ -131,10 +131,10 @@ module.exports.calculateInvestorStatistics = async (account) => {
 		}
 	})
 
-	const approveExits = await approveExitDao.getByInvestor(account)
+	const approveExits = await approveExitMysql.getByInvestor(account)
 
 	approveExits.forEach((approveExit) => {
-		let index = investments.findIndex(investment => investment.id === approveExit.id)
+		let index = investments.findIndex(investment => investment.investmentId === approveExit.investmentId)
 		if (index !== -1) {
 			investments[index] = {
 				...investments[index],
@@ -153,7 +153,7 @@ module.exports.calculateInvestorStatistics = async (account) => {
 const calculateInvestmentCounts = async (investments) => {
 	let investmentCounts = {}
 
-	investments.forEach(async (investment) => {
+	investments.forEach((investment) => {
 		const tokenSymbol = helpers.tokenSymbolForAddress(investment.token)
 		const investmentType = investment.investmentType
 
@@ -209,7 +209,7 @@ const calculateLevel = async (investments, trustRating) => {
 	let collateralApprovalCount = 0
 	let directApprovalCount = 0
 
-	investments.forEach(async (investment) => {
+	investments.forEach((investment) => {
 		// if approved and profitable
 		if (investment.approveFrom) {
 			
@@ -240,7 +240,7 @@ const calculateTrustRating = async (account, investments) => {
 	let total = 0
 	let bad = 0
 
-	investments.forEach(async (investment) => {
+	investments.forEach((investment) => {
 
 		if (investment.requestFrom) {
 			total = total + 1
@@ -291,7 +291,7 @@ const calculateLimits = async (account, investments, level) => {
 	let directLimits = {}
 	let directInvested = {}
 
-	investments.forEach(async (investment) => {
+	investments.forEach((investment) => {
 		
 		if (investment.approveFrom) {
 			if (!latestApproval || investment.start.isAfter(latestApproval)) {
@@ -313,7 +313,7 @@ const calculateLimits = async (account, investments, level) => {
 		for (let i=0; i<helpers.userTokens.length; i++) {
 			const token = helpers.userTokens[i]
 
-			let allocations = await allocateDao.getByTraderAndToken(account, token.address)
+			let allocations = await allocateMysql.getByTraderAndToken(account, token.address)
 			allocations = allocations.map(mapAllocate)
 
 			// find the allocation just before the start of this investment
@@ -421,7 +421,7 @@ const calculateTradingRatings = async (account, allTraders) => {
 			USDC: 0
 		}
 
-		let trades = await tradesDao.getTrades(trader.user)
+		let trades = await tradesMysql.getByTrader(trader.user)
 		trades = trades.map(mapTrade)
 
 		for (let tradeIndex=0; tradeIndex<trades.length; tradeIndex++) {
@@ -574,16 +574,16 @@ const calculateProfitRatings = async (account, allTraders) => {
 			USDC: 0
 		}
 
-		let investments = await investDao.getByTrader(trader.user)
+		let investments = await investMysql.getByTrader(trader.user)
 		for (let i=0; i<investments.length; i++) {
 			investments[i] = await mapInvest(investments[i])
 		}
 
-		const requestExits = await requestExitDao.getByTrader(trader.user)
+		const requestExits = await requestExitMysql.getByTrader(trader.user)
 
 		requestExits.forEach((requestExit) => {
 			// console.log("RequestExit", requestExit)
-			let index = investments.findIndex(investment => investment.id === requestExit.id)
+			let index = investments.findIndex(investment => investment.investmentId === requestExit.investmentId)
 			// console.log ("index", index)
 			if (index !== -1) {
 				investments[index] = {
@@ -593,10 +593,10 @@ const calculateProfitRatings = async (account, allTraders) => {
 			}
 		})
 
-		const approveExits = await approveExitDao.getByTrader(trader.user)
+		const approveExits = await approveExitMysql.getByTrader(trader.user)
 
 		approveExits.forEach((approveExit) => {
-			let index = investments.findIndex(investment => investment.id === approveExit.id)
+			let index = investments.findIndex(investment => investment.investmentId === approveExit.investmentId)
 			if (index !== -1) {
 				investments[index] = {
 					...investments[index],
@@ -689,7 +689,9 @@ const mapTrade = (trade) => {
 const mapAllocate = (event) => {
 	return {
 		...event,
-		eventDate: moment.unix(event.eventDate).utc()
+		eventDate: moment.unix(event.eventDate).utc(),
+		total: new BigNumber(event.total),
+		invested: new BigNumber(event.invested)
 	}
 }
 
@@ -706,7 +708,7 @@ const mapInvest = async (event) => {
 		start: moment.unix(event.eventDate).utc(),
 		end: moment.unix(0).utc(),
 		invested: new BigNumber(event.invested),
-		state: "0"
+		state: 0
 	}
 
 	investment = await getInvestmentValue(investment)
@@ -735,15 +737,15 @@ const mapStop = (event) => {
 		...event,
 		end: moment.unix(event.eventDate).utc(),
 		eventDate: moment.unix(event.eventDate).utc(),
-		state: "1"
+		state: 1
 	}
 }
 
 const mapRequestExit = (event) => {
 
-	let state = "2"
+	let state = 2
 	if (event.from === event.trader) {
-		state = "3"
+		state = 3
 	}
 
 	return {
@@ -758,7 +760,7 @@ const mapApproveExit = (event) => {
 	return {
 		...event,
 		approveExitDate: moment.unix(event.eventDate).utc(),
-		state: "4"
+		state: 4
 	}
 }
 
@@ -767,7 +769,7 @@ const mapRejectExit = (event) => {
 		...event,
 		rejectValue: new BigNumber(event.value),
 		rejectExitDate: moment.unix(event.eventDate).utc(),
-		state: "1"
+		state: 1
 	}
 }
 
@@ -777,7 +779,7 @@ const getInvestmentValue = async (investment) => {
 	let investorProfitPercent = investment.investorProfitPercent.dividedBy(10000)
 
 	// get all trades for this investment
-	let trades = await tradesDao.getTrades(investment.trader)
+	let trades = await tradesMysql.getByTrader(investment.trader)
 
 	trades = trades.filter(
 		(trade) => helpers.tokenAddressForSymbol(trade.asset) === investment.token)
@@ -787,12 +789,12 @@ const getInvestmentValue = async (investment) => {
 	trades = trades.filter(trade =>
 		trade.start.isAfter(investment.start) 
 			&& (
-				(investment.end.unix() === 0 || investment.state === "0") 
+				(investment.end.unix() === 0 || investment.state === 0) 
 					|| trade.end.isBefore(investment.end)))
 
 	// console.log("P", trades)
 
-	const allocations = await allocateDao.getByTraderAndToken(investment.trader, investment.token)
+	const allocations = await allocateMysql.getByTraderAndToken(investment.trader, investment.token)
 
 	// console.log("A", allocations)
 
@@ -852,11 +854,11 @@ const getInvestmentValue = async (investment) => {
 const getTraderInvestments = async (account, token) => {
 	let result = []
 	try {
-		let investList = await investDao.getByTraderAndToken(account, token)
-		let stopList = await stopDao.getByTrader(account)
+		let investList = await investMysql.getByTraderAndToken(account, token)
+		let stopList = await stopMysql.getByTrader(account)
 
 		investList.forEach((investment) => {
-			let index = stopList.findIndex(stopped => stopped.id === investment.id)
+			let index = stopList.findIndex(stopped => stopped.investmentId === investment.investmentId)
 			if (index !== -1) {
 				investment.state = stopList[index].state
 				investment.end = stopList[index].end
@@ -878,7 +880,7 @@ const getTradeInvestmentsAmount = async (trade, traderInvestments) => {
 	investments = investments.filter(investment =>
 		trade.start.isAfter(investment.start) 
 			&& (
-				(investment.end.unix() === 0 || investment.state === "0") 
+				(investment.end.unix() === 0 || investment.state === 0) 
 					|| trade.end.isBefore(investment.end)))
 	
 	

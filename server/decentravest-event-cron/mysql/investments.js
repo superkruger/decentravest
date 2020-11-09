@@ -61,7 +61,6 @@ const create = async (investment) => {
       investment.startDate, 
       investment.endDate
     ]);
-  client.quit()
   return resp;
 }
 module.exports.create = create
@@ -79,7 +78,6 @@ const get = async (id) => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 module.exports.get = get
@@ -119,7 +117,6 @@ module.exports.update = async (investment) => {
       investment.endDate,
       investment.id
     ]);
-  client.quit()
   return resp;
 }
 
@@ -146,7 +143,6 @@ module.exports.listActive = async () => {
 
   let dbRes = await client.query(`select * from investments where state != ${helpers.INVESTMENT_STATE_EXITAPPROVED} order by startDate desc`)
 
-  client.quit()
   return dbRes;
 }
 
@@ -163,7 +159,6 @@ module.exports.getInvestLast = async () => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 
@@ -180,7 +175,6 @@ module.exports.getStopLast = async () => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 
@@ -197,7 +191,6 @@ module.exports.getRequestLast = async () => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 
@@ -214,7 +207,6 @@ module.exports.getRejectLast = async () => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 
@@ -231,7 +223,6 @@ module.exports.getApproveLast = async () => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 
@@ -243,7 +234,6 @@ module.exports.getByTrader = async (account) => {
 
   let dbRes = await client.query(`select * from investments where trader = ? order by startDate desc`, [account])
 
-  client.quit()
   return dbRes;
 }
 
@@ -255,7 +245,6 @@ module.exports.getByInvestor = async (account) => {
 
   let dbRes = await client.query(`select * from investments where investor = ? order by startDate desc`, [account])
 
-  client.quit()
   return dbRes;
 }
 

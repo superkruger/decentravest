@@ -30,7 +30,6 @@ const create = async (event) => {
       event.invested,
       event.mdate
     ]);
-  client.quit()
   return resp;
 }
 module.exports.create = create
@@ -48,7 +47,6 @@ const get = async (id) => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 module.exports.get = get
@@ -71,7 +69,6 @@ const update = async (event) => {
       event.mdate,
       event.id
     ]);
-  client.quit()
   return resp;
 }
 module.exports.update = update
@@ -97,15 +94,9 @@ module.exports.getByTraderAndToken = async (trader, token) => {
 
   const client = mysqlCommon.getClient()
 
-  let dbRes = await client.query(`select * from event_traderpaired_allocate where user = ?`, [id])
-  if (dbRes.length == 0) {
-      return null;
-  }
-  
-  let resp = dbRes[0]
+  let dbRes = await client.query(`select * from event_traderpaired_allocate where trader = ? and token = ? ORDER by eventDate desc`, [trader, token])
 
-  client.quit()
-  return resp;
+  return dbRes;
 }
 
 module.exports.list = async () => {
@@ -116,7 +107,6 @@ module.exports.list = async () => {
 
   let dbRes = await client.query(`select * from event_traderpaired_allocate`)
 
-  client.quit()
   return dbRes;
 }
 
@@ -133,7 +123,6 @@ module.exports.getLast = async () => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 

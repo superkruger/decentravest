@@ -20,7 +20,9 @@ module.exports.processAllEvents = (event, context) => {
 	const time = new Date();
 	console.log(`Your cron function "${context.functionName}" ran at ${time}`);
 
-	localProcessAllEvents();
+	localProcessAllEvents()
+
+  mysqlCommon.quitClient()
 	
 	return "processed all events";
 }
@@ -29,7 +31,9 @@ module.exports.processAllTrades = (event, context) => {
 	const time = new Date();
 	console.log(`Your cron function "${context.functionName}" ran at ${time}`);
 
-	localProcessAllTrades();
+	localProcessAllTrades()
+
+  mysqlCommon.quitClient()
 
 	return "processed all trades";
 }
@@ -38,7 +42,9 @@ module.exports.calculateAllTradersStatistics = (event, context) => {
 	const time = new Date();
 	console.log(`Your cron function "${context.functionName}" ran at ${time}`);
 
-	localCalculateAllTradersStatistics();
+	localCalculateAllTradersStatistics()
+
+  mysqlCommon.quitClient()
 
 	return "calculated statistics";
 }
@@ -47,7 +53,9 @@ module.exports.calculateAllInvestorsStatistics = (event, context) => {
   const time = new Date();
   console.log(`Your cron function "${context.functionName}" ran at ${time}`);
 
-  localCalculateAllInvestorsStatistics();
+  localCalculateAllInvestorsStatistics()
+
+  mysqlCommon.quitClient()
 
   return "calculated statistics";
 }
@@ -56,7 +64,9 @@ module.exports.calculateAllInvestmentValues = (event, context) => {
   const time = new Date();
   console.log(`Your cron function "${context.functionName}" ran at ${time}`);
 
-  localCalculateAllInvestmentValues();
+  localCalculateAllInvestmentValues()
+
+  mysqlCommon.quitClient()
 
   return "calculated investment values";
 }
@@ -64,8 +74,8 @@ module.exports.calculateAllInvestmentValues = (event, context) => {
 module.exports.statistics = async (event, context) => {
   console.log("statistics", event, context)
 
+  let result
   try {
-    let result
     if (event.queryStringParameters.investor) {
       result = await investorStatisticsDao.getStatistics(event.queryStringParameters.investor)
     } else if (event.queryStringParameters.trader) {
@@ -74,23 +84,32 @@ module.exports.statistics = async (event, context) => {
       throw "unknown query parameter for statistics"
     }
 
-  	return encode.success(result);
+  	result = encode.success(result);
   } catch (error) {
   	console.error("could not get statistics", error)
-  	return encode.error(error, "could not get statistics");
+  	result = encode.error(error, "could not get statistics");
   }
+
+  mysqlCommon.quitClient()
+
+  return result
 }
 
 module.exports.trades = async (event, context) => {
   console.log("trades", event, context)
+  let result
 
   try {
-  	const result = await tradesMysql.getByTrader(event.queryStringParameters.trader)
-  	return encode.success(result);
+  	result = await tradesMysql.getByTrader(event.queryStringParameters.trader)
+  	result = encode.success(result);
   } catch (error) {
   	console.error("could not get trades", error)
-  	return encode.error(error, "could not get trades");
+  	result = encode.error(error, "could not get trades");
   }
+
+  mysqlCommon.quitClient()
+
+  return result
 }
 
 module.exports.userAction = (event, context) => {
@@ -103,70 +122,83 @@ module.exports.userAction = (event, context) => {
     return encode.error(new Error('Couldn\'t createdInvestment.'), "action could not be determined")
   }
 
+  let result
+
   switch(data.action) {
     case 'createTables': {
-      return localCreateTables()
+      result = localCreateTables()
       break
     }
     case 'traderJoined': {
       if (typeof data.trader !== 'string') {
-        return encode.error(new Error(`${data.action} error`), "action parameters missing")
+        result = encode.error(new Error(`${data.action} error`), "action parameters missing")
+      } else {
+        result = localJoinedTrader(data.trader)
       }
-      return localJoinedTrader(data.trader)
       break
     }
     case 'investorJoined': {
       if (typeof data.investor !== 'string') {
-        return encode.error(new Error(`${data.action} error`), "action parameters missing")
+        result = encode.error(new Error(`${data.action} error`), "action parameters missing")
+      } else {
+        result = localJoinedInvestor(data.investor)
       }
-      return localJoinedInvestor(data.investor)
       break
     }
     case 'createdInvestment': {
       if (typeof data.investmentId !== 'string') {
-        return encode.error(new Error(`${data.action} error`), "action parameters missing")
+        result = encode.error(new Error(`${data.action} error`), "action parameters missing")
+      } else {
+        result = localCreatedInvestment(data.investmentId)
       }
-      return localCreatedInvestment(data.investmentId)
       break
     }
     case 'stoppedInvestment': {
       if (typeof data.investmentId !== 'string') {
-        return encode.error(new Error(`${data.action} error`), "action parameters missing")
+        result = encode.error(new Error(`${data.action} error`), "action parameters missing")
+      } else {
+        result = localStoppedInvestment(data.investmentId)
       }
-      return localStoppedInvestment(data.investmentId)
       break
     }
     case 'exitRequested': {
       if (typeof data.investmentId !== 'string') {
-        return encode.error(new Error(`${data.action} error`), "action parameters missing")
+        result = encode.error(new Error(`${data.action} error`), "action parameters missing")
+      } else {
+        result = localExitRequested(data.investmentId)
       }
-      return localExitRequested(data.investmentId)
       break
     }
     case 'exitRejected': {
       if (typeof data.investmentId !== 'string') {
-        return encode.error(new Error(`${data.action} error`), "action parameters missing")
+        result = encode.error(new Error(`${data.action} error`), "action parameters missing")
+      } else {
+        result = localExitRejected(data.investmentId)
       }
-      return localExitRejected(data.investmentId)
       break
     }
     case 'exitApproved': {
       if (typeof data.investmentId !== 'string') {
-        return encode.error(new Error(`${data.action} error`), "action parameters missing")
+        result = encode.error(new Error(`${data.action} error`), "action parameters missing")
+      } else {
+        result = localExitApproved(data.investmentId)
       }
-      return localExitApproved(data.investmentId)
       break
     }
     default:
-      return encode.error(new Error(`Action error`), "action unknown")
+      result = encode.error(new Error(`Action error`), "action unknown")
   }
+
+  mysqlCommon.quitClient()
+  return result
 }
 
 module.exports.investments = async (event, context) => {
   console.log("investments", event, context)
 
+  let result
+
   try {
-    let result
     if (event.queryStringParameters.investor) {
       result = await investmentsMysql.getByInvestor(event.queryStringParameters.investor)
     } else if (event.queryStringParameters.trader) {
@@ -174,22 +206,29 @@ module.exports.investments = async (event, context) => {
     } else {
       throw "unknown query parameter for investments"
     }
-    return encode.success(result);
+    result = encode.success(result);
   } catch (error) {
     console.error("could not get investments", error)
-    return encode.error(error, "could not get investments");
+    result = encode.error(error, "could not get investments");
   }
+
+  mysqlCommon.quitClient()
+  return result
 }
 
 const localProcessAllEvents = async () => {
   const {web3, traderPaired} = await loadTraderPaired()
 	
 	await interactions.processAllEvents(web3, traderPaired)
+
+  mysqlCommon.quitClient()
 }
 module.exports.localProcessAllEvents = localProcessAllEvents
 
 const localProcessAllTrades = async () => {
 	await interactions.processAllTrades();
+
+  mysqlCommon.quitClient()
 }
 module.exports.localProcessAllTrades = localProcessAllTrades
 
@@ -207,114 +246,150 @@ const localCreateTables = async () => {
 }
 
 const localJoinedTrader = async (trader) => {
+  let result
   try {
     const {web3, traderPaired} = await loadTraderPaired()
-    const result = await interactions.joinedTrader(trader, traderPaired)
+    result = await interactions.joinedTrader(trader, traderPaired)
     if (!result) {
       throw "error processing trader"
     }
-    return encode.success(result)
+    result = encode.success(result)
   } catch (error) {
     console.error("could not join trader", error)
-    return encode.error(error, "could not join trader")
+    result = encode.error(error, "could not join trader")
   }
+
+  mysqlCommon.quitClient()
+  return result
 }
 
 const localJoinedInvestor = async (investor) => {
+  let result
   try {
     const {web3, traderPaired} = await loadTraderPaired()
-    const result = await interactions.joinedInvestor(investor, traderPaired)
+    result = await interactions.joinedInvestor(investor, traderPaired)
     if (!result) {
       throw "error processing investor"
     }
-    return encode.success(result)
+    result = encode.success(result)
   } catch (error) {
     console.error("could not join investor", error)
-    return encode.error(error, "could not join investor")
+    result = encode.error(error, "could not join investor")
   }
+
+  mysqlCommon.quitClient()
+  return result
 }
 
 const localCreatedInvestment = async (investmentId) => {
+  let result
   try {
     const {web3, traderPaired} = await loadTraderPaired()
-    const result = await interactions.createdInvestment(investmentId, traderPaired)
+    result = await interactions.createdInvestment(investmentId, traderPaired)
     if (!result) {
       throw "error processing investment creation"
     }
-    return encode.success(result)
+    result = encode.success(result)
   } catch (error) {
     console.error("could not create investment", error)
-    return encode.error(error, "could not create investment")
+    result = encode.error(error, "could not create investment")
   }
+
+  mysqlCommon.quitClient()
+  return result
 }
 
 const localStoppedInvestment = async (investmentId) => {
+  let result
   try {
     const {web3, traderPaired} = await loadTraderPaired()
-    const result = await interactions.stoppedInvestment(investmentId, traderPaired)
+    result = await interactions.stoppedInvestment(investmentId, traderPaired)
     if (!result) {
       throw "error processing investment stop"
     }
-    return encode.success(result)
+    result = encode.success(result)
   } catch (error) {
     console.error("could not stop investment", error)
-    return encode.error(error, "could not stop investment")
+    result = encode.error(error, "could not stop investment")
   }
+
+  mysqlCommon.quitClient()
+  return result
 }
 
 const localExitRequested = async (investmentId) => {
+  let result
   try {
     const {web3, traderPaired} = await loadTraderPaired()
-    const result = await interactions.exitRequested(investmentId, web3, traderPaired)
+    result = await interactions.exitRequested(investmentId, web3, traderPaired)
     if (!result) {
       throw "error processing investment exit request"
     }
-    return encode.success(result)
+    result = encode.success(result)
   } catch (error) {
     console.error("could not request exit", error)
-    return encode.error(error, "could not request exit")
+    result = encode.error(error, "could not request exit")
   }
+
+  mysqlCommon.quitClient()
+  return result
 }
 
 const localExitRejected = async (investmentId) => {
+  let result
   try {
     const {web3, traderPaired} = await loadTraderPaired()
-    const result = await interactions.exitRejected(investmentId, traderPaired)
+    result = await interactions.exitRejected(investmentId, traderPaired)
     if (!result) {
       throw "error processing investment exit reject"
     }
-    return encode.success(result)
+    result = encode.success(result)
   } catch (error) {
     console.error("could not reject exit", error)
-    return encode.error(error, "could not reject exit")
+    result = encode.error(error, "could not reject exit")
   }
+
+  mysqlCommon.quitClient()
+  return result
 }
 
 const localExitApproved = async (investmentId) => {
+  let result
   try {
     const {web3, traderPaired} = await loadTraderPaired()
-    const result = await interactions.exitApproved(investmentId, traderPaired)
+    result = await interactions.exitApproved(investmentId, traderPaired)
     if (!result) {
       throw "error processing investment exit approval"
     }
-    return encode.success(result)
+    result = encode.success(result)
   } catch (error) {
     console.error("could not reject approved", error)
-    return encode.error(error, "could not reject approved")
+    result = encode.error(error, "could not reject approved")
   }
+
+  mysqlCommon.quitClient()
+  return result
 }
 
 const localCalculateAllTradersStatistics = async () => {
 	await interactions.calculateAllTradersStatistics();
+  mysqlCommon.quitClient()
 }
 module.exports.localCalculateAllTradersStatistics = localCalculateAllTradersStatistics
 
 const localCalculateAllInvestorsStatistics = async () => {
   await interactions.calculateAllInvestorsStatistics();
+  mysqlCommon.quitClient()
 }
 module.exports.localCalculateAllInvestorsStatistics = localCalculateAllInvestorsStatistics
 
 const localCalculateAllInvestmentValues = async () => {
-  await interactions.calculateAllInvestmentValues();
+  try {
+    await interactions.calculateAllInvestmentValues();
+  }
+  catch(error) {
+    console.error("localCalculateAllInvestmentValues error", error)
+  }
+  mysqlCommon.quitClient()
 }
 module.exports.localCalculateAllInvestmentValues = localCalculateAllInvestmentValues

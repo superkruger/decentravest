@@ -16,7 +16,7 @@ provider:
     MYSQL_PORT: ${self:custom.MYSQL.PORT}
     DB_NAME: decentravest
     USERNAME: master
-    PASSWORD: password
+    PASSWORD: ${param:MYSQL_PASSWORD}
     #s3
     tradingbucket: ${self:custom.tradingbucket}
     eventbucket: ${self:custom.eventbucket}
@@ -36,7 +36,7 @@ provider:
 custom:
   DB_NAME: decentravest
   USERNAME: master
-  PASSWORD: password
+  PASSWORD: ${param:MYSQL_PASSWORD}
   MYSQL:
     HOST:
       Fn::GetAtt: [MySqlRDSInstance, Endpoint.Address]
@@ -108,7 +108,7 @@ functions:
   processAllEvents:
     handler: handler.processAllEvents
     events:
-      - schedule: rate(1 hour)
+      - schedule: rate(1 day)
 
   processAllTrades:
     handler: handler.processAllTrades

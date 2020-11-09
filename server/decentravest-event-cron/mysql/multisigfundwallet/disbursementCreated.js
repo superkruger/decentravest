@@ -36,7 +36,6 @@ const create = async (walletAddress, event) => {
       event.amount,
       event.mdate
     ]);
-  client.quit()
   return resp;
 }
 module.exports.create = create
@@ -54,7 +53,6 @@ const get = async (walletAddress, id) => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 module.exports.get = get
@@ -81,7 +79,6 @@ const update = async (walletAddress, event) => {
       event.mdate,
       event.id
     ]);
-  client.quit()
   return resp;
 }
 module.exports.update = update
@@ -109,7 +106,6 @@ module.exports.list = async (walletAddress) => {
 
   let dbRes = await client.query(`select * from event_multisigfundwallet_disbursementcreated where wallet = ?`, [walletAddress])
 
-  client.quit()
   return dbRes;
 }
 
@@ -126,7 +122,6 @@ module.exports.getLast = async (walletAddress) => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 
@@ -143,7 +138,6 @@ module.exports.getLastForInvestment = async (walletAddress, investmentId) => {
   
   let resp = dbRes[0]
 
-  client.quit()
   return resp;
 }
 

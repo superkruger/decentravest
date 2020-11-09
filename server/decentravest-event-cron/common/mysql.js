@@ -1,20 +1,32 @@
 const Client = require('serverless-mysql')
 
+let mysqlClient
+
 const getClient = () => {
-    var client = Client({
-        config: {
-            host: process.env.MYSQL_HOST,
-            database: process.env.DB_NAME,
-            user: process.env.USERNAME,
-            password: process.env.PASSWORD
-        }
-    })
+    if (!mysqlClient) {
+        mysqlClient = Client({
+            config: {
+                host: process.env.MYSQL_HOST,
+                database: process.env.DB_NAME,
+                user: process.env.USERNAME,
+                password: process.env.PASSWORD
+            }
+        })
 
-    console.log("MySQL Client", process.env.MYSQL_HOST, process.env.DB_NAME)
+        console.log("MySQL Client", process.env.MYSQL_HOST, process.env.DB_NAME)
+    }
 
-    return client
+    return mysqlClient
 }
 exports.getClient = getClient
+
+const quitClient = () => {
+    if (mysqlClient) {
+        mysqlClient.quit()
+        mysqlClient = null
+    }
+}
+exports.quitClient = quitClient
 
 exports.dropTables = async () => {
 
@@ -67,8 +79,8 @@ exports.dropTables = async () => {
     res = await client.query(`
     DROP TABLE IF EXISTS trades;  
     `)
-
-    client.quit()
+    
+    quitClient()
     return res
 }
 
@@ -270,6 +282,6 @@ exports.createTables = async () => {
     );  
     `)
 
-    client.quit()
+    quitClient()
     return res
 }

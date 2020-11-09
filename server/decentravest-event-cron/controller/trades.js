@@ -7,7 +7,8 @@ const tradesMysql = require('../mysql/trades')
 const helpers = require('../helpers')
 
 module.exports.getTrades = async (account) => {
-  const trades = await tradesMysql.getByTrader(account)
+  let trades = await tradesMysql.getByTrader(account)
+
   return trades.map(mapTrade)
 }
 

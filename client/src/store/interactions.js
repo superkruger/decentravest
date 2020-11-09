@@ -940,8 +940,8 @@ const mapRejectExit = (event) => {
 const mapTrade = (trade) => {
 	return {
 		...trade,
-		start: moment(trade.start),
-		end: moment(trade.end),
+		start: moment.unix(trade.start),
+		end: moment.unix(trade.end),
 		profit: new BigNumber(trade.profit),
 		initialAmount: new BigNumber(trade.initialAmount)
 	}
