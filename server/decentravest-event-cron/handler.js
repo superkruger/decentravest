@@ -1,11 +1,12 @@
 require('dotenv').config()
 
+const mysqlCommon = require('./common/mysql')
 const encode = require('./common/encode')
 const interactions = require('./interactions')
 const traderStatisticsDao = require('./dao/traderStatistics')
 const investorStatisticsDao = require('./dao/investorStatistics')
-const tradesDao = require('./dao/trades')
-const investmentsDao = require('./dao/investments')
+const tradesMysql = require('./mysql/trades')
+const investmentsMysql = require('./mysql/investments')
 
 const loadTraderPaired = async () => {
   const {web3, networkId} = await interactions.loadWeb3()
@@ -51,6 +52,15 @@ module.exports.calculateAllInvestorsStatistics = (event, context) => {
   return "calculated statistics";
 }
 
+module.exports.calculateAllInvestmentValues = (event, context) => {
+  const time = new Date();
+  console.log(`Your cron function "${context.functionName}" ran at ${time}`);
+
+  localCalculateAllInvestmentValues();
+
+  return "calculated investment values";
+}
+
 module.exports.statistics = async (event, context) => {
   console.log("statistics", event, context)
 
@@ -75,7 +85,7 @@ module.exports.trades = async (event, context) => {
   console.log("trades", event, context)
 
   try {
-  	const result = await tradesDao.getTrades(event.queryStringParameters.trader)
+  	const result = await tradesMysql.getByTrader(event.queryStringParameters.trader)
   	return encode.success(result);
   } catch (error) {
   	console.error("could not get trades", error)
@@ -94,6 +104,10 @@ module.exports.userAction = (event, context) => {
   }
 
   switch(data.action) {
+    case 'createTables': {
+      return localCreateTables()
+      break
+    }
     case 'traderJoined': {
       if (typeof data.trader !== 'string') {
         return encode.error(new Error(`${data.action} error`), "action parameters missing")
@@ -154,9 +168,9 @@ module.exports.investments = async (event, context) => {
   try {
     let result
     if (event.queryStringParameters.investor) {
-      result = await investmentsDao.getByInvestor(event.queryStringParameters.investor)
+      result = await investmentsMysql.getByInvestor(event.queryStringParameters.investor)
     } else if (event.queryStringParameters.trader) {
-      result = await investmentsDao.getByTrader(event.queryStringParameters.trader)
+      result = await investmentsMysql.getByTrader(event.queryStringParameters.trader)
     } else {
       throw "unknown query parameter for investments"
     }
@@ -178,6 +192,19 @@ const localProcessAllTrades = async () => {
 	await interactions.processAllTrades();
 }
 module.exports.localProcessAllTrades = localProcessAllTrades
+
+const localCreateTables = async () => {
+  try {
+    const result = await mysqlCommon.createTables()
+    if (!result) {
+      throw "error creating tables"
+    }
+    return encode.success(result)
+  } catch (error) {
+    console.error("could not create tables", error)
+    return encode.error(error, "could not create tables")
+  }
+}
 
 const localJoinedTrader = async (trader) => {
   try {
@@ -286,3 +313,8 @@ const localCalculateAllInvestorsStatistics = async () => {
   await interactions.calculateAllInvestorsStatistics();
 }
 module.exports.localCalculateAllInvestorsStatistics = localCalculateAllInvestorsStatistics
+
+const localCalculateAllInvestmentValues = async () => {
+  await interactions.calculateAllInvestmentValues();
+}
+module.exports.localCalculateAllInvestmentValues = localCalculateAllInvestmentValues

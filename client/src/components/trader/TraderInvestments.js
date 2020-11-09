@@ -4,6 +4,7 @@ import { Container, Row, Col, Button, Badge, Alert, Form } from 'react-bootstrap
 import AddressImage from '../AddressImage'
 import Token from '../Token'
 import Help from '../containers/Help'
+import WalletInstruction from '../cards/WalletInstruction'
 import { 
   log, 
   toBN, 
@@ -154,52 +155,51 @@ function showInvestments(component) {
                 : <h4>Direct Investment</h4>
               }
               </div>
-              <div className="card-body">
+             
                 {
                   investment.changing
-                  ? <Row>
-                      <Col sm={12}>
-                        <div className="h6 mb-0 mr-3 font-weight-bold text-gray-800">
-                          Please follow the instructions in metamask.<br/>
-                          {investment.message}
-                        </div>
-                      </Col>
-                    </Row>
-                  : <Row>
-                      <Col sm={8}>
-                      {
+                  ? <div className="card-body">
+                      <Row>
+                        <Col sm={6}>
+                          <WalletInstruction title="Confirm Investment" message={investment.message}/>
+                        </Col>
+                      </Row>
+                    </div>
+                  : <div className="card-body">
+                      <Row>
+                        <Col sm={8}>
                         {
-                          0: <StopButton investment={investment} props={component.props} />,
-                          1: <DisburseButton investment={investment} props={component.props} />,
-                          2: <ApproveButton investment={investment} props={component.props} />,
-                          3: <ApproveButton investment={investment} props={component.props} />,
-                          4: <div>Divested</div>
-                        }[investment.state]
-                      }
-                      </Col>
-                      <Col sm={4}>
-                        <span className="very-small align-right">
-                          <table>
-                            <tbody>
-                              <tr>
-                                <td>Start:</td>
-                                <td>{investment.formattedStart}</td>
-                              </tr>
-                              {
-                                investment.end.unix() > 0 &&
-                                  <tr>
-                                    <td>End:</td>
-                                    <td>{investment.formattedEnd}</td>
-                                  </tr>
-                              }
-                            </tbody>
-                          </table>
-                        </span>
-                      </Col>
-                    </Row>
+                          {
+                            0: <StopButton investment={investment} props={component.props} />,
+                            1: <DisburseButton investment={investment} props={component.props} />,
+                            2: <ApproveButton investment={investment} props={component.props} />,
+                            3: <ApproveButton investment={investment} props={component.props} />,
+                            4: <div>Divested</div>
+                          }[investment.state]
+                        }
+                        </Col>
+                        <Col sm={4}>
+                          <span className="very-small align-right">
+                            <table>
+                              <tbody>
+                                <tr>
+                                  <td>Start:</td>
+                                  <td>{investment.formattedStart}</td>
+                                </tr>
+                                {
+                                  investment.end.unix() > 0 &&
+                                    <tr>
+                                      <td>End:</td>
+                                      <td>{investment.formattedEnd}</td>
+                                    </tr>
+                                }
+                              </tbody>
+                            </table>
+                          </span>
+                        </Col>
+                      </Row>
+                    </div>
                 }
-                
-              </div>
             </div>
           </div>
         )

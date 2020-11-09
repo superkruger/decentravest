@@ -1,11 +1,13 @@
 
 import BigNumber from 'bignumber.js'
+import {isEqual} from 'lodash'
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Container, Row, Col, Form, Button, Badge } from 'react-bootstrap'
 import AddressImage from '../AddressImage'
 import Rating from '../Rating'
 import Spinner from '../Spinner'
+import WalletInstruction from '../cards/WalletInstruction'
 
 import PageLink from '../containers/PageLink'
 import { Page } from '../containers/pages'
@@ -28,7 +30,7 @@ import {
   tradersSelector,
   walletSelector,
   investmentsSelector,
-  startingInvestmentsSelector
+  investingsSelector
 } from '../../store/selectors'
 import { 
   invest,
@@ -45,21 +47,25 @@ class InvestorTraderDetail extends Component {
   componentDidMount() {
     const { web3, network, account, trader, traders, traderPaired, tokens, dispatch } = this.props
 
-    loadTraderStatistics(trader.user, network, dispatch)
-    loadTraderAllocations(network, trader.user, traderPaired, dispatch)
-    loadBalances(account, traderPaired, tokens, web3, dispatch)
+    if (web3 && network && account && trader && traderPaired) {
+      loadTraderStatistics(trader.user, network, dispatch)
+      loadTraderAllocations(network, trader.user, traderPaired, dispatch)
+      loadBalances(account, traderPaired, tokens, web3, dispatch)
+    }
   }
 
   componentDidUpdate(prevProps) {
     const { web3, network, account, trader, traders, traderPaired, tokens, dispatch } = this.props
 
-    if (trader.user !== prevProps.trader.user || network !== prevProps.network || account !== prevProps.account) {
+    if (!isEqual(trader, prevProps.trader) || 
+        !isEqual(network, prevProps.network) || 
+        !isEqual(account, prevProps.account) || 
+        !isEqual(web3, prevProps.web3) || 
+        !isEqual(traderPaired, prevProps.traderPaired)) {
 
-      console.log("InvestorTraderDetail componentDidUpdate", prevProps)
-
-      // loadTraderStatistics(trader.user, network, dispatch)
-      // loadTraderAllocations(network, trader.user, traderPaired, dispatch)
-      // loadBalances(account, traderPaired, tokens, web3, dispatch)
+      loadTraderStatistics(trader.user, network, dispatch)
+      loadTraderAllocations(network, trader.user, traderPaired, dispatch)
+      loadBalances(account, traderPaired, tokens, web3, dispatch)
     }
   }
 
@@ -150,7 +156,7 @@ class InvestorTraderDetail extends Component {
 }
 
 function Collateral(props) {
-  const {web3, trader, traderAllocations, traderStatistics, investments, startingInvestments } = props.props
+  const {web3, trader, traderAllocations, traderStatistics, investments, investings } = props.props
 
   return (
     <div className="card shadow mb-4" key={`collateral-${trader.user}`}>
@@ -177,13 +183,13 @@ function Collateral(props) {
                 {
                   traderAllocations.map((allocation) => {
                     if (allocation.symbol && !allocation.total.isZero()) {
-                      let startingInvestment = startingInvestments.find(si => si.id === `${allocation.trader}_${allocation.token}_0`)
-                      if (startingInvestment) {
+                      let investing = investings.find(si => si.id === `${allocation.trader}_${allocation.token}_0`)
+                      if (investing) {
                         return (
                           <div key={`collateral_${allocation.symbol}_${allocation.trader}`} className="col-sm-12">
                             <div className="h6 mb-0 mr-3 font-weight-bold text-gray-800">
                               Please follow the instructions in metamask.<br/>
-                              {startingInvestment.message}
+                              {investing.message}
                             </div>
                           </div>
                         )
@@ -220,7 +226,7 @@ function Collateral(props) {
 }
 
 function Direct(props) {
-  const {web3, trader, traderAllocations, traderStatistics, investments, startingInvestments } = props.props
+  const {web3, trader, traderAllocations, traderStatistics, investments, investings } = props.props
 
   return (
     <div className="card shadow mb-4" key={`direct-${trader.user}`}>
@@ -249,14 +255,11 @@ function Direct(props) {
                     const limit = traderStatistics.limits.directLimits[allocation.symbol]
 
                     if (limit && limit.gt(0)) {
-                      let startingInvestment = startingInvestments.find(si => si.id === `${allocation.trader}_${allocation.token}_1`)
-                      if (startingInvestment) {
+                      let investing = investings.find(si => si.id === `${allocation.trader}_${allocation.token}_1`)
+                      if (investing) {
                         return (
                           <div key={`direct_${allocation.symbol}_${allocation.trader}`} className="col-sm-12">
-                            <div className="h6 mb-0 mr-3 font-weight-bold text-gray-800">
-                              Please follow the instructions in metamask.<br/>
-                              {startingInvestment.message}
-                            </div>
+                            <WalletInstruction title="Confirm Investment" message={investing.message}/>
                           </div>
                         )
                       } else {
@@ -390,7 +393,7 @@ function mapStateToProps(state, props) {
     balances: balancesSelector(state),
     wallet: walletSelector(state),
     investments: investmentsSelector(state),
-    startingInvestments: startingInvestmentsSelector(state)
+    investings: investingsSelector(state)
   }
 }
 

@@ -20,19 +20,19 @@ import {
 	tokensLoaded,
 	balanceLoaded,
 	traderLoaded,
+	settingProfit,
 	profitPercentagesLoaded,
 	mainTraderLoaded,
 	mainInvestorLoaded,
-	traderJoining,
-	investorJoining,
+	joining,
 	traderAllocationLoaded,
+	allocating,
 	walletFactoryLoaded,
 	walletCreating,
 	mainWalletLoaded,
 	mainWalletBalanceLoaded,
 	investmentLoaded,
-	investmentStarting,
-	investmentStarted,
+	investing,
 	investmentChanging,
 	disbursementCreated,
 	traderStatisticsLoaded,
@@ -262,20 +262,24 @@ export const setProfitPercentages = async (account, collateralPercentage, direct
 			return
 		}
 
+		dispatch(settingProfit(true))
 		traderPaired.methods.setProfitPercentages(collateralNum * 100, directNum * 100).send({from: account})
 		.on('transactionHash', async (hash) => {
 			dispatch(notificationAdded(info("Profit", "Setting profit percentages...", hash)))
 		})
 		.on('receipt', async (receipt) => {
 			log("receipt", receipt)
+			dispatch(settingProfit(false))
 			dispatch(notificationRemoved(receipt.transactionHash))
 			dispatch(notificationAdded(info("Profit", "Profit percentages set")))
 		})
 		.on('error', (err) => {
+			dispatch(settingProfit(false))
 			log('Could not setProfitPercentages', err)
 			dispatch(notificationAdded(fail("Profit", "Could not profit percentages")))
 		})
 	} catch (err) {
+			dispatch(settingProfit(false))
 		log('Could not setProfitPercentages', err)
 	}
 }
@@ -312,9 +316,9 @@ const loadTraderInvestments = async (network, account, web3, dispatch) => {
 export const joinAsTrader = async (network, account, traderPaired, pairedInvestments, walletFactory, web3, dispatch, history) => {
 	log('joinAsTrader', network, account)
 	try {
+		dispatch(joining(true))
 		traderPaired.methods.joinAsTrader().send({from: account})
 		.on('transactionHash', (hash) => {
-			dispatch(traderJoining())
 			dispatch(notificationAdded(info("Trader", "Joining as trader...", hash)))
 		})
 		.on('receipt', async (receipt) => {
@@ -329,12 +333,15 @@ export const joinAsTrader = async (network, account, traderPaired, pairedInvestm
 				dispatch(notificationAdded(info("Trader", "Successfully registered as a trader!")))
 				history.push('trader_dashboard')
 			}
+			dispatch(joining(false))
 		})
 		.on('error', (err) => {
 			log('Could not joinAsTrader', err)
+			dispatch(joining(false))
 			dispatch(notificationAdded(fail("Trader", "Could not join as trader")))
 		})
 	} catch (err) {
+		dispatch(joining(false))
 		log('Could not joinAsTrader', err)
 		return null
 	}
@@ -342,9 +349,9 @@ export const joinAsTrader = async (network, account, traderPaired, pairedInvestm
 
 export const joinAsInvestor = async (network, account, traderPaired, pairedInvestments, walletFactory, web3, dispatch, history) => {
 	try {
+		dispatch(joining(true))
 		traderPaired.methods.joinAsInvestor().send({from: account})
 		.on('transactionHash', async (hash) => {
-			dispatch(investorJoining())
 			dispatch(notificationAdded(info("Investor", "Joining as investor...", hash)))
 		})
 		.on('receipt', async (receipt) => {
@@ -359,12 +366,15 @@ export const joinAsInvestor = async (network, account, traderPaired, pairedInves
 				dispatch(notificationAdded(info("Investor", "Successfully registered as an investor")))
 				history.push('investor_dashboard')
 			}
+			dispatch(joining(false))
 		})
 		.on('error', (err) => {
+			dispatch(joining(false))
 			log('Could not joinAsInvestor', err)
 			dispatch(notificationAdded(fail("Investor", "Could not join as investor")))
 		})
 	} catch (err) {
+		dispatch(joining(false))
 		log('Could not joinAsInvestor', err)
 		return null
 	}
@@ -414,6 +424,7 @@ const mapAllocation = (allocation) => {
 
 export const setTraderAllocation = async (account, tokenAddress, amount, decimals, traderPaired, dispatch) => {
 	try {
+		dispatch(allocating(true, tokenAddress))
 		log("setTraderAllocation", tokenAddress, amount.toString(), decimals)
 
 		traderPaired.methods.allocate(tokenAddress, toBN(etherToWei(amount, decimals))).send({from: account})
@@ -422,14 +433,17 @@ export const setTraderAllocation = async (account, tokenAddress, amount, decimal
 		})
 		.on('receipt', async (receipt) => {
 			log("receipt", receipt)
+			dispatch(allocating(false, tokenAddress))
 			dispatch(notificationRemoved(receipt.transactionHash))
 			dispatch(notificationAdded(info("Allocation", "Allocation set")))
 		})
 		.on('error', (err) => {
+			dispatch(allocating(false, tokenAddress))
 			log('Could not setTraderAllocation', err)
 			dispatch(notificationAdded(fail("Allocation", "Could not set allocation")))
 		})
 	} catch (err) {
+		dispatch(allocating(false, tokenAddress))
 		log('Could not setTraderAllocation', err)
 		return null
 	}
@@ -510,20 +524,26 @@ export const invest = async (network, account, trader, tokenAddress, token, amou
 	try {
 		const isTrader = await wallet.methods.traders(trader).call()
 		if (!isTrader) {
+			dispatch(investing(true, trader, tokenAddress, investmentType, "You'll be asked to confirm adding the trader to your wallet"))
 			wallet.methods.setTrader(trader, true).send({from: account})
 			.on('transactionHash', async (hash) => {
+				dispatch(notificationAdded(info("Investment", "Adding trader to wallet...", hash)))
 			})
 			.on('receipt', async (receipt) => {
+				dispatch(notificationRemoved(receipt.transactionHash))
 				await investInTrader(network, account, trader, tokenAddress, token, amount, wallet, investmentType, web3, dispatch)
 			})
 			.on('error', (err) => {
+				dispatch(investing(false, trader, tokenAddress, investmentType))
 				log('Could not invest', err)
+				dispatch(notificationAdded(fail("Investment", "Could not add trader to wallet")))
 			})
 		} else {
 			await investInTrader(network, account, trader, tokenAddress, token, amount, wallet, investmentType, web3, dispatch)
 		}
 		
 	} catch (err) {
+		dispatch(investing(false, trader, tokenAddress, investmentType))
 		log('Could not invest', err)
 		return null
 	}
@@ -532,14 +552,14 @@ export const invest = async (network, account, trader, tokenAddress, token, amou
 const investInTrader = async (network, account, trader, tokenAddress, token, amount, wallet, investmentType, web3, dispatch) => {
 	try {
 		if (tokenAddress === ZERO_ADDRESS) {
-			dispatch(investmentStarting(trader, tokenAddress, investmentType, "You'll be asked to confirm the investment amount plus gas fees"))
+			dispatch(investing(true, trader, tokenAddress, investmentType, "You'll be asked to confirm the investment amount plus gas fees"))
 		
 			wallet.methods.fundEther(trader, investmentType).send({from: account, value: amount})
 			.on('transactionHash', async (hash) => {
 				dispatch(notificationAdded(info("Investment", "Investing ether...", hash)))
 			})
 			.on('receipt', async (receipt) => {
-				dispatch(investmentStarted(trader, tokenAddress, investmentType))
+				dispatch(investing(false, trader, tokenAddress, investmentType))
 				dispatch(notificationRemoved(receipt.transactionHash))
 				dispatch(notificationAdded(info("Investment", "Invested ether")))
 
@@ -549,18 +569,18 @@ const investInTrader = async (network, account, trader, tokenAddress, token, amo
 			})
 			.on('error', (err) => {
 				log('Could not fundEther', err)
-				dispatch(investmentStarted(trader, tokenAddress, investmentType))
+				dispatch(investing(false, trader, tokenAddress, investmentType))
 				dispatch(notificationAdded(fail("Investment", "Could not invest ether")))
 			})
 		} else {
-			dispatch(investmentStarting(trader, tokenAddress, investmentType, "You'll be asked to approve wallet access to the token"))
+			dispatch(investing(true, trader, tokenAddress, investmentType, "You'll be asked to approve wallet access to the token"))
 		
 			token.contract.methods.approve(wallet.options.address, amount).send({from: account})
 			.on('transactionHash', async (hash) => {
 				dispatch(notificationAdded(info("Investment", "Aproving tokens...", hash)))
 			})
 			.on('receipt', async (receipt) => {
-				dispatch(investmentStarting(trader, tokenAddress, investmentType, "You'll be asked to confirm the investment amount plus gas fees"))
+				dispatch(investing(true, trader, tokenAddress, investmentType, "You'll be asked to confirm the investment amount plus gas fees"))
 		
 				dispatch(notificationRemoved(receipt.transactionHash))
 				wallet.methods.fundToken(trader, token.contract.options.address, amount, investmentType).send({from: account})
@@ -568,7 +588,7 @@ const investInTrader = async (network, account, trader, tokenAddress, token, amo
 					dispatch(notificationAdded(info("Investment", "Investing tokens...", hash)))
 				})
 				.on('receipt', async (receipt) => {
-					dispatch(investmentStarted(trader, tokenAddress, investmentType))
+					dispatch(investing(false, trader, tokenAddress, investmentType))
 					dispatch(notificationRemoved(receipt.transactionHash))
 					dispatch(notificationAdded(info("Investment", "Invested tokens")))
 
@@ -578,18 +598,19 @@ const investInTrader = async (network, account, trader, tokenAddress, token, amo
 				})
 				.on('error', (err) => {
 					log('Could not fundToken', err)
-					dispatch(investmentStarted(trader, tokenAddress, investmentType))
+					dispatch(investing(false, trader, tokenAddress, investmentType))
 					dispatch(notificationAdded(fail("Investment", "Could not invest token")))
 				})
 			})
 			.on('error', (err) => {
 				log('Could not approve token', err)
-				dispatch(investmentStarted(trader, tokenAddress, investmentType))
+				dispatch(investing(false, trader, tokenAddress, investmentType))
 				dispatch(notificationAdded(fail("Investment", "Could not approve token amount")))
 			})
 		}
 		
 	} catch (err) {
+		dispatch(investing(false, trader, tokenAddress, investmentType))
 		log('Could not investInTrader', err)
 		return null
 	}
@@ -623,7 +644,7 @@ export const stopInvestment = async (network, account, investment, wallet, web3,
 
 export const disburseInvestment = async (network, account, investment, wallet, token, pairedInvestments, web3, dispatch) => {
 	try {
-		let profitsAndFees = await pairedInvestments.methods.calculateProfitsAndFees(toBN(investment.grossValue), toBN(investment.amount), 100, 100, investment.investorProfitPercent).call()
+		let profitsAndFees = await pairedInvestments.methods.calculateProfitsAndFees(toBN(investment.grossValue), toBN(investment.amount), 100, 100, toBN(investment.investorProfitPercent)).call()
 		log("profitsAndFees", profitsAndFees)
 
 		let amount = new BigNumber(0)

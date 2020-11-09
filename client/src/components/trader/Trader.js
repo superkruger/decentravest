@@ -1,4 +1,5 @@
 import moment from 'moment'
+import {isEqual} from 'lodash'
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
@@ -42,7 +43,9 @@ class Trader extends Component {
   componentDidUpdate(prevProps) {
     const { account, network, traderPaired, dispatch } = this.props
 
-    if (account !== prevProps.account || network !== prevProps.network && traderPaired !== prevProps.traderPaired) {
+    if (!isEqual(account, prevProps.account) || 
+        !isEqual(network, prevProps.network) || 
+        !isEqual(traderPaired, prevProps.traderPaired)) {
       loadTraderAllocations(network, account, traderPaired, dispatch)
       loadTrades(network, account, dispatch)
       loadTraderStatistics(account, network, dispatch)

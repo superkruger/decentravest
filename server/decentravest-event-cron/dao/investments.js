@@ -1,5 +1,8 @@
 'use strict';
 
+
+const helpers = require('../helpers')
+
 const s3Common = require("../common/s3Common")
 const select = 'investBlockNumber, stopBlockNumber, requestBlockNumber, rejectBlockNumber, approveBlockNumber, \
   id, disbursementId, wallet, trader, investor, token, amount, value, \
@@ -71,6 +74,31 @@ module.exports.get = async (id) => {
   }
   
   return null;
+}
+
+module.exports.listActive = async () => {
+  console.log("getting active investments")
+
+  if (!s3Common.hasData(`${process.env.investmentbucket}`)) {
+    return []
+  }
+
+  const query = {
+    sql: `SELECT ${select} FROM investments WHERE state != ${helpers.INVESTMENT_STATE_EXITAPPROVED} ORDER BY startDate desc`
+  };
+
+  try {
+    const results = await s3Common.athenaExpress.query(query);
+    if (results.Items.length > 0) {
+
+      const res = results.Items
+      return res
+    }
+  } catch (error) {
+    console.log("athena error", error);
+  }
+  
+  return [];
 }
 
 module.exports.getInvestLast = async (account) => {

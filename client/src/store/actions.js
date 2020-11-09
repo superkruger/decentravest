@@ -142,6 +142,13 @@ export function directLimitLoaded(trader, token, limit, invested) {
 	}
 }
 
+export function settingProfit(busy) {
+	return {
+		type: 'SETTING_PROFIT',
+		busy
+	}
+}
+
 export function profitPercentagesLoaded(profitPercentages) {
 	return {
 		type: 'PROFIT_PERCENTAGES_LOADED',
@@ -165,12 +172,6 @@ export function traderAllocationLoaded(account, allocation) {
 	}
 }
 
-export function traderJoining() {
-	return {
-		type: 'TRADER_JOINING'
-	}
-}
-
 export function investorLoaded(investor) {
 	return {
 		type: 'INVESTOR_LOADED',
@@ -185,9 +186,18 @@ export function mainInvestorLoaded(investor) {
 	}
 }
 
-export function investorJoining() {
+export function joining(busy) {
 	return {
-		type: 'INVESTOR_JOINING'
+		type: 'JOINING',
+		busy
+	}
+}
+
+export function allocating(busy, tokenAddress) {
+
+	return {
+		type: 'ALLOCATING',
+		busy, tokenAddress
 	}
 }
 
@@ -199,17 +209,11 @@ export function investmentLoaded(investment) {
 	}
 }
 
-export function investmentStarting(trader, tokenAddress, investmentType, message) {
-	return {
-		type: 'INVESTMENT_STARTING',
-		trader, tokenAddress, investmentType, message
-	}
-}
+export function investing(busy, trader, tokenAddress, investmentType, message) {
 
-export function investmentStarted(trader, tokenAddress, investmentType) {
 	return {
-		type: 'INVESTMENT_STARTED',
-		trader, tokenAddress, investmentType
+		type: 'INVESTING',
+		busy, trader, tokenAddress, investmentType, message
 	}
 }
 

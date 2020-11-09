@@ -100,14 +100,11 @@ const trader = (state, account) => {
 }
 export const traderSelector = createSelector(trader, e => e)
 
-const traderJoining = state => get(state, 'trader.joining', false)
-export const traderJoiningSelector = createSelector(traderJoining, e => e)
+const joining = state => get(state, 'app.joining', false)
+export const joiningSelector = createSelector(joining, e => e)
 
 const investor = state => get(state, 'investor.investor')
 export const investorSelector = createSelector(investor, e => e)
-
-const investorJoining = state => get(state, 'investor.joining', false)
-export const investorJoiningSelector = createSelector(investorJoining, e => e)
 
 const tradeCount = state => get(state, 'web3.tradeCount', 0)
 export const tradeCountSelector = createSelector(tradeCount, e => e)
@@ -271,8 +268,14 @@ const tradesForInvestment = (state, investment) => {
 }
 export const tradesForInvestmentSelector = createSelector(tradesForInvestment, e => e)
 
-const startingInvestments = state => get(state, 'web3.startingInvestments', [])
-export const startingInvestmentsSelector = createSelector(startingInvestments, i => i)
+const investings = state => get(state, 'web3.investings', [])
+export const investingsSelector = createSelector(investings, i => i)
+
+const allocatings = state => get(state, 'web3.allocatings', [])
+export const allocatingsSelector = createSelector(allocatings, i => i)
+
+const settingProfit = state => get(state, 'web3.settingProfit', false)
+export const settingProfitSelector = createSelector(settingProfit, e => e)
 
 const investments = state => get(state, 'web3.investments', [])
 export const investmentsSelector = createSelector(investments, (investments) => {

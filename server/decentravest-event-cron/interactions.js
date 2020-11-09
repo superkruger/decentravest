@@ -3,11 +3,14 @@ const BigNumber = require('bignumber.js')
 const moment = require('moment')
 const axios = require('axios')
 
+const mysqlCommon = require('./common/mysql')
+
 const TraderPaired = require('./abis/TraderPaired.json')
 const MultiSigFundWallet = require('./abis/MultiSigFundWallet.json')
 
 const traderDao = require('./dao/traderpaired/trader')
 const investorDao = require('./dao/traderpaired/investor')
+const investmentDao = require('./dao/traderpaired/investment')
 const investDao = require('./dao/traderpaired/invest')
 const requestExitDao = require('./dao/traderpaired/requestExit')
 const rejectExitDao = require('./dao/traderpaired/rejectExit')
@@ -16,12 +19,23 @@ const allocateDao = require('./dao/traderpaired/allocate')
 const stopDao = require('./dao/traderpaired/stop')
 const disbursementCreatedDao = require('./dao/multisigfundwallet/disbursementCreated')
 
+const traderMysql = require('./mysql/traderpaired/trader')
+const investorMysql = require('./mysql/traderpaired/investor')
+const investmentMysql = require('./mysql/traderpaired/investment')
+const investMysql = require('./mysql/traderpaired/invest')
+const requestExitMysql = require('./mysql/traderpaired/requestExit')
+const rejectExitMysql = require('./mysql/traderpaired/rejectExit')
+const approveExitMysql = require('./mysql/traderpaired/approveExit')
+const allocateMysql = require('./mysql/traderpaired/allocate')
+const stopMysql = require('./mysql/traderpaired/stop')
+const disbursementCreatedMysql = require('./mysql/multisigfundwallet/disbursementCreated')
+
 const positionsHandler = require('./dydx/positions')
 
 const traderStatisticsDao = require('./dao/traderStatistics')
 const investorStatisticsDao = require('./dao/investorStatistics')
 
-const investmentsDao = require('./dao/investments')
+const investmentsMysql = require('./mysql/investments')
 const investmentsController = require('./controller/investments')
 
 const statisticsHandler = require('./statistics')
@@ -80,79 +94,85 @@ exports.loadTraderPaired = loadTraderPaired
 
 const processAllEvents = async (web3, traderPaired) => {
 	console.log('processAllEvents START')
+
+	await mysqlCommon.dropTables() // TODO: remove!!
+
+	await mysqlCommon.createTables()
+
+	// let client = mysqlCommon.getClient()
+
 	let lastBlock = 0;
-	let result
+	let result = true
 
 	// Trader
 	//
-	result = await processTraderEvents(traderPaired)
-	if (!result) {
-		return false
+	if (result) {
+		result = await processTraderEvents(traderPaired)
 	}
 
 	// Investor
 	//
-	result = await processInvestorEvents(traderPaired)
-	if (!result) {
-		return false
+	if (result) {
+		result = await processInvestorEvents(traderPaired)
+	}
+	
+	// Investor
+	//
+	if (result) {
+		result = await processInvestmentEvents(web3, traderPaired)
 	}
 	
 	// Invest
 	//
-	result = await processInvestEvents(traderPaired)
-	if (!result) {
-		return false
+	if (result) {
+		result = await processInvestEvents(traderPaired)
 	}
 
 	// Stop
 	//
-	result = await processStopEvents(traderPaired)
-	if (!result) {
-		return false
+	if (result) {
+		result = await processStopEvents(traderPaired)
 	}
 	
 	// RequestExit
 	//
-	result = await processRequestExitEvents(traderPaired)
-	if (!result) {
-		return false
+	if (result) {
+		result = await processRequestExitEvents(traderPaired)
 	}
 	
 	// RejectExit
 	//
-	result = await processRejectExitEvents(traderPaired)
-	if (!result) {
-		return false
+	if (result) {
+		result = await processRejectExitEvents(traderPaired)
 	}
 
 	// ApproveExit
 	//
-	result = await processApproveExitEvents(traderPaired)
-	if (!result) {
-		return false
+	if (result) {
+		result = await processApproveExitEvents(traderPaired)
 	}
 	
 	// Allocate
 	//
-	result = await processAllocateEvents(traderPaired)
-	if (!result) {
-		return false
+	if (result) {
+		result = await processAllocateEvents(traderPaired)
 	}
 
-	result = await processEventsForInvestments(web3, traderPaired)
-	if (!result) {
-		return false
+	if (result) {
+		result = await processEventsForInvestments(web3, traderPaired)
 	}
 
+	// client.quit()
 	console.log('processAllEvents END')
+	return result
 }
 exports.processAllEvents = processAllEvents
 
 const processTraderEvents = async (traderPaired) => {
-	let last = await traderDao.getLast();
-	console.log("Trader last", last);
-	lastBlock = last ? last.blockNumber + 1 : 0;
-	console.log("Trader blockNumber", lastBlock);
+	let last = await traderMysql.getLast()
+	console.log("Trader last", last)
+	lastBlock = last ? last.blockNumber + 1 : 0
+	console.log("Trader blockNumber", lastBlock)
 
 	let stream = await traderPaired.getPastEvents(
 		'Trader', {filter: {},fromBlock: lastBlock}
@@ -162,19 +182,31 @@ const processTraderEvents = async (traderPaired) => {
 	for (let i=0; i<events.length; i++) {
 		console.log("Trader", events[i])
 
-		result = await traderDao.create(events[i]);
+		let result = await traderDao.create(events[i])
 		if (!result) {
 			return false
 		}
+
+		result = await traderDao.get(events[i].id)
+		if (!result) {
+			return false
+		}
+
+		result = await traderMysql.createOrUpdate(result)
+		console.log('traderMysql.create', result)
+		if (!result) {
+			return false
+		}
+
 	}
 	return true
 }
 
 const processInvestorEvents = async (traderPaired) => {
-	let last = await investorDao.getLast();
-	console.log("Investor last", last);
-	let lastBlock = last ? last.blockNumber + 1 : 0;
-	console.log("Investor blockNumber", lastBlock);
+	let last = await investorMysql.getLast()
+	console.log("Investor last", last)
+	let lastBlock = last ? last.blockNumber + 1 : 0
+	console.log("Investor blockNumber", lastBlock)
 
 	let stream = await traderPaired.getPastEvents(
 		'Investor', {filter: {},fromBlock: lastBlock}
@@ -184,7 +216,113 @@ const processInvestorEvents = async (traderPaired) => {
 	for (let i=0; i<events.length; i++) {
 		console.log("Investor", events[i])
 
-		result = await investorDao.create(events[i]);
+		let result = await investorDao.create(events[i])
+		if (!result) {
+			return false
+		}
+
+		result = await investorDao.get(events[i].id)
+		if (!result) {
+			return false
+		}
+
+		result = await investorMysql.createOrUpdate(result)
+		console.log('investorMysql.create', result)
+		if (!result) {
+			return false
+		}
+	}
+	return true
+}
+
+const processInvestmentEvents = async (web3, traderPaired) => {
+	let last = await investmentMysql.getLast()
+	console.log("Investment last", last)
+	let lastBlock = last ? last.blockNumber + 1 : 0
+	console.log("Investment blockNumber", lastBlock)
+
+	let stream = await traderPaired.getPastEvents(
+		'Investment', {filter: {},fromBlock: lastBlock}
+	)
+	let events = stream.map(event => event)
+	console.log(`${events.length} Investment Events`)
+	for (let i=0; i<events.length; i++) {
+		console.log("Investment", events[i])
+
+		let result = await investmentDao.create(events[i])
+		if (!result) {
+			return false
+		}
+
+		result = await investmentDao.get(events[i].id)
+		if (!result) {
+			return false
+		}
+
+		result = await investmentMysql.createOrUpdate(result)
+		console.log('investmentMysql.create', result)
+		if (!result) {
+			return false
+		}
+	}
+
+	let investmentEvents = await investmentMysql.list()
+
+	for (let i=0; i<investmentEvents.length; i++) {
+
+		let walletAddress = investmentEvents[i].wallet
+		const walletContract = await new web3.eth.Contract(MultiSigFundWallet.abi, walletAddress, {handleRevert: true})
+
+		if (!walletContract) {
+			console.error("Invalid wallet for investment event", investmentEvents[i])
+			return false
+		}
+
+		let result = await processWalletEvents(walletAddress, walletContract)
+		if (!result) {
+			return false
+		}
+	}
+
+	return true
+}
+
+const processWalletEvents = async (walletAddress, walletContract) => {
+	console.log("processWalletEvents", walletAddress)
+	let result = await processDisbursementCreatedEvents(walletAddress, walletContract)
+	if (!result) {
+		return false
+	}
+
+	return true
+}
+
+const processDisbursementCreatedEvents = async (walletAddress, walletContract) => {
+	let last = await disbursementCreatedMysql.getLast(walletAddress)
+	console.log("DisbursementCreated last", last)
+	let lastBlock = last ? last.blockNumber + 1 : 0
+	console.log("DisbursementCreated blockNumber", lastBlock)
+
+	let stream = await walletContract.getPastEvents(
+		'DisbursementCreated', {filter: {},fromBlock: lastBlock}
+	)
+	let events = stream.map(event => event)
+
+	for (let i=0; i<events.length; i++) {
+		console.log("DisbursementCreated", events[i])
+
+		let result = await disbursementCreatedDao.create(walletAddress, events[i])
+		if (!result) {
+			return false
+		}
+
+		result = await disbursementCreatedDao.get(walletAddress, events[i].id)
+		if (!result) {
+			return false
+		}
+
+		result = await disbursementCreatedMysql.createOrUpdate(walletAddress, result)
+		console.log('disbursementCreatedMysql.createOrUpdate', result)
 		if (!result) {
 			return false
 		}
@@ -193,10 +331,10 @@ const processInvestorEvents = async (traderPaired) => {
 }
 
 const processInvestEvents = async (traderPaired) => {
-	let last = await investDao.getLast();
-	console.log("Invest last", last);
-	let lastBlock = last ? last.blockNumber + 1 : 0;
-	console.log("Invest blockNumber", lastBlock);
+	let last = await investMysql.getLast()
+	console.log("Invest last", last)
+	let lastBlock = last ? last.blockNumber + 1 : 0
+	console.log("Invest blockNumber", lastBlock)
 
 	let stream = await traderPaired.getPastEvents(
 		'Invest', {filter: {},fromBlock: lastBlock}
@@ -210,12 +348,23 @@ const processInvestEvents = async (traderPaired) => {
 		if (!result) {
 			return false
 		}
+
+		result = await investDao.get(events[i].id)
+		if (!result) {
+			return false
+		}
+
+		result = await investMysql.createOrUpdate(result)
+		console.log('investMysql.createOrUpdate', result)
+		if (!result) {
+			return false
+		}
 	}
 	return true
 }
 
 const processStopEvents = async (traderPaired) => {
-	let last = await stopDao.getLast()
+	let last = await stopMysql.getLast()
 	console.log("Stop last", last)
 	let lastBlock = last ? last.blockNumber + 1 : 0
 	console.log("Stop blockNumber", lastBlock)
@@ -232,12 +381,23 @@ const processStopEvents = async (traderPaired) => {
 		if (!result) {
 			return false
 		}
+
+		result = await stopDao.get(events[i].id)
+		if (!result) {
+			return false
+		}
+
+		result = await stopMysql.createOrUpdate(result)
+		console.log('stopMysql.createOrUpdate', result)
+		if (!result) {
+			return false
+		}
 	}
 	return true
 }
 
 const processRequestExitEvents = async (traderPaired) => {
-	let last = await requestExitDao.getLast()
+	let last = await requestExitMysql.getLast()
 	console.log("RequestExit last", last)
 	let lastBlock = last ? last.blockNumber + 1 : 0
 	console.log("RequestExit blockNumber", lastBlock)
@@ -254,12 +414,23 @@ const processRequestExitEvents = async (traderPaired) => {
 		if (!result) {
 			return false
 		}
+
+		result = await requestExitDao.get(events[i].id)
+		if (!result) {
+			return false
+		}
+
+		result = await requestExitMysql.createOrUpdate(result)
+		console.log('requestExitMysql.createOrUpdate', result)
+		if (!result) {
+			return false
+		}
 	}
 	return true
 }
 
 const processRejectExitEvents = async (traderPaired) => {
-	let last = await rejectExitDao.getLast();
+	let last = await rejectExitMysql.getLast();
 	console.log("RejectExit last", last);
 	let lastBlock = last ? last.blockNumber + 1 : 0;
 	console.log("RejectExit blockNumber", lastBlock);
@@ -276,12 +447,23 @@ const processRejectExitEvents = async (traderPaired) => {
 		if (!result) {
 			return false
 		}
+
+		result = await rejectExitDao.get(events[i].id)
+		if (!result) {
+			return false
+		}
+
+		result = await rejectExitMysql.createOrUpdate(result)
+		console.log('rejectExitMysql.createOrUpdate', result)
+		if (!result) {
+			return false
+		}
 	}
 	return true
 }
 
 const processApproveExitEvents = async (traderPaired) => {
-	let last = await approveExitDao.getLast()
+	let last = await approveExitMysql.getLast()
 	console.log("ApproveExit last", last)
 	let lastBlock = last ? last.blockNumber + 1 : 0
 	console.log("ApproveExit blockNumber", lastBlock)
@@ -298,12 +480,23 @@ const processApproveExitEvents = async (traderPaired) => {
 		if (!result) {
 			return false
 		}
+
+		result = await approveExitDao.get(events[i].id)
+		if (!result) {
+			return false
+		}
+
+		result = await approveExitMysql.createOrUpdate(result)
+		console.log('approveExitMysql.createOrUpdate', result)
+		if (!result) {
+			return false
+		}
 	}
 	return true
 }
 
 const processAllocateEvents = async (traderPaired) => {
-	let last = await allocateDao.getLast();
+	let last = await allocateMysql.getLast();
 	console.log("Allocate last", last);
 	let lastBlock = last ? last.blockNumber + 1 : 0;
 	console.log("Allocate blockNumber", lastBlock);
@@ -317,6 +510,17 @@ const processAllocateEvents = async (traderPaired) => {
 		console.log("Allocate", events[i])
 
 		result = await allocateDao.create(events[i]);
+		if (!result) {
+			return false
+		}
+
+		result = await allocateDao.get(events[i].id)
+		if (!result) {
+			return false
+		}
+
+		result = await allocateMysql.createOrUpdate(result)
+		console.log('allocateMysql.createOrUpdate', result)
 		if (!result) {
 			return false
 		}
@@ -357,24 +561,16 @@ const processEventsForInvestments = async (web3, traderPaired) => {
 
 const processInvestEventsForInvestments = async (traderPaired) => {
 
-	let last = await investmentsDao.getInvestLast();
+	let last = await investmentsMysql.getInvestLast();
 	console.log("Investment invest last", last);
 	let lastBlock = last ? last.investBlockNumber + 1 : 0;
 	console.log("Investment investBlockNumber", lastBlock);
 
-	let stream = await traderPaired.getPastEvents(
-		'Invest', {filter: {},fromBlock: lastBlock}
-	)
-	let events = stream.map(event => event)
+	let events = await investMysql.getEventsFromBlock(lastBlock)
+
 	console.log(`${events.length} Invest Events`)
 	for (let i=0; i<events.length; i++) {
 		console.log("Invest", events[i])
-
-		let investment = await investmentsController.get(events[i].returnValues.id)
-		if (investment) {
-			// already exists
-			continue
-		}
 		
 		let result = await investmentsController.create(events[i])
 		if (!result) {
@@ -387,22 +583,20 @@ const processInvestEventsForInvestments = async (traderPaired) => {
 
 const processStopEventsForInvestments = async (traderPaired) => {
 
-	let last = await investmentsDao.getStopLast()
+	let last = await investmentsMysql.getStopLast()
 	console.log("Investment stop last", last)
 	let lastBlock = last ? last.stopBlockNumber + 1 : 0
 	console.log("Investment stopBlockNumber", lastBlock)
 
-	let stream = await traderPaired.getPastEvents(
-		'Stop', {filter: {},fromBlock: lastBlock}
-	)
-	let events = stream.map(event => event)
+	let events = await stopMysql.getEventsFromBlock(lastBlock)
+
 	console.log(`${events.length} Stop Events`)
 	for (let i=0; i<events.length; i++) {
 		console.log("Stop", events[i])
 
-		let investment = await investmentsController.get(events[i].returnValues.id)
+		let investment = await investmentsController.get(events[i].investmentId)
 		if (!investment) {
-			console.error(`Could not find investment ${events[i].returnValues.id} to stop`)
+			console.error(`Could not find investment ${events[i].investmentId} to stop`)
 			return false
 		}
 
@@ -413,18 +607,18 @@ const processStopEventsForInvestments = async (traderPaired) => {
 		}
 
 		investment.stopBlockNumber = events[i].blockNumber
-		investment.endDate = moment(parseInt(events[i].returnValues.date, 10))
+		investment.endDate = moment.unix(parseInt(events[i].eventDate, 10))
 		investment.state = helpers.INVESTMENT_STATE_STOPPED
 
 		let result = await positionsHandler.loadTraderPositions(investment.trader)
 		if (!result) {
-			console.error(`Could not process trades for investment ${events[i].returnValues.id} to stop`)
+			console.error(`Could not process trades for investment ${events[i].investmentId} to stop`)
 			return false
 		}
 
 		investment = await statisticsController.setInvestmentValue(investment)
 		if (!investment) {
-			console.error(`Could not update value for investment ${events[i].returnValues.id} to stop`)
+			console.error(`Could not update value for investment ${events[i].investmentId} to stop`)
 			return null
 		}
 
@@ -439,22 +633,20 @@ const processStopEventsForInvestments = async (traderPaired) => {
 
 const processRequestExitEventsForInvestments = async (web3, traderPaired) => {
 
-	let last = await investmentsDao.getRequestLast()
+	let last = await investmentsMysql.getRequestLast()
 	console.log("Investment request last", last)
 	let lastBlock = last ? last.requestBlockNumber + 1 : 0
 	console.log("Investment requestBlockNumber", lastBlock)
 
-	let stream = await traderPaired.getPastEvents(
-		'RequestExit', {filter: {},fromBlock: lastBlock}
-	)
-	let events = stream.map(event => event)
+	let events = await requestExitMysql.getEventsFromBlock(lastBlock)
+
 	console.log(`${events.length} RequestExit Events`)
 	for (let i=0; i<events.length; i++) {
 		console.log("RequestExit", events[i])
 
-		let investment = await investmentsController.get(events[i].returnValues.id)
+		let investment = await investmentsController.get(events[i].investmentId)
 		if (!investment) {
-			console.error(`Could not find investment ${events[i].returnValues.id}`)
+			console.error(`Could not find investment ${events[i].investmentId}`)
 			return false
 		}
 
@@ -464,40 +656,25 @@ const processRequestExitEventsForInvestments = async (web3, traderPaired) => {
 			continue
 		}
 
-		let walletAddress = events[i].returnValues.wallet
-		const walletContract = await new web3.eth.Contract(MultiSigFundWallet.abi, walletAddress, {handleRevert: true})
-
+		let walletAddress = events[i].wallet
+		
 		investment.requestBlockNumber = events[i].blockNumber
-		investment.state = events[i].returnValues.from === events[i].returnValues.investor ? helpers.INVESTMENT_STATE_EXITREQUESTED_INVESTOR : helpers.INVESTMENT_STATE_EXITREQUESTED_TRADER
-		investment.value = events[i].returnValues.value
+		investment.state = events[i].requestFrom === events[i].investor ? helpers.INVESTMENT_STATE_EXITREQUESTED_INVESTOR : helpers.INVESTMENT_STATE_EXITREQUESTED_TRADER
+		investment.value = events[i].value
 
-		last = await disbursementCreatedDao.getLastForInvestment(walletAddress, investment.id)
-		console.log("DisbursementCreated last", last)
-		lastBlock = last ? last.blockNumber + 1 : 0
-		console.log("DisbursementCreated blockNumber", lastBlock)
+		disbursement = await disbursementCreatedMysql.getLastForInvestment(walletAddress, investment.id)
+		console.log("DisbursementCreated last", disbursement)
+		
+		if (disbursement) {
+			investment.disbursementId = disbursement.disbursementId
 
-		stream = await walletContract.getPastEvents(
-			'DisbursementCreated', {filter: {},fromBlock: lastBlock}
-		)
-		let disbursementEvents = stream.map(event => event)
-
-		for (let i=0; i<disbursementEvents.length; i++) {
-			// get the first event after the end blocknumber that matches the investment
-
-			if (investment.id === disbursementEvents[i].returnValues.investmentId) {
-
-				investment.disbursementId = disbursementEvents[i].returnValues.disbursementId
-
-				let result = await investmentsController.update(investment)
-				if (!result) {
-					return false
-				}
-
-				result = await disbursementCreatedDao.create(walletAddress, disbursementEvents[i])
-				if (!result) {
-					return false
-				}
+			let result = await investmentsController.update(investment)
+			if (!result) {
+				return false
 			}
+		} else {
+			console.error("No disbursement event found")
+			return false
 		}
 	}
 
@@ -506,22 +683,20 @@ const processRequestExitEventsForInvestments = async (web3, traderPaired) => {
 
 const processRejectExitEventsForInvestments = async (traderPaired) => {
 
-	let last = await investmentsDao.getRejectLast();
+	let last = await investmentsMysql.getRejectLast();
 	console.log("Investment reject last", last);
 	let lastBlock = last ? last.rejectBlockNumber + 1 : 0;
 	console.log("Investment rejectBlockNumber", lastBlock);
 
-	let stream = await traderPaired.getPastEvents(
-		'RejectExit', {filter: {},fromBlock: lastBlock}
-	)
-	let events = stream.map(event => event)
+	let events = await rejectExitMysql.getEventsFromBlock(lastBlock)
+
 	console.log(`${events.length} RejectExit Events`)
 	for (let i=0; i<events.length; i++) {
 		console.log("RejectExit", events[i])
 
-		let investment = await investmentsController.get(events[i].returnValues.id)
+		let investment = await investmentsController.get(events[i].investmentId)
 		if (!investment) {
-			console.error(`Could not find investment ${events[i].returnValues.id}`)
+			console.error(`Could not find investment ${events[i].investmentId}`)
 			return false
 		}
 
@@ -546,22 +721,20 @@ const processRejectExitEventsForInvestments = async (traderPaired) => {
 
 const processApproveExitEventsForInvestments = async (traderPaired) => {
 
-	let last = await investmentsDao.getApproveLast()
+	let last = await investmentsMysql.getApproveLast()
 	console.log("Investment approve last", last)
 	let lastBlock = last ? last.approveBlockNumber + 1 : 0
 	console.log("Investment approveBlockNumber", lastBlock)
 
-	let stream = await traderPaired.getPastEvents(
-		'ApproveExit', {filter: {},fromBlock: lastBlock}
-	)
-	let events = stream.map(event => event)
+	let events = await approveExitMysql.getEventsFromBlock(lastBlock)
+
 	console.log(`${events.length} ApproveExit Events`)
 	for (let i=0; i<events.length; i++) {
 		console.log("ApproveExit", events[i])
 
-		let investment = await investmentsController.get(events[i].returnValues.id)
+		let investment = await investmentsController.get(events[i].investmentId)
 		if (!investment) {
-			console.error(`Could not find investment ${events[i].returnValues.id}`)
+			console.error(`Could not find investment ${events[i].investmentId}`)
 			return false
 		}
 
@@ -671,6 +844,11 @@ const createdInvestment = async (investmentId, traderPaired) => {
 
 	let investment = await investmentsDao.get(investmentId)
 
+	result = await calculateTraderStatistics(investment.trader)
+	if (!result) {
+		return null
+	}
+
 	return investment
 }
 exports.createdInvestment = createdInvestment
@@ -691,6 +869,11 @@ const stoppedInvestment = async (investmentId, traderPaired) => {
 	}
 
 	let investment = await investmentsDao.get(investmentId)
+
+	result = await calculateTraderStatistics(investment.trader)
+	if (!result) {
+		return null
+	}
 
 	return investment
 }
@@ -819,3 +1002,19 @@ const calculateAllInvestorsStatistics = async () => {
 }
 exports.calculateAllInvestorsStatistics = calculateAllInvestorsStatistics
 
+const calculateAllInvestmentValues = async () => {
+	
+	let investments = await investmentsController.listActive();
+
+	console.log("calculateAllInvestmentValues");
+
+	if (!investments) {
+		return
+	}
+
+	investments.forEach(async (investment) => {
+		const result = await statisticsController.setInvestmentValue(investment)
+		console.log("setInvestmentValue result", result)
+	})
+}
+exports.calculateAllInvestmentValues = calculateAllInvestmentValues

@@ -3,7 +3,7 @@
 const BigNumber = require('bignumber.js');
 
 const s3Common = require("../../common/s3Common")
-const select = 'blockNumber, returnvalues.id, returnvalues.wallet, \
+const select = 'id, blockNumber, returnvalues.id as investmentid, returnvalues.wallet, \
   returnvalues.trader, returnvalues.value, returnvalues.mfrom, returnvalues.mdate'
 
 module.exports.create = async (event) => {
@@ -43,7 +43,7 @@ module.exports.get = async (id) => {
     if (results.Items.length > 0) {
 
       console.log("got event", results.Items[0])
-      return mapRejectExit(results.Items[0])
+      return results.Items[0]
     }
   } catch (error) {
     console.log("athena error", error);
@@ -69,7 +69,7 @@ module.exports.getByInvestmentId = async (id) => {
     if (results.Items.length > 0) {
 
       console.log("got event", results.Items[0])
-      return mapRejectExit(results.Items[0])
+      return results.Items[0]
     }
   } catch (error) {
     console.log("athena error", error);
@@ -94,7 +94,7 @@ module.exports.list = async () => {
     const results = await s3Common.athenaExpress.query(query);
     if (results.Items.length > 0) {
 
-      return results.Items.map(mapRejectExit)
+      return results.Items
     }
   } catch (error) {
     console.log("athena error", error);
@@ -118,13 +118,38 @@ module.exports.getLast = async () => {
   try {
     const results = await s3Common.athenaExpress.query(query);
     if (results.Items.length > 0) {
-      return mapRejectExit(results.Items[0])
+      return results.Items[0]
     }
   } catch (error) {
     console.log("athena error", error);
   }
   
   return null;
+}
+
+module.exports.getEventsFromBlock = async(blockNumber) => {
+  console.log("getting rejectExits from block", blockNumber)
+
+  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-rejectexit`)) {
+    return []
+  }
+
+  const query = {
+    sql: `SELECT ${select} FROM traderpaired_rejectexit WHERE blockNumber >= ${blockNumber} ORDER BY blockNumber`
+  };
+
+  try {
+    const results = await s3Common.athenaExpress.query(query);
+    if (results.Items.length > 0) {
+
+      const res = results.Items
+      return res
+    }
+  } catch (error) {
+    console.log("athena error", error);
+  }
+  
+  return [];
 }
 
 module.exports.getByTrader = async (trader) => {
@@ -143,7 +168,7 @@ module.exports.getByTrader = async (trader) => {
     const results = await s3Common.athenaExpress.query(query);
     if (results.Items.length > 0) {
 
-      return results.Items.map(mapRejectExit)
+      return results.Items
     }
   } catch (error) {
     console.log("athena error", error);
@@ -168,7 +193,7 @@ module.exports.getByTraderFrom = async (trader, fromDate) => {
     const results = await s3Common.athenaExpress.query(query);
     if (results.Items.length > 0) {
 
-      return results.Items.map(mapRejectExit)
+      return results.Items
     }
   } catch (error) {
     console.log("athena error", error);
@@ -180,8 +205,9 @@ module.exports.getByTraderFrom = async (trader, fromDate) => {
 const mapRejectExit = (event) => {
 
   return {
+    id: event.id,
     blockNumber: event.blockNumber,
-    id: event.id, 
+    investmentId: event.investmentid, 
     wallet: event.wallet,
     trader: event.trader, 
     value: new BigNumber(event.value), 

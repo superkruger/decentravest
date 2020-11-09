@@ -3,6 +3,7 @@ import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
 import { Button, Container, Row, Col, ListGroup, Tab, Alert, Form } from 'react-bootstrap'
 import Spinner from './Spinner'
+import WalletInstruction from './cards/WalletInstruction'
 import {
   web3Selector,
   networkSelector,
@@ -11,7 +12,7 @@ import {
   pairedInvestmentsSelector,
   walletFactorySelector,
   tradeCountSelector,
-  traderJoiningSelector
+  joiningSelector
 } from '../store/selectors'
 import { 
   joinAsTrader, 
@@ -204,7 +205,7 @@ function Terms(props) {
 
 function TraderButton(props) {
   const { component } = props
-  const { tradeCount, traderJoining } = props.props
+  const { tradeCount, joining } = props.props
 
   const handleClick = () => traderJoin(props.props)
 
@@ -212,8 +213,8 @@ function TraderButton(props) {
     <div className="row-center">
       {
         tradeCount > 0 && component.state.termsAccepted ? 
-          traderJoining ?
-            <Spinner />
+          joining ?
+            <WalletInstruction title="Confirm Joining" message="Please confirm the wallet action"/>
             :
             <Button
               className="row-center"
@@ -257,7 +258,7 @@ function mapStateToProps(state) {
     walletFactory: walletFactorySelector(state),
     ready: account && traderPaired,
     tradeCount: tradeCountSelector(state),
-    traderJoining: traderJoiningSelector(state)
+    joining: joiningSelector(state)
   }
 }
 

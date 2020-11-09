@@ -14,6 +14,9 @@ provider:
     #mysql
     MYSQL_HOST: ${self:custom.MYSQL.HOST}
     MYSQL_PORT: ${self:custom.MYSQL.PORT}
+    DB_NAME: decentravest
+    USERNAME: master
+    PASSWORD: password
     #s3
     tradingbucket: ${self:custom.tradingbucket}
     eventbucket: ${self:custom.eventbucket}
@@ -110,17 +113,22 @@ functions:
   processAllTrades:
     handler: handler.processAllTrades
     events:
-      - schedule: rate(1 hour)
+      - schedule: rate(1 day)
 
   calculateAllTradersStatistics:
     handler: handler.calculateAllTradersStatistics
     events:
-      - schedule: rate(1 hour)
+      - schedule: rate(1 day)
 
   calculateAllInvestorsStatistics:
     handler: handler.calculateAllInvestorsStatistics
     events:
-      - schedule: rate(1 hour)
+      - schedule: rate(1 day)
+
+  calculateAllInvestmentValues:
+    handler: handler.calculateAllInvestmentValues
+    events:
+      - schedule: rate(1 day)
 
   getStatistics:
     handler: handler.statistics

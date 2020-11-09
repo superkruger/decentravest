@@ -3,7 +3,7 @@
 const BigNumber = require('bignumber.js');
 
 const s3Common = require("../../common/s3Common")
-const select = 'blockNumber, returnvalues.trader, returnvalues.initiator, \
+const select = 'id, blockNumber, returnvalues.trader, returnvalues.initiator, \
   returnvalues.investmentid, returnvalues.disbursementid, returnvalues.value, returnvalues.amount, returnvalues.mdate'
 
 module.exports.create = async (walletAddress, event) => {
@@ -43,7 +43,7 @@ module.exports.get = async (walletAddress, id) => {
     if (results.Items.length > 0) {
 
       console.log("got event", results.Items[0])
-      return mapDisbursementCreated(results.Items[0])
+      return results.Items[0]
     }
   } catch (error) {
     console.log("athena error", error);
@@ -68,7 +68,7 @@ module.exports.list = async (walletAddress) => {
     const results = await s3Common.athenaExpress.query(query);
     if (results.Items.length > 0) {
 
-      return results.Items.map(mapDisbursementCreated)
+      return results.Items
     }
   } catch (error) {
     console.log("athena error", error);
@@ -92,7 +92,7 @@ module.exports.getLast = async (walletAddress) => {
   try {
     const results = await s3Common.athenaExpress.query(query);
     if (results.Items.length > 0) {
-      return mapDisbursementCreated(results.Items[0])
+      return results.Items[0]
     }
   } catch (error) {
     console.log("athena error", error);
@@ -116,7 +116,7 @@ module.exports.getLastForInvestment = async (walletAddress, investmentId) => {
   try {
     const results = await s3Common.athenaExpress.query(query);
     if (results.Items.length > 0) {
-      return mapDisbursementCreated(results.Items[0])
+      return results.Items[0]
     }
   } catch (error) {
     console.log("athena error", error);
@@ -141,7 +141,7 @@ module.exports.getByTrader = async (walletAddress, trader) => {
     const results = await s3Common.athenaExpress.query(query);
     if (results.Items.length > 0) {
 
-      return results.Items.map(mapDisbursementCreated)
+      return results.Items
     }
   } catch (error) {
     console.log("athena error", error);
@@ -153,6 +153,7 @@ module.exports.getByTrader = async (walletAddress, trader) => {
 const mapDisbursementCreated = (event) => {
 
   return {
+    id: event.id,
     blockNumber: event.blockNumber,
     trader: event.trader, 
     initiator: event.initiator,

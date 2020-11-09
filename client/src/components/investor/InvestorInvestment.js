@@ -3,6 +3,7 @@ import { connect } from 'react-redux'
 import { Container, Row, Col, Button, Badge, Alert } from 'react-bootstrap'
 import AddressImage from '../AddressImage'
 import Token from '../Token'
+import WalletInstruction from '../cards/WalletInstruction'
 import { 
   log, 
   toBN, 
@@ -76,86 +77,87 @@ class InvestorInvestment extends Component {
             : <h4>Direct Investment</h4>
           }
           </div>
-          <div className="card-body">
             {
               investment.changing
-              ? <Row>
-                  <Col sm={12}>
-                    <div className="h6 mb-0 mr-3 font-weight-bold text-gray-800">
-                      Please follow the instructions in metamask.<br/>
-                      {investment.message}
-                    </div>
-                  </Col>
-                </Row>
-              : <Row>
-                  <Col sm={8}>
-                  {
+              ? <div className="card-body">
+                  <Row>
+                    <Col sm={6}>
+                      <WalletInstruction title="Confirm Investment" message={investment.message}/>
+                    </Col>
+                  </Row>
+                </div>
+              : <div className="card-body">
+                  <Row>
+                    <Col sm={8}>
                     {
-                      0: <StopButton props={this.props} />,
-                      1: <DisburseButton props={this.props} />,
-                      2: <ApproveButton props={this.props} />,
-                      3: <ApproveButton props={this.props} />,
-                      4: <div>Divested</div>
-                    }[investment.state]
-                  }
-                  </Col>
-                  <Col sm={4}>
-                    <span className="very-small align-right">
-                      <table>
-                        <tbody>
-                          <tr>
-                            <td>Start:</td>
-                            <td>{investment.formattedStart}</td>
-                          </tr>
-                          {
-                            investment.end.unix() > 0 &&
-                              <tr>
-                                <td>End:</td>
-                                <td>{investment.formattedEnd}</td>
-                              </tr>
-                          }
-                        </tbody>
-                      </table>
-                    </span>
-                  </Col>
-                </Row>
+                      {
+                        0: <StopButton props={this.props} />,
+                        1: <DisburseButton props={this.props} />,
+                        2: <ApproveButton props={this.props} />,
+                        3: <ApproveButton props={this.props} />,
+                        4: <div>Divested</div>
+                      }[investment.state]
+                    }
+                    </Col>
+                    <Col sm={4}>
+                      <span className="very-small align-right">
+                        <table>
+                          <tbody>
+                            <tr>
+                              <td>Start:</td>
+                              <td>{investment.formattedStart}</td>
+                            </tr>
+                            {
+                              investment.end.unix() > 0 &&
+                                <tr>
+                                  <td>End:</td>
+                                  <td>{investment.formattedEnd}</td>
+                                </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </span>
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col sm={12}>
+                      <div className="card shadow mb-4">
+                        <a href={`#investments_${investment.id}_trades`} className="d-block card-header py-2 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`investments_${investment.id}_trades`}>
+                          <span className="m-0 font-weight-bold text-primary">Trades</span>
+                        </a>
+                        <div className="collapse" id={`investments_${investment.id}_trades`}>
+                          <div className="card-body">
+                            <a href={dydxUrl} target="_blank" rel="noopener">dydx positions</a>
+                            <table className="table table-bordered table-light table-sm small" id="dataTable" width="100%">
+                              <thead>
+                                <tr>
+                                  <th>Date</th>
+                                  <th>Nett Profit</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                              {
+                                tradesForInvestment.map((trade) => {
+                                  return (
+                                    <tr key={trade.uuid}>
+                                      <td className="text-muted">{trade.formattedStart}</td>
+                                      <td className={`text-${trade.profitClass}`}>{trade.formattedProfit}</td>
+                                    </tr>
+                                  )
+                                })
+                              }
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    </Col>
+                  </Row>
+                </div>
             }
             
-            <Row>
-              <Col sm={12}>
-                <div className="card shadow mb-4">
-                  <a href={`#investments_${investment.id}_trades`} className="d-block card-header py-2 collapsed" data-toggle="collapse" role="button" aria-expanded="true" aria-controls={`investments_${investment.id}_trades`}>
-                    <span className="m-0 font-weight-bold text-primary">Trades</span>
-                  </a>
-                  <div className="collapse" id={`investments_${investment.id}_trades`}>
-                    <div className="card-body">
-                      <a href={dydxUrl} target="_blank" rel="noopener">dydx positions</a>
-                      <table className="table table-bordered table-light table-sm small" id="dataTable" width="100%">
-                        <thead>
-                          <tr>
-                            <th>Date</th>
-                            <th>Nett Profit</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                        {
-                          tradesForInvestment.map((trade) => {
-                            return (
-                              <tr key={trade.uuid}>
-                                <td className="text-muted">{trade.formattedStart}</td>
-                                <td className={`text-${trade.profitClass}`}>{trade.formattedProfit}</td>
-                              </tr>
-                            )
-                          })
-                        }
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              </Col>
-            </Row>
-          </div>
+            
+          
         </div>
       </div>
     )

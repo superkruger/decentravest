@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js'
+import {isEqual} from 'lodash'
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Container, Row, Col, Button, Alert } from 'react-bootstrap'
@@ -38,10 +39,11 @@ class Investor extends Component {
   componentDidUpdate(prevProps) {
     const { network, account, wallet, tokens, dispatch } = this.props
 
-    console.log("componentDidUpdate", wallet, network, account)
-
     if (wallet && wallet.contract && 
-        ((!prevProps.wallet && wallet.contract) || wallet.contract !== prevProps.wallet.contract || account !== prevProps.account || network !== prevProps.network)) {
+        ((!prevProps.wallet && wallet.contract) ||
+          !isEqual(wallet.contract, prevProps.wallet.contract) || 
+          !isEqual(account, prevProps.account) || 
+          !isEqual(network, prevProps.network))) {
       loadMainWalletBalances(wallet.contract, tokens, dispatch)
       loadInvestorStatistics(account, network, dispatch)
     }

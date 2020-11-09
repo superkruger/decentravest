@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import {isEqual} from 'lodash'
 import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
 import { Alert, Form, Button, Container, Row, Col, Tabs, Tab } from 'react-bootstrap'
@@ -42,7 +43,8 @@ class Profile extends Component {
   componentDidUpdate(prevProps) {
     const { network, dispatch, section } = this.props
 
-    if (network !== prevProps.network) {
+    if (!isEqual(network, prevProps.network) ||
+        !isEqual(section, prevProps.section)) {
       loadTrades(network, section, dispatch)
       loadTraderStatistics(section, network, dispatch)
     }

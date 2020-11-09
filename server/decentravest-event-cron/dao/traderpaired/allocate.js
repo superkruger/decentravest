@@ -3,7 +3,7 @@
 const BigNumber = require('bignumber.js');
 
 const s3Common = require("../../common/s3Common")
-const select = 'blockNumber, returnvalues.trader, returnvalues.token, \
+const select = 'id, blockNumber, returnvalues.trader, returnvalues.token, \
 	returnvalues.total, returnvalues.invested, returnvalues.mdate'
 
 module.exports.create = async (event) => {
@@ -43,7 +43,7 @@ module.exports.get = async (id) => {
     if (results.Items.length > 0) {
 
       console.log("got event", results.Items[0])
-      return mapAllocate(results.Items[0])
+      return results.Items[0]
     }
   } catch (error) {
     console.log("athena error", error);
@@ -68,7 +68,7 @@ module.exports.list = async () => {
     const results = await s3Common.athenaExpress.query(query);
     if (results.Items.length > 0) {
 
-      return results.Items.map(mapAllocate)
+      return results.Items
     }
   } catch (error) {
     console.log("athena error", error);
@@ -92,7 +92,7 @@ module.exports.getLast = async () => {
   try {
     const results = await s3Common.athenaExpress.query(query);
     if (results.Items.length > 0) {
-      return mapAllocate(results.Items[0])
+      return results.Items[0]
     }
   } catch (error) {
     console.log("athena error", error);
@@ -117,7 +117,7 @@ module.exports.getByTraderAndToken = async (trader, token) => {
     const results = await s3Common.athenaExpress.query(query);
     if (results.Items.length > 0) {
 
-      return results.Items.map(mapAllocate)
+      return results.Items
     }
   } catch (error) {
     console.log("athena error", error);
@@ -129,6 +129,7 @@ module.exports.getByTraderAndToken = async (trader, token) => {
 const mapAllocate = (event) => {
 
   return {
+    id: event.id,
     blockNumber: event.blockNumber,
     trader: event.trader, 
     token: event.token,

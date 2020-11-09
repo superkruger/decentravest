@@ -1,3 +1,5 @@
+
+import {isEqual} from 'lodash'
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 
@@ -30,7 +32,7 @@ class PieChart extends Component {
         return;
     }
 
-    if(JSON.stringify(oldProps.data) !== JSON.stringify(this.props.data)) {
+    if(!isEqual(oldProps.data, this.props.data)) {
         setChartData(this.chartContainer, this.props.data);
         return;
     }

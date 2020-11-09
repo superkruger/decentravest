@@ -1,23 +1,23 @@
 'use strict';
 
 const s3Common = require("../../common/s3Common")
-const select = 'id, blockNumber, returnvalues.user, returnvalues.investorid, returnvalues.mdate'
+const select = 'id, blockNumber, returnvalues.wallet, returnvalues.investor, returnvalues.mdate'
 
 module.exports.create = async (event) => {
 
-  console.log("creating investor", event, `${process.env.eventbucket}/traderpaired-investor`)
+  console.log("creating investment", event, `${process.env.eventbucket}/traderpaired-investment`)
 
   try {
     let res = await s3Common.s3.putObject({
-      Bucket: `${process.env.eventbucket}/traderpaired-investor`,
+      Bucket: `${process.env.eventbucket}/traderpaired-investment`,
       Key: event.id,
       Body: JSON.stringify(event)
     }).promise()
 
-    console.log("created investor", res)
+    console.log("created investment", res)
     return true
   } catch (error) {
-    console.log("could not create investor", error)
+    console.log("could not create investment", error)
   }
 
   return false
@@ -27,36 +27,12 @@ module.exports.get = async (id) => {
 
   console.log("get event", id)
 
-  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-investor`)) {
+  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-investment`)) {
     return null
   }
 
   const query = {
-    sql: `SELECT ${select} FROM traderpaired_investor where id = '${id}'`
-  };
-
-  try {
-    const results = await s3Common.athenaExpress.query(query);
-    if (results.Items.length > 0) {
-      return results.Items[0]
-    }
-  } catch (error) {
-    console.log("athena error", error);
-  }
-  
-  return null;
-}
-
-module.exports.getByUser = async (id) => {
-
-  console.log("get event", id)
-
-  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-investor`)) {
-    return null
-  }
-
-  const query = {
-    sql: `SELECT ${select} FROM traderpaired_investor where returnvalues.user = '${id}'`
+    sql: `SELECT ${select} FROM traderpaired_investment where id = '${id}'`
   };
 
   try {
@@ -75,12 +51,12 @@ module.exports.list = async () => {
 
   console.log("list events")
 
-  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-investor`)) {
+  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-investment`)) {
     return []
   }
 
   const query = {
-    sql: `SELECT ${select} FROM traderpaired_investor`
+    sql: `SELECT ${select} FROM traderpaired_investment`
   };
 
   try {
@@ -99,12 +75,12 @@ module.exports.getLast = async () => {
 
   console.log("getting last event")
 
-  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-investor`)) {
+  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-investment`)) {
     return null
   }
 
   const query = {
-    sql: `SELECT ${select} FROM traderpaired_investor ORDER BY blockNumber desc LIMIT 1`
+    sql: `SELECT ${select} FROM traderpaired_investment ORDER BY blockNumber desc LIMIT 1`
   };
 
   try {
@@ -120,13 +96,13 @@ module.exports.getLast = async () => {
 }
 
 
-const mapInvestor = (event) => {
+const mapInvestment = (event) => {
 
   return {
     id: event.id,
     blockNumber: event.blockNumber,
-    user: event.user,
-    investorId: event.investorid,
+    wallet: event.wallet,
+    investor: event.investor,
     eventDate: event.mdate
   }
 }

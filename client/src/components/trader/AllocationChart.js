@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import {isEqual} from 'lodash'
 import { connect } from 'react-redux'
 import * as am4core from "@amcharts/amcharts4/core";
 import * as am4charts from "@amcharts/amcharts4/charts";
@@ -34,9 +35,8 @@ class AllocationChart extends Component {
         return;
     }
 
-    if(JSON.stringify(oldProps.traderAllocations) !== JSON.stringify(this.props.traderAllocations)) {
+    if(!isEqual(oldProps.traderAllocations, this.props.traderAllocations)) {
         const allocation = getTraderAllocation(this.props.token, this.props.traderAllocations)
-        log("Refresh", allocation)
         setChartData(this.chartContainer, convertAllocationToData(allocation));
         return;
     }

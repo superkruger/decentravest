@@ -36,6 +36,6 @@ Properties:
       - Name: dv_end
         Type: string
       InputFormat: org.apache.hadoop.mapred.TextInputFormat
-      Location: "s3://${self:custom.eventbucket}/dydx-positions"
+      Location: "s3://${self:custom.eventbucket}/trades/dydx/positions"
       SerdeInfo:
         SerializationLibrary: org.openx.data.jsonserde.JsonSerDe

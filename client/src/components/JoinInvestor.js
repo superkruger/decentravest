@@ -3,6 +3,7 @@ import { connect } from 'react-redux'
 import { withRouter } from 'react-router-dom'
 import { Button, Container, Row, Col, Alert, Form, Nav } from 'react-bootstrap'
 import Spinner from './Spinner'
+import WalletInstruction from './cards/WalletInstruction'
 import {
   web3Selector,
   networkSelector,
@@ -10,7 +11,7 @@ import {
   traderPairedSelector,
   pairedInvestmentsSelector,
   walletFactorySelector,
-  investorJoiningSelector
+  joiningSelector
 } from '../store/selectors'
 import { 
   joinAsTrader, 
@@ -177,14 +178,14 @@ function Terms(props) {
 
 function InvestorButton(props) {
   const { component } = props
-  const { investorJoining } = props.props
+  const { joining } = props.props
   const handleClick = () => investorJoin(props.props)
 
   return (
     <div className="row-center">
     {
-      investorJoining ?
-      <Spinner />
+      joining ?
+      <WalletInstruction title="Confirm Joining" message="Please confirm the wallet action"/>
       :
       <div>
       {
@@ -231,7 +232,7 @@ function mapStateToProps(state) {
     pairedInvestments: pairedInvestmentsSelector(state),
     walletFactory: walletFactorySelector(state),
     ready: account && traderPaired,
-    investorJoining: investorJoiningSelector(state)
+    joining: joiningSelector(state)
   }
 }
 

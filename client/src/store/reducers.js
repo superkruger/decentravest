@@ -2,6 +2,9 @@ import { combineReducers } from 'redux'
 
 function app (state = {}, action ) {
 	switch (action.type) {
+
+		case 'JOINING':
+			return { ...state, joining: action.busy }
 		case 'NOTIFICATION_ADDED':
 			{
 				// prevent duplicates
@@ -81,6 +84,10 @@ function web3 (state = {}, action ) {
 				if (index === -1) {
 					data = [...state.balances, action.balance]
 				} else {
+					state.balances[index] = {
+						...state.balances[index],
+						...action.balance
+					}
 					data = state.balances
 				}
 				return { 
@@ -111,6 +118,8 @@ function web3 (state = {}, action ) {
 					]
 				}
 			}
+		case 'SETTING_PROFIT':
+			return { ...state, settingProfit: action.busy }
 		case 'PROFIT_PERCENTAGES_LOADED':
 			{
 				let index, data
@@ -318,47 +327,82 @@ function web3 (state = {}, action ) {
 					]
 				}
 			}
-		case 'INVESTMENT_STARTING':
+		case 'INVESTING':
 			{
 				let index, data
 				let id = `${action.trader}_${action.tokenAddress}_${action.investmentType}`
-				let startObj = {id: id, message: action.message}
-
-				if (!state.startingInvestments) {
-					state.startingInvestments = []
-				}
-				index = state.startingInvestments.findIndex(start => start.id === id)
-				if (index === -1) {
-					data = [...state.startingInvestments, startObj]
-				} else {
-					state.startingInvestments[index] = {
-						...state.startingInvestments[index],
-						...startObj
+				
+				if (action.busy) {
+					if (!state.investings) {
+						state.investings = []
 					}
-					data = state.startingInvestments
+
+					index = state.investings.findIndex(start => start.id === id)
+					let startObj = {id: id, message: action.message}
+
+					if (index === -1) {
+						data = [...state.investings, startObj]
+					} else {
+						state.investings[index] = {
+							...state.investings[index],
+							...startObj
+						}
+						data = state.investings
+					}
+				} else {
+					index = state.investings.findIndex(start => start.id === id)
+
+					if (index !== -1) {
+						state.investings.splice(index, 1)
+						data = state.investings
+					} else {
+						data = state.investings
+					}
 				}
+				
 				return { 
 					...state, 
-					startingInvestments: [
+					investings: [
 						...data
 					]
 				}
 			}
-		case 'INVESTMENT_STARTED':
+		case 'ALLOCATING':
 			{
 				let index, data
-				let id = `${action.trader}_${action.tokenAddress}_${action.investmentType}`
+				let id = `${action.tokenAddress}`
 
-				index = state.startingInvestments.findIndex(start => start.id === id)
-				if (index !== -1) {
-					state.startingInvestments.splice(index, 1)
-					data = state.startingInvestments
+				if (action.busy) {
+					if (!state.allocatings) {
+						state.allocatings = []
+					}
+
+					index = state.allocatings.findIndex(start => start.id === id)
+					let startObj = {id: id}
+
+					if (index === -1) {
+						data = [...state.allocatings, startObj]
+					} else {
+						state.allocatings[index] = {
+							...state.allocatings[index],
+							...startObj
+						}
+						data = state.allocatings
+					}
 				} else {
-					data = state.startingInvestments
+					index = state.allocatings.findIndex(start => start.id === id)
+
+					if (index !== -1) {
+						state.allocatings.splice(index, 1)
+						data = state.allocatings
+					} else {
+						data = state.allocatings
+					}
 				}
+				
 				return { 
 					...state, 
-					startingInvestments: [
+					allocatings: [
 						...data
 					]
 				}
@@ -391,8 +435,6 @@ function web3 (state = {}, action ) {
 function trader (state = {}, action ) {
 	switch (action.type) {
 		
-		case 'TRADER_JOINING':
-			return { ...state, joining: true }
 		case 'MAIN_TRADER_LOADED':
 			return { ...state, joining: false, trader: action.trader }
 		case 'TRADE_LOADED':
@@ -424,8 +466,6 @@ function trader (state = {}, action ) {
 
 function investor (state = {}, action ) {
 	switch (action.type) {
-		case 'INVESTOR_JOINING':
-			return { ...state, joining: true }
 		case 'MAIN_INVESTOR_LOADED':
 			return { ...state, joining: false, investor: action.investor }
 		case 'WALLET_CREATING':

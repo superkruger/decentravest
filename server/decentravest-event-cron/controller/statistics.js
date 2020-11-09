@@ -4,11 +4,11 @@ const moment = require('moment')
 
 const tradesController = require('./trades')
 
-const investDao = require('../dao/traderpaired/invest')
-const stopDao = require('../dao/traderpaired/stop')
-const requestExitDao = require('../dao/traderpaired/requestExit')
-const rejectExitDao = require('../dao/traderpaired/rejectExit')
-const approveExitDao = require('../dao/traderpaired/approveExit')
+const investMysql = require('../mysql/traderpaired/invest')
+const stopMysql = require('../mysql/traderpaired/stop')
+const requestExitMysql = require('../mysql/traderpaired/requestExit')
+const rejectExitMysql = require('../mysql/traderpaired/rejectExit')
+const approveExitMysql = require('../mysql/traderpaired/approveExit')
 
 const helpers = require('../helpers')
 
@@ -33,26 +33,16 @@ module.exports.getTotalInvestedForInvestment = async (investment) => {
 	totalAmount = investments.reduce((total, investment) => total.plus(investment.amount), totalAmount)
 	
 	return totalAmount
-
-	// const trustRating = await calculateTrustRating(investment.trader, investments)
-	// const level = await calculateLevel(investments, trustRating)
-	// const limits = await calculateLimits(investment.trader, investments, level)
-
-	// return {
-	// 	trustRating: trustRating,
-	// 	level: level,
-	// 	limits: limits
-	// }
 }
 
 const getTraderDirectInvestmentsBefore = async (account, token, startDate) => {
 	
-	let investments = await investDao.getByTraderAndTokenBefore(account, token, startDate)
+	let investments = await investMysql.getByTraderAndTokenBefore(account, token, startDate)
 
 	let i = investments.length
 	while (i--) {
 	    investments[i] = await mapInvest(investments[i])
-	    const stop = await stopDao.getByInvestmentId(investments[i].id)
+	    const stop = await stopMysql.getByInvestmentId(investments[i].investmentId)
 
 	    console.log("getTraderDirectInvestmentsBefore", stop)
 
@@ -70,144 +60,6 @@ const getTraderDirectInvestmentsBefore = async (account, token, startDate) => {
 
 	return investments
 }
-
-// const calculateTrustRating = async (account, investments) => {
-
-// 	let total = 0
-// 	let bad = 0
-
-// 	investments.forEach(async (investment) => {
-
-// 		if (investment.requestFrom) {
-// 			total = total + 1
-
-// 			if (investment.requestFrom === account) {
-// 				// trader requested exit, check value
-// 				if (investment.grossValue.lt(investment.value)) {
-// 					// trader requested wrong value
-// 					bad = bad + 1
-// 				}
-
-// 			} else {
-// 				// investor requested exit
-// 				let now = moment()
-// 				if (investment.approveFrom) {
-// 					if (investment.approveExitDate.diff(investment.requestExitDate) > 48 * 60 * 60 * 1000) {
-// 						bad = bad + 1
-// 					}
-
-// 				} else if (investment.rejectFrom) {
-// 					if (investment.grossValue.lt(investment.rejectValue)) {
-// 						// trader rejected wrong value
-// 						// console.log("trader rejected with wrong value", investment.grossValue.toString(), investment.value.toString(), investment.rejectValue.toString())
-// 						bad = bad + 1
-// 					}
-// 				} else {
-// 					// still waiting
-// 					if (now.diff(investment.requestExitDate) > 48 * 60 * 60 * 1000) {
-// 						bad = bad + 1
-// 					}
-// 				}
-// 			}
-// 		}
-// 	})
-
-// 	let trustRating = new BigNumber(0)
-
-// 	if (total > 0) {
-// 		trustRating = new BigNumber(total - bad).dividedBy(total).multipliedBy(10)
-// 	}
-
-// 	return trustRating.toString()
-// }
-
-// const calculateLevel = async (investments, trustRating) => {
-// 	let collateralApprovalCount = 0
-// 	let directApprovalCount = 0
-
-// 	investments.forEach(async (investment) => {
-// 		// if approved and profitable
-// 		if (investment.approveFrom) {
-			
-// 			if (investment.nettValue.minus(investment.amount).gt(0)) {
-// 				if (investment.investmentType === helpers.INVESTMENT_DIRECT) {
-// 					directApprovalCount = directApprovalCount + 1
-// 				} else {
-// 					collateralApprovalCount = collateralApprovalCount + 1
-// 				}
-// 			}
-// 		}
-// 	})
-
-// 	let level = levelRequirements.length - 1
-// 	for (; level >= 0; level--) {
-// 		if (collateralApprovalCount >= levelRequirements[level].collateralReq &&
-// 			directApprovalCount >= levelRequirements[level].directReq &&
-// 			trustRating >= levelRequirements[level].trustReq) {
-// 			break;
-// 		}
-// 	}
-
-// 	return level
-// }
-
-// const calculateLimits = async (account, investments, level) => {
-// 	let latestApproval
-// 	let investmentDirectTotals = []
-// 	let directLimits = {}
-// 	let directInvested = {}
-
-// 	investments.forEach(async (investment) => {
-		
-// 		if (investment.approveFrom) {
-// 			if (!latestApproval || investment.start.isAfter(latestApproval)) {
-// 				latestApproval = investment.start
-// 			}
-// 		} else {
-// 			if (investment.investmentType === helpers.INVESTMENT_DIRECT) {
-// 				if (investmentDirectTotals[investment.token]) {
-// 					investmentDirectTotals[investment.token] = investmentDirectTotals[investment.token].plus(investment.amount)
-// 				} else {
-// 					investmentDirectTotals[investment.token] = investment.amount
-// 				}
-// 			}
-// 		}
-// 	})
-
-// 	if (latestApproval) {
-// 		// get allocations just before this
-// 		for (let i=0; i<helpers.userTokens.length; i++) {
-// 			const token = helpers.userTokens[i]
-
-// 			let allocations = await allocateDao.getByTraderAndToken(account, token.address)
-// 			allocations = allocations.map(mapAllocate)
-
-// 			// find the allocation just before the start of this investment
-// 			const allocation = allocations.find(allocation => allocation.eventDate.isBefore(latestApproval))
-
-// 			if (allocation) {
-// 				// calculate direct investment limit
-// 				let directLimit = allocation.total.multipliedBy(levelRequirements[level].directLimit)
-				
-// 				let directInvestment = investmentDirectTotals[token.address]
-// 				if (!directInvestment) {
-// 					directInvestment = new BigNumber(0)
-// 				}
-// 				directLimits[helpers.tokenSymbolForAddress(allocation.token)] = directLimit.toString()
-// 				directInvested[helpers.tokenSymbolForAddress(allocation.token)] = directInvestment.toString()
-// 			}
-// 		}
-// 	}
-
-// 	return {
-// 		directLimits: directLimits,
-// 		directInvested: directInvested
-// 	}
-// }
-
-
-///
-
 
 const setInvestmentValue = async (investment) => {
 	
@@ -285,11 +137,11 @@ const getTradeInvestmentsAmount = async (trade, traderInvestments) => {
 
 const getTraderInvestments = async (account, token) => {
 	
-	let investments = await investDao.getByTraderAndToken(account, token)
+	let investments = await investMysql.getByTraderAndToken(account, token)
 	for (let i=0; i<investments.length; i++) {
 		investments[i] = await mapInvest(investments[i])
 
-		const stop = await stopDao.getByInvestmentId(investments[i].id)
+		const stop = await stopMysql.getByInvestmentId(investments[i].investmentId)
 
 		if (stop) {
 			investments[i] = {
@@ -298,7 +150,7 @@ const getTraderInvestments = async (account, token) => {
 			}
 		}
 
-		const requestExit = await requestExitDao.getByInvestmentId(investments[i].id)
+		const requestExit = await requestExitMysql.getByInvestmentId(investments[i].investmentId)
 
 		if (requestExit) {
 			investments[i] = {
@@ -307,7 +159,7 @@ const getTraderInvestments = async (account, token) => {
 			}
 		}
 
-		const rejectExit = await rejectExitDao.getByInvestmentId(investments[i].id)
+		const rejectExit = await rejectExitMysql.getByInvestmentId(investments[i].investmentId)
 
 		if (rejectExit) {
 			investments[i] = {
@@ -316,7 +168,7 @@ const getTraderInvestments = async (account, token) => {
 			}
 		}
 
-		const approveExit = await approveExitDao.getByInvestmentId(investments[i].id)
+		const approveExit = await approveExitMysql.getByInvestmentId(investments[i].investmentId)
 
 		if (approveExit) {
 			investments[i] = {
@@ -338,7 +190,6 @@ const mapInvest = async (event) => {
 		grossValue: new BigNumber(event.amount),
 		nettValue: new BigNumber(event.amount),
 		investorProfitPercent: new BigNumber(event.investorProfitPercent),
-		investmentType: parseInt(event.investmentType, 10),
 		startDate: moment.unix(event.eventDate).utc(),
 		endDate: moment.unix(0).utc(),
 		state: helpers.INVESTMENT_STATE_INVESTED
@@ -359,7 +210,7 @@ const mapStop = (event) => {
 const mapRequestExit = (event) => {
 
 	let state = helpers.INVESTMENT_STATE_EXITREQUESTED_INVESTOR
-	if (event.from === event.trader) {
+	if (event.requestFrom === event.trader) {
 		state = helpers.INVESTMENT_STATE_EXITREQUESTED_TRADER
 	}
 

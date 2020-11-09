@@ -73,7 +73,7 @@ function AllocationsButton(props) {
             <i className="fas fa-fw fa-chart-pie"></i>
           </div>
           <div className="col-auto">
-            <div className="font-weight-bold mb-1">Allocations</div>
+            <div className="font-weight-bold mb-1">Collateral Limits</div>
           </div>
           {
             !hasValidAllocation && 

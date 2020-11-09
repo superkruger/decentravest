@@ -7,7 +7,7 @@ const path = require("path");
 const fs = require('fs');
 
 const positionsDao = require('../dao/dydx/positions');
-const tradesDao = require('../dao/trades');
+const tradesMysql = require('../mysql/trades');
 
 const addPosition = async (position) => {
 	if (!position) {
@@ -31,12 +31,38 @@ module.exports.loadTraderPositions = async (account) => {
 	try {
 		console.log("loadTraderPositions", account)
 
+		let lastDate
+		let last = tradesMysql.getLastForTrader(account)
+		if (last) {
+			lastDate = last.end
+		} else {
+			lastDate = 0
+		}
+
 		let positions = await getTraderPositions(account)
 		positions = positions.map(decoratePosition)
+		// only process new positions
+		positions = positions.filter(position => parseInt(moment(position.dv_end).unix(), 10) > lastDate)
 
-		await positionsDao.addAll(account, positions);
+		for (let i=0; i<positions.length; i++) {
+			console.log("Position", positions[i])
 
-		await tradesDao.addAll(account, positions.map(positionToTrade))
+			let result = await positionsDao.create(positions[i])
+			if (!result) {
+				return false
+			}
+
+			result = await positionsDao.get(positions[i].uuid)
+			if (!result) {
+				return false
+			}
+
+			result = await tradesMysql.createOrUpdate(positionToTrade(result))
+			console.log('tradesMysql.createOrUpdate', result)
+			if (!result) {
+				return false
+			}
+		}
 
 		return true
 
@@ -134,10 +160,10 @@ const decoratePosition = (position) => {
 
 const positionToTrade = (position) => {
 	return {
-		uuid: position.uuid,
+		id: position.uuid,
 		trader: position.owner,
-		start: position.dv_start,
-		end: position.dv_end,
+		start: parseInt(moment(position.dv_start).unix(), 10),
+		end: parseInt(moment(position.dv_end).unix(), 10),
 		asset: position.dv_asset === 'WETH' ? 'ETH' : position.dv_asset,
 		profit: position.dv_profit,
 		initialAmount: position.dv_initialAmount

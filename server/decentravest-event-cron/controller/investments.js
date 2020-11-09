@@ -4,7 +4,7 @@ const BigNumber = require('bignumber.js')
 const moment = require('moment')
 
 const encode = require('../common/encode');
-const investmentsDao = require('../dao/investments')
+const investmentsMysql = require('../mysql/investments')
 
 const statisticsController = require('./statistics')
 const helpers = require('../helpers')
@@ -25,16 +25,16 @@ module.exports.create = async (event) => {
     }
 
     // upper limit for calculating value is the total value of investments
-    investment.traderLimit = totalInvested
+    investment.traderLimit = totalInvested.toString()
   }
 
-  let result = await investmentsDao.create(investment)
+  let result = await investmentsMysql.createOrUpdate(investment)
 
   return result
 }
 
 module.exports.get = async (investmentId) => {
-  let investment = await investmentsDao.get(investmentId)
+  let investment = await investmentsMysql.get(investmentId)
 
   if (investment) {
     return decorateInvestment(investment)
@@ -43,54 +43,59 @@ module.exports.get = async (investmentId) => {
   return null
 }
 
+module.exports.listActive = async () => {
+  let investments = await investmentsMysql.listActive()
+
+  return investments.map(decorateInvestment)
+}
+
 module.exports.update = async (investment) => {
 
   investment = reduceInvestment(investment)
 
-  let result = await investmentsDao.update(investment)
+  let result = await investmentsMysql.update(investment)
 
   return result
 };
 
 module.exports.getByTraderAndToken = async (trader, token) => {
 
-  const result = await investmentsDao.getByTraderAndToken(trader, token)
+  const result = await investmentsMysql.getByTraderAndToken(trader, token)
   return result.map(decorateInvestment)
 }
 
 module.exports.getByTraderUpTo = async (trader, startDate) => {
 
-  const result = await investmentsDao.getByTraderUpTo(trader, startDate)
+  const result = await investmentsMysql.getByTraderUpTo(trader, startDate)
   return result.map(decorateInvestment)
 }
 
 const mapInvestEvent = (event) => {
 
   return {
+    id: event.investmentId,
     investBlockNumber: event.blockNumber,
     stopBlockNumber: 0,
     requestBlockNumber: 0,
     rejectBlockNumber: 0,
     approveBlockNumber: 0,
-    id: event.returnValues.id,
     disbursementId: 0,
-    wallet: event.returnValues.wallet,
-    trader: event.returnValues.trader,
-    investor: event.returnValues.investor,
-    token: event.returnValues.token,
-    amount: event.returnValues.amount,
-    value: event.returnValues.amount,
-    investorProfitPercent: event.returnValues.investorProfitPercent,
-    investmentType: parseInt(event.returnValues.investmentType, 10),
+    wallet: event.wallet,
+    trader: event.trader,
+    investor: event.investor,
+    token: event.token,
+    amount: event.amount,
+    value: event.amount,
+    investorProfitPercent: event.investorProfitPercent,
+    investmentType: parseInt(event.investmentType, 10),
     state: 0,
-    traderLimit: event.returnValues.allocationTotal,
-    startDate: parseInt(event.returnValues.date, 10),
+    traderLimit: event.allocationTotal,
+    startDate: parseInt(event.eventDate, 10),
     endDate: 0,
-    grossValue: event.returnValues.amount,
-    nettValue: event.returnValues.amount
+    grossValue: event.amount,
+    nettValue: event.amount
   }
 }
-
 
 const decorateInvestment = (investment) => {
 
@@ -107,17 +112,16 @@ const decorateInvestment = (investment) => {
   }
 }
 
-
 const reduceInvestment = (investment) => {
 
   return {
     ... investment,
     amount: investment.amount.toString(),
     value: investment.value.toString(),
-    investorProfitPercent: investment.investorProfitPercent.toString(),
+    investorProfitPercent: parseInt(investment.investorProfitPercent.toString(), 10),
     traderLimit: investment.traderLimit.toString(),
-    startDate: investment.startDate.unix(),
-    endDate: investment.endDate.unix(),
+    startDate: parseInt(investment.startDate.unix(), 10),
+    endDate: parseInt(investment.endDate.unix(), 10),
     grossValue: investment.grossValue.toString(),
     nettValue: investment.nettValue.toString()
   }

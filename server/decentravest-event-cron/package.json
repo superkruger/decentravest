@@ -10,6 +10,7 @@
     "dotenv": "^8.2.0",
     "lodash": "^4.17.20",
     "moment": "^2.27.0",
+    "serverless-mysql": "^1.5.4",
     "web3": "^1.2.11"
   },
   "devDependencies": {
@@ -20,7 +21,8 @@
     "processAllEvents": "node -e 'require(\"./handler\").localProcessAllEvents()'",
     "processAllTrades": "node -e 'require(\"./handler\").localProcessAllTrades()'",
     "calculateAllTradersStatistics": "node -e 'require(\"./handler\").localCalculateAllTradersStatistics()'",
-    "calculateAllInvestorsStatistics": "node -e 'require(\"./handler\").localCalculateAllInvestorsStatistics()'"
+    "calculateAllInvestorsStatistics": "node -e 'require(\"./handler\").localCalculateAllInvestorsStatistics()'",
+    "calculateAllInvestmentValues": "node -e 'require(\"./handler\").localCalculateAllInvestmentValues()'"
   },
   "author": "Jaco Kruger <superkruger@gmail.com>",
   "license": "ISC"

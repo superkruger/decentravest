@@ -55,7 +55,9 @@ class InvestorInvestments extends Component {
   componentDidUpdate(prevProps) {
     const { network, investments, traderPaired, dispatch } = this.props
 
-    if (network !== prevProps.network || traderPaired !== prevProps.traderPaired || !isEqual(sortBy(investments), sortBy(prevProps.investments))) {
+    if (!isEqual(network, prevProps.network) || 
+        !isEqual(traderPaired, prevProps.traderPaired) || 
+        !isEqual(sortBy(investments), sortBy(prevProps.investments))) {
       
       const traderInvestments = uniqueByKey(investments, it => it.trader)
 
