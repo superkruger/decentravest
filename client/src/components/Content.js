@@ -31,13 +31,13 @@ class Content extends Component {
   render() {
     const { page, section, network, account, traderPaired } = this.props
 
-    if (requiresWeb3(page)) {
-      if (!network || !account || !traderPaired) {
-        return (
-          <Spinner />
-        )
-      }
-    }
+    // if (requiresWeb3(page)) {
+    //   if (!network || !account || !traderPaired) {
+    //     return (
+    //       <Spinner />
+    //     )
+    //   }
+    // }
 
     return (
       <div id="content-wrapper" className="d-flex flex-column">
@@ -53,25 +53,28 @@ class Content extends Component {
 
           {/* Begin Page Content */}
           <div className="container-fluid">
-
-            <div className="d-sm-flex align-items-center justify-content-between mb-4">
-              {
+          {
+            requiresWeb3(page) && (!network || !account || !traderPaired)
+            ? <Intro />
+            : <div className="d-sm-flex align-items-center justify-content-between mb-4">
                 {
-                  'join_trader': <JoinTrader />,
-                  'join_investor': <JoinInvestor />,
-                  'trader_profile': <Profile page={page} section={section} />,
-                  'trader_dashboard': <Trader page={page} section={section} />,
-                  'trader_profitpercentages': <ProfitPercentages page={page} />,
-                  'trader_allocations': <TraderAllocations />,
-                  'trader_investments': <TraderInvestments />,
-                  'investor_dashboard': <Investor page={page} section={section} />,
-                  'investor_traders': <InvestorTraders page={page} section={section} />,
-                  'investor_investments': <InvestorInvestments />,
-                  undefined: <Intro />
-                }[this.props.page]
-              }
-          
-            </div>
+                  {
+                    'join_trader': <JoinTrader />,
+                    'join_investor': <JoinInvestor />,
+                    'trader_profile': <Profile page={page} section={section} />,
+                    'trader_dashboard': <Trader page={page} section={section} />,
+                    'trader_profitpercentages': <ProfitPercentages page={page} />,
+                    'trader_allocations': <TraderAllocations />,
+                    'trader_investments': <TraderInvestments />,
+                    'investor_dashboard': <Investor page={page} section={section} />,
+                    'investor_traders': <InvestorTraders page={page} section={section} />,
+                    'investor_investments': <InvestorInvestments />,
+                    undefined: <Intro />
+                  }[this.props.page]
+                }
+            
+              </div>
+          }
 
           </div>
           {/* /.container-fluid */}

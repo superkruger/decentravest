@@ -155,20 +155,22 @@ function createPieChart(container, props) {
       for (var i = 0; i < count; i++) {
         pieSeries2.colors.list.push(fill.brighten(i * 2 / count));
       }
+
+      chart2.data = dataItem.dataContext.subData;
+      pieSeries2.appear();
+
+      let middleAngle = selectedSlice.middleAngle;
+      let firstAngle = pieSeries.slices.getIndex(0).startAngle;
+      let animation = pieSeries.animate([{ property: "startAngle", to: firstAngle - middleAngle }, { property: "endAngle", to: firstAngle - middleAngle + 360 }], 600, am4core.ease.sinOut);
+      animation.events.on("animationprogress", updateLines);
+
+      selectedSlice.events.on("transformed", updateLines);
+
+    //  var animation = chart2.animate({property:"dx", from:-container.pixelWidth / 2, to:0}, 2000, am4core.ease.elasticOut)
+    //  animation.events.on("animationprogress", updateLines)
     }
 
-    chart2.data = dataItem.dataContext.subData;
-    pieSeries2.appear();
-
-    let middleAngle = selectedSlice.middleAngle;
-    let firstAngle = pieSeries.slices.getIndex(0).startAngle;
-    let animation = pieSeries.animate([{ property: "startAngle", to: firstAngle - middleAngle }, { property: "endAngle", to: firstAngle - middleAngle + 360 }], 600, am4core.ease.sinOut);
-    animation.events.on("animationprogress", updateLines);
-
-    selectedSlice.events.on("transformed", updateLines);
-
-  //  var animation = chart2.animate({property:"dx", from:-container.pixelWidth / 2, to:0}, 2000, am4core.ease.elasticOut)
-  //  animation.events.on("animationprogress", updateLines)
+    
   }
 
 
