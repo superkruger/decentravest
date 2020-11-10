@@ -139,7 +139,7 @@ class InvestorInvestment extends Component {
                               {
                                 tradesForInvestment.map((trade) => {
                                   return (
-                                    <tr key={trade.uuid}>
+                                    <tr key={trade.id}>
                                       <td className="text-muted">{trade.formattedStart}</td>
                                       <td className={`text-${trade.profitClass}`}>{trade.formattedProfit}</td>
                                     </tr>

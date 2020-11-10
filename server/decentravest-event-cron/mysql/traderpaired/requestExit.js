@@ -96,7 +96,7 @@ module.exports.createOrUpdate = async (event) => {
 
 module.exports.getByInvestmentId = async (id) => {
 
-  console.log("getting requestExit", id)
+  // console.log("getting requestExit", id)
 
   const client = mysqlCommon.getClient()
 
@@ -112,7 +112,7 @@ module.exports.getByInvestmentId = async (id) => {
 
 module.exports.list = async () => {
 
-  console.log("getting requestExits")
+  // console.log("getting requestExits")
 
   const client = mysqlCommon.getClient()
 
@@ -123,7 +123,7 @@ module.exports.list = async () => {
 
 module.exports.getLast = async () => {
 
-  console.log("getting last event")
+  // console.log("getting last event")
 
   const client = mysqlCommon.getClient()
 
@@ -138,7 +138,7 @@ module.exports.getLast = async () => {
 }
 
 module.exports.getEventsFromBlock = async(blockNumber) => {
-  console.log("getting requestExits from block", blockNumber)
+  // console.log("getting requestExits from block", blockNumber)
 
   const client = mysqlCommon.getClient()
 
@@ -149,7 +149,7 @@ module.exports.getEventsFromBlock = async(blockNumber) => {
 
 module.exports.getByTrader = async (trader) => {
 
-  console.log("getting requestExits for trader", trader)
+  // console.log("getting requestExits for trader", trader)
 
   const client = mysqlCommon.getClient()
 
@@ -160,7 +160,7 @@ module.exports.getByTrader = async (trader) => {
 
 module.exports.getByInvestor = async (investor) => {
 
-  console.log("getting requestExits for investor", investor)
+  // console.log("getting requestExits for investor", investor)
 
   const client = mysqlCommon.getClient()
 

@@ -1013,7 +1013,8 @@ const calculateAllInvestmentValues = async () => {
 	}
 
 	for (let i=0; i<investments.length; i++) {
-		const result = await statisticsController.setInvestmentValue(investments[i])
+		let result = await statisticsController.setInvestmentValue(investments[i])
+		result = await investmentsController.update(result)
 		console.log("setInvestmentValue result", result)
 	}
 }

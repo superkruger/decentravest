@@ -32,7 +32,7 @@ module.exports.create = create
 
 const get = async (id) => {
 
-  console.log("getting investment", id)
+  // console.log("getting investment", id)
 
   const client = mysqlCommon.getClient()
 
@@ -84,7 +84,7 @@ module.exports.createOrUpdate = async (event) => {
 
 module.exports.list = async () => {
 
-  console.log("getting investments")
+  // console.log("getting investments")
 
   const client = mysqlCommon.getClient()
 
@@ -95,7 +95,7 @@ module.exports.list = async () => {
 
 module.exports.getLast = async () => {
 
-  console.log("getting last event")
+  // console.log("getting last event")
 
   const client = mysqlCommon.getClient()
 

@@ -36,7 +36,7 @@ module.exports.create = create
 
 const get = async (id) => {
 
-  console.log("getting trader", id)
+  // console.log("getting trader", id)
 
   const client = mysqlCommon.getClient()
 
@@ -91,7 +91,7 @@ module.exports.createOrUpdate = async (event) => {
 
 module.exports.getByUser = async (id) => {
 
-  console.log("getting trader", id)
+  // console.log("getting trader", id)
 
   const client = mysqlCommon.getClient()
 
@@ -107,7 +107,7 @@ module.exports.getByUser = async (id) => {
 
 module.exports.list = async () => {
 
-  console.log("getting traders")
+  // console.log("getting traders")
 
   const client = mysqlCommon.getClient()
 
@@ -118,7 +118,7 @@ module.exports.list = async () => {
 
 module.exports.getLast = async () => {
 
-  console.log("getting last event")
+  // console.log("getting last event")
 
   const client = mysqlCommon.getClient()
 

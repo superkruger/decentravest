@@ -149,10 +149,12 @@ function createPieChart(container, props) {
 
     let fill = selectedSlice.fill;
 
-    let count = dataItem.dataContext.subData.length;
-    pieSeries2.colors.list = [];
-    for (var i = 0; i < count; i++) {
-      pieSeries2.colors.list.push(fill.brighten(i * 2 / count));
+    if (fill) {
+      let count = dataItem.dataContext.subData.length;
+      pieSeries2.colors.list = [];
+      for (var i = 0; i < count; i++) {
+        pieSeries2.colors.list.push(fill.brighten(i * 2 / count));
+      }
     }
 
     chart2.data = dataItem.dataContext.subData;

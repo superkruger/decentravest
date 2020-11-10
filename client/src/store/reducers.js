@@ -445,7 +445,7 @@ function trader (state = {}, action ) {
 				if (state.trades === undefined) {
 					state.trades = {data: []}
 				}
-				index = state.trades.data.findIndex(trade => trade.uuid === action.trade.uuid)
+				index = state.trades.data.findIndex(trade => trade.id === action.trade.id)
 				if (index === -1) {
 					data = [...state.trades.data, action.trade]
 				} else {

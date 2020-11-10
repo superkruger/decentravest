@@ -88,7 +88,8 @@ const setInvestmentValue = async (investment) => {
 	// for each trade get all investments that it should be split over
 	// and calculate profit/loss
 	let grossProfit = new BigNumber(0)
-	await trades.forEach(async (trade) => {
+	for (let i=0; i<trades.length; i++) {
+		const trade = trades[i]
 
 		// console.log("trade.profit", trade.profit.toString())
 		let totalAmount = await getTradeInvestmentsAmount(trade, traderInvestments)
@@ -105,7 +106,7 @@ const setInvestmentValue = async (investment) => {
 		// console.log("tradeProfit", tradeProfit.toString())
 
 		grossProfit = grossProfit.plus(tradeProfit)
-	})
+	}
 
 	if (investment.amount.plus(grossProfit).isNegative()) {
 		// if losses would amount to a negative valuation, just make the loss equal to the investment amount
@@ -120,6 +121,10 @@ const setInvestmentValue = async (investment) => {
 	console.log("nettProfit", nettProfit.toString())
 	investment.grossValue = investment.amount.plus(grossProfit)
 	investment.nettValue = investment.amount.plus(nettProfit)
+
+	console.log("grossValue", investment.grossValue.toString())
+	console.log("nettValue", investment.nettValue.toString())
+
 	return investment
 }
 module.exports.setInvestmentValue = setInvestmentValue

@@ -42,7 +42,7 @@ module.exports.create = create
 
 const get = async (id) => {
 
-  console.log("getting approveExit", id)
+  // console.log("getting approveExit", id)
 
   const client = mysqlCommon.getClient()
 
@@ -100,7 +100,7 @@ module.exports.createOrUpdate = async (event) => {
 
 module.exports.getByInvestmentId = async (id) => {
 
-  console.log("getting approveExit", id)
+  // console.log("getting approveExit", id)
 
   const client = mysqlCommon.getClient()
 
@@ -116,7 +116,7 @@ module.exports.getByInvestmentId = async (id) => {
 
 module.exports.list = async () => {
 
-  console.log("getting approveExits")
+  // console.log("getting approveExits")
 
   const client = mysqlCommon.getClient()
 
@@ -127,7 +127,7 @@ module.exports.list = async () => {
 
 module.exports.getLast = async () => {
 
-  console.log("getting last event")
+  // console.log("getting last event")
 
   const client = mysqlCommon.getClient()
 
@@ -142,7 +142,7 @@ module.exports.getLast = async () => {
 }
 
 module.exports.getEventsFromBlock = async(blockNumber) => {
-  console.log("getting approveExits from block", blockNumber)
+  // console.log("getting approveExits from block", blockNumber)
 
   const client = mysqlCommon.getClient()
 
@@ -153,7 +153,7 @@ module.exports.getEventsFromBlock = async(blockNumber) => {
 
 module.exports.getByTrader = async (trader) => {
 
-  console.log("getting approveExits for trader", trader)
+  // console.log("getting approveExits for trader", trader)
 
   const client = mysqlCommon.getClient()
 
@@ -164,7 +164,7 @@ module.exports.getByTrader = async (trader) => {
 
 module.exports.getByInvestor = async (investor) => {
 
-  console.log("getting approveExits for investor", investor)
+  // console.log("getting approveExits for investor", investor)
 
   const client = mysqlCommon.getClient()
 
