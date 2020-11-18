@@ -50,7 +50,7 @@ class Level extends Component {
                                 <tbody>
                                   <tr>
                                     <td><b>{levelRequirement.collateralReq}</b> profitable collateral investments</td>
-                                    <td rowSpan="3">Direct investments up to <b>{levelRequirement.directLimit * 100}%</b> of allocation</td>
+                                    <td rowSpan="3">Direct investments up to <b>{levelRequirement.directLimit * 100}%</b> of collateral limit</td>
                                   </tr>
                                   <tr>
                                     <td><b>{levelRequirement.directReq}</b> profitable direct investments</td>
