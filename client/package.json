@@ -1,8 +1,11 @@
 {
   "homepage": "/",
   "name": "decentravest-client",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "10.21.0"
+  },
   "dependencies": {
     "@amcharts/amcharts4": "^4.9.33",
     "@babel/core": "^7.9.0",
@@ -45,7 +48,6 @@
     "react-dom": "16.14.0",
     "react-redux": "7.2.1",
     "react-router-dom": "^5.2.0",
-    "react-scripts": "3.4.3",
     "react-spring": "^8.0.27",
     "redux": "4.0.5",
     "redux-logger": "3.0.6",
@@ -56,6 +58,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build && ln -s ../../build/contracts build/contracts && cp build/index.html build/404.html",
+    "cibuild": "npm ci && npm run build",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build"
@@ -85,6 +88,8 @@
     "gh-pages": "^2.2.0",
     "husky": "^4.2.5",
     "mocha": "^8.0.1",
-    "nodemon": "^2.0.4"
+    "nodemon": "^2.0.4",
+    "os-locale": "^5.0.0",
+    "react-scripts": "^3.4.3"
   }
 }
