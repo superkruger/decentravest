@@ -3,6 +3,9 @@
   "name": "decentravest-client",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "10.21.0"
+  },
   "dependencies": {
     "@amcharts/amcharts4": "^4.9.33",
     "@babel/core": "^7.9.0",
