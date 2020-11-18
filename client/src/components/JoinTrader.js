@@ -93,8 +93,9 @@ function TraderJourney(props) {
                             <div className="col mr-2">
                               <div className="mb-0 text-gray-100">
                                 At first, you'll only be able to accept <em>collateral</em> investments. 
-                                The funds are kept in a multisig wallet, where you can recoup trading losses, but you'll trade with your own funds.
-                                To enable this, you'll need to specify <em>Allocations</em> for each currency you trade with.
+                                The investor's funds are kept in a multisig wallet, where you can recoup trading losses, but you'll trade with your own funds.
+                                By default, you keep 80% of the profit and 20% goes to the investor.
+                                To enable this, you'll need to specify <em>Collateral Limits</em> for each currency you trade with
                               </div>
                             </div>
                           </div>
@@ -132,7 +133,8 @@ function TraderJourney(props) {
                           <div className="row no-gutters">
                             <div className="col mr-2">
                               <div className="mb-0 text-gray-100">
-                                With <em>direct</em> investments, you get full access to the investment funds and can start expanding your trading capacity
+                                With <em>direct</em> investments, the investor's funds are sent directly to your wallet so you can start expanding your trading capacity. 
+                                By default you keep 20% of the profits, and 80% goes to the investor
                               </div>
                             </div>
                           </div>
@@ -151,7 +153,7 @@ function TraderJourney(props) {
                           <div className="row no-gutters">
                             <div className="col mr-2">
                               <div className="mb-0 text-gray-100">
-                                By getting more investments and earning a good trust rating, you earn increasingly larger investment thresholds, further expanding your trading capacity
+                                By getting more investments and earning a good trust rating, you earn increasingly larger investment limits, further expanding your trading capacity
                               </div>
                             </div>
                           </div>
