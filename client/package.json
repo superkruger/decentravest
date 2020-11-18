@@ -1,7 +1,7 @@
 {
   "homepage": "/",
   "name": "decentravest-client",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "dependencies": {
     "@amcharts/amcharts4": "^4.9.33",
@@ -55,6 +55,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build && ln -s ../../build/contracts build/contracts && cp build/index.html build/404.html",
+    "cibuild": "npm ci && npm run build",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build"
