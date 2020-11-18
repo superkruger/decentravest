@@ -5,6 +5,7 @@ import { connect } from 'react-redux'
 import { Container, Row, Col, Button, Alert } from 'react-bootstrap'
 import EtherscanLink from '../containers/EtherscanLink'
 import Spinner from '../Spinner'
+import WalletInstruction from '../cards/WalletInstruction'
 import ExplodingPieChart from '../cards/ExplodingPieChart'
 import PieChart from '../cards/PieChart'
 import SmallCurrencyAmounts from '../cards/SmallCurrencyAmounts'
@@ -70,7 +71,7 @@ function CreateWallet(props) {
 
   return (
     walletCreating ?
-    <Spinner />
+    <WalletInstruction title="Confirm Wallet Creation" message="Confirm the transaction to create your personal investment wallet"/>
     :
     <div>
       <Alert variant="info">
@@ -205,7 +206,7 @@ function Direct(props) {
 }
 
 function Wallet(props) {
-  const { wallet } = props.props
+  const { network, wallet } = props.props
 
   return (
     <div>
@@ -215,7 +216,7 @@ function Wallet(props) {
             <div className="col mr-2">
               <div className="text-xs font-weight-bold text-info text-uppercase mb-1">
                 Personal Investment Multisig Wallet Balances:&nbsp;
-                <EtherscanLink address={wallet.contract.options.address} />
+                <EtherscanLink network={network} type="address" address={wallet.contract.options.address} />
               </div>
               {
                 wallet.balances.map((balance) => {

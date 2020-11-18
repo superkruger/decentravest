@@ -8,12 +8,14 @@ const investorStatisticsDao = require('./dao/investorStatistics')
 const tradesMysql = require('./mysql/trades')
 const investmentsMysql = require('./mysql/investments')
 
-const loadTraderPaired = async () => {
-  const {web3, networkId} = await interactions.loadWeb3()
-  console.log("loaded web3: ", web3, networkId)
+const loadTraderPaired = async (web3, networkId) => {
   const traderPaired = await interactions.loadTraderPaired(web3, networkId)
-  console.log("loaded traderPaired: ", traderPaired)
-  return {web3, traderPaired}
+  return traderPaired
+}
+
+const loadWalletFactory = async (web3, networkId) => {
+  const walletFactory = await interactions.loadWalletFactory(web3, networkId)
+  return walletFactory
 }
 
 module.exports.processAllEvents = (event, context) => {
@@ -217,9 +219,11 @@ module.exports.investments = async (event, context) => {
 }
 
 const localProcessAllEvents = async () => {
-  const {web3, traderPaired} = await loadTraderPaired()
+  const {web3, networkId} = await interactions.loadWeb3()
+  const traderPaired = await loadTraderPaired(web3, networkId)
+  const walletFactory = await loadWalletFactory(web3, networkId)
 	
-	await interactions.processAllEvents(web3, traderPaired)
+	await interactions.processAllEvents(web3, traderPaired, walletFactory)
 
   mysqlCommon.quitClient()
 }
@@ -248,7 +252,8 @@ const localCreateTables = async () => {
 const localJoinedTrader = async (trader) => {
   let result
   try {
-    const {web3, traderPaired} = await loadTraderPaired()
+    const {web3, networkId} = await interactions.loadWeb3()
+    const traderPaired = await loadTraderPaired(web3, networkId)
     result = await interactions.joinedTrader(trader, traderPaired)
     if (!result) {
       throw "error processing trader"
@@ -266,7 +271,8 @@ const localJoinedTrader = async (trader) => {
 const localJoinedInvestor = async (investor) => {
   let result
   try {
-    const {web3, traderPaired} = await loadTraderPaired()
+    const {web3, networkId} = await interactions.loadWeb3()
+    const traderPaired = await loadTraderPaired(web3, networkId)
     result = await interactions.joinedInvestor(investor, traderPaired)
     if (!result) {
       throw "error processing investor"
@@ -284,7 +290,8 @@ const localJoinedInvestor = async (investor) => {
 const localCreatedInvestment = async (investmentId) => {
   let result
   try {
-    const {web3, traderPaired} = await loadTraderPaired()
+    const {web3, networkId} = await interactions.loadWeb3()
+    const traderPaired = await loadTraderPaired(web3, networkId)
     result = await interactions.createdInvestment(investmentId, traderPaired)
     if (!result) {
       throw "error processing investment creation"
@@ -302,7 +309,8 @@ const localCreatedInvestment = async (investmentId) => {
 const localStoppedInvestment = async (investmentId) => {
   let result
   try {
-    const {web3, traderPaired} = await loadTraderPaired()
+    const {web3, networkId} = await interactions.loadWeb3()
+    const traderPaired = await loadTraderPaired(web3, networkId)
     result = await interactions.stoppedInvestment(investmentId, traderPaired)
     if (!result) {
       throw "error processing investment stop"
@@ -320,7 +328,8 @@ const localStoppedInvestment = async (investmentId) => {
 const localExitRequested = async (investmentId) => {
   let result
   try {
-    const {web3, traderPaired} = await loadTraderPaired()
+    const {web3, networkId} = await interactions.loadWeb3()
+    const traderPaired = await loadTraderPaired(web3, networkId)
     result = await interactions.exitRequested(investmentId, web3, traderPaired)
     if (!result) {
       throw "error processing investment exit request"
@@ -338,7 +347,8 @@ const localExitRequested = async (investmentId) => {
 const localExitRejected = async (investmentId) => {
   let result
   try {
-    const {web3, traderPaired} = await loadTraderPaired()
+    const {web3, networkId} = await interactions.loadWeb3()
+    const traderPaired = await loadTraderPaired(web3, networkId)
     result = await interactions.exitRejected(investmentId, traderPaired)
     if (!result) {
       throw "error processing investment exit reject"
@@ -356,7 +366,8 @@ const localExitRejected = async (investmentId) => {
 const localExitApproved = async (investmentId) => {
   let result
   try {
-    const {web3, traderPaired} = await loadTraderPaired()
+    const {web3, networkId} = await interactions.loadWeb3()
+    const traderPaired = await loadTraderPaired(web3, networkId)
     result = await interactions.exitApproved(investmentId, traderPaired)
     if (!result) {
       throw "error processing investment exit approval"

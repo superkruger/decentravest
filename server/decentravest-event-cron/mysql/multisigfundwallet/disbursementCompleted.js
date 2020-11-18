@@ -6,7 +6,7 @@ const mysqlCommon = require("../../common/mysql")
 
 const create = async (walletAddress, event) => {
 
-  console.log("creating disbursementCreated", event)
+  console.log("creating disbursementCompleted", event)
 
   const client = mysqlCommon.getClient()
 
@@ -14,28 +14,24 @@ const create = async (walletAddress, event) => {
   // blockNumber INT UNSIGNED not null, 
   // txHash char(60) not null,
   // wallet char(50) not null,
-  // trader char(50) not null,
   // initiator char(50) not null,
-  // investmentId BIGINT UNSIGNED not null,
-  // disbursementId BIGINT UNSIGNED not null,
-  // value char(36) not null,
-  // amount char(36) not null,
+  // signedBy char(50) not null,
+  // investmentId char(20) not null,
+  // disbursementId char(20) not null,
   // eventDate INT UNSIGNED not null,
 
-  let resp = await client.query('INSERT INTO event_multisigfundwallet_disbursementcreated \
-    (id, blockNumber, txHash, wallet, trader, initiator, investmentId, disbursementId, value, amount, eventDate) \
-    VALUES(?,?,?,?,?,?,?,?,?,?,?)', 
+  let resp = await client.query('INSERT INTO event_multisigfundwallet_disbursementcompleted \
+    (id, blockNumber, txHash, wallet, initiator, signedBy, investmentId, disbursementId, eventDate) \
+    VALUES(?,?,?,?,?,?,?,?,?)', 
     [
       event.id,
       event.blockNumber, 
       event.transactionHash,
       walletAddress,
-      event.trader,
       event.initiator,
+      event.signedby,
       event.investmentid,
       event.disbursementid,
-      event.value,
-      event.amount,
       event.mdate
     ]);
   return resp;
@@ -44,11 +40,11 @@ module.exports.create = create
 
 const get = async (walletAddress, id) => {
 
-  console.log("getting disbursementCreated", id)
+  console.log("getting disbursementCompleted", id)
 
   const client = mysqlCommon.getClient()
 
-  let dbRes = await client.query(`select * from event_multisigfundwallet_disbursementcreated where wallet = ? and id = ?`, [walletAddress, id])
+  let dbRes = await client.query(`select * from event_multisigfundwallet_disbursementcompleted where wallet = ? and id = ?`, [walletAddress, id])
   if (dbRes.length == 0) {
       return null;
   }
@@ -61,24 +57,22 @@ module.exports.get = get
 
 const update = async (walletAddress, event) => {
 
-  console.log("updating disbursementCreated", event)
+  console.log("updating disbursementCompleted", event)
 
   const client = mysqlCommon.getClient()
 
-  let resp = await client.query('UPDATE event_multisigfundwallet_disbursementcreated \
-    set blockNumber = ?, txHash = ?, wallet = ?, trader = ?, initiator = ?, investmentId = ?, \
-    disbursementId = ?, value = ?, amount = ?, eventDate = ? \
+  let resp = await client.query('UPDATE event_multisigfundwallet_disbursementcompleted \
+    set blockNumber = ?, txHash = ?, wallet = ?, initiator = ?, signedBy = ?, \
+    investmentId = ?, disbursementId = ?, eventDate = ? \
     WHERE id = ?', 
     [
       event.blockNumber, 
       event.transactionHash,
       walletAddress,
-      event.trader,
       event.initiator,
+      event.signedby,
       event.investmentid,
       event.disbursementid,
-      event.value,
-      event.amount,
       event.mdate,
       event.id
     ]);
@@ -88,7 +82,7 @@ module.exports.update = update
 
 module.exports.createOrUpdate = async (walletAddress, event) => {
 
-  console.log("createOrUpdate disbursementCreated", event)
+  console.log("createOrUpdate disbursementCompleted", event)
   let resp
 
   const obj = await get(walletAddress, event.id)
@@ -105,7 +99,7 @@ module.exports.list = async (walletAddress) => {
 
   const client = mysqlCommon.getClient()
 
-  let dbRes = await client.query(`select * from event_multisigfundwallet_disbursementcreated where wallet = ?`, [walletAddress])
+  let dbRes = await client.query(`select * from event_multisigfundwallet_disbursementcompleted where wallet = ?`, [walletAddress])
 
   return dbRes;
 }
@@ -114,7 +108,7 @@ module.exports.getLast = async (walletAddress) => {
 
   const client = mysqlCommon.getClient()
 
-  let dbRes = await client.query(`select * from event_multisigfundwallet_disbursementcreated where wallet = ? order by blockNumber desc limit 1`, [walletAddress])
+  let dbRes = await client.query(`select * from event_multisigfundwallet_disbursementcompleted where wallet = ? order by blockNumber desc limit 1`, [walletAddress])
   if (dbRes.length == 0) {
       return null;
   }
@@ -128,7 +122,7 @@ module.exports.getLastForInvestment = async (walletAddress, investmentId) => {
 
   const client = mysqlCommon.getClient()
 
-  let dbRes = await client.query(`select * from event_multisigfundwallet_disbursementcreated where wallet = ? and investmentId = ? order by blockNumber desc limit 1`, [walletAddress, investmentId])
+  let dbRes = await client.query(`select * from event_multisigfundwallet_disbursementcompleted where wallet = ? and investmentId = ? order by blockNumber desc limit 1`, [walletAddress, investmentId])
   if (dbRes.length == 0) {
       return null;
   }

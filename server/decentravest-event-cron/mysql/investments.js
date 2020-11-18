@@ -22,12 +22,20 @@ const create = async (investment) => {
   // value char(36) not null,
   // grossValue char(36) not null,
   // nettValue char(36) not null,
+  // grossProfit char(36) not null,
+  // investorProfit char(36) not null,
+  // traderProfit char(36) not null,
   // investorProfitPercent SMALLINT UNSIGNED not null,
   // investmentType SMALLINT UNSIGNED not null,
   // state SMALLINT UNSIGNED not null,
   // traderLimit char(36) not null,
   // startDate INT UNSIGNED not null,
   // endDate INT UNSIGNED not null,
+  // investTxHash char(60),
+  // stopTxHash char(60),
+  // requestTxHash char(60),
+  // rejectTxHash char(60),
+  // approveTxHash char(60),
 
   console.log("creating investment", investment)
 
@@ -35,9 +43,11 @@ const create = async (investment) => {
 
   let resp = await client.query('INSERT INTO investments \
     (id, investBlockNumber, stopBlockNumber, requestBlockNumber, rejectBlockNumber, approveBlockNumber, \
-      disbursementId, wallet, trader, investor, token, amount, value, \
-      grossValue, nettValue, investorProfitPercent, investmentType, state, traderLimit, startDate, endDate) \
-    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', 
+      disbursementId, wallet, trader, investor, token, amount, value, grossValue, nettValue, \
+      grossProfit, investorProfit, traderProfit, investorProfitPercent, investmentType, \
+      state, traderLimit, startDate, endDate, \
+      investTxHash, stopTxHash, requestTxHash, rejectTxHash, approveTxHash) \
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', 
     [
       investment.id, 
       investment.investBlockNumber, 
@@ -54,12 +64,20 @@ const create = async (investment) => {
       investment.value, 
       investment.grossValue, 
       investment.nettValue, 
+      investment.grossProfit, 
+      investment.investorProfit, 
+      investment.traderProfit, 
       investment.investorProfitPercent, 
       investment.investmentType, 
       investment.state, 
       investment.traderLimit, 
       investment.startDate, 
-      investment.endDate
+      investment.endDate, 
+      investment.investTxHash, 
+      investment.stopTxHash, 
+      investment.requestTxHash, 
+      investment.rejectTxHash, 
+      investment.approveTxHash
     ]);
   return resp;
 }
@@ -91,8 +109,9 @@ module.exports.update = async (investment) => {
   let resp = await client.query('UPDATE investments \
     set investBlockNumber = ?, stopBlockNumber = ?, requestBlockNumber = ?, rejectBlockNumber = ?, \
       approveBlockNumber = ?, disbursementId = ?, wallet = ?, trader = ?, investor = ?, token = ?, amount = ?, \
-      value = ?, grossValue = ?, nettValue = ?, investorProfitPercent = ?, investmentType = ?, \
-      state = ?, traderLimit = ?, startDate = ?, endDate = ? \
+      value = ?, grossValue = ?, nettValue = ?, grossProfit = ?, investorProfit = ?, traderProfit = ?, \
+      investorProfitPercent = ?, investmentType = ?, state = ?, traderLimit = ?, startDate = ?, endDate = ?, \
+      investTxHash = ?, stopTxHash = ?, requestTxHash = ?, rejectTxHash = ?, approveTxHash = ? \
     WHERE id = ?', 
     [
       investment.investBlockNumber, 
@@ -109,12 +128,20 @@ module.exports.update = async (investment) => {
       investment.value, 
       investment.grossValue, 
       investment.nettValue, 
+      investment.grossProfit, 
+      investment.investorProfit, 
+      investment.traderProfit, 
       investment.investorProfitPercent, 
       investment.investmentType, 
       investment.state, 
       investment.traderLimit, 
       investment.startDate, 
       investment.endDate,
+      investment.investTxHash, 
+      investment.stopTxHash, 
+      investment.requestTxHash, 
+      investment.rejectTxHash, 
+      investment.approveTxHash,
       investment.id
     ]);
   return resp;

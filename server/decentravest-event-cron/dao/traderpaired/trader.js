@@ -3,7 +3,7 @@
 const BigNumber = require('bignumber.js');
 
 const s3Common = require("../../common/s3Common")
-const select = `id, blockNumber, returnvalues.user, returnvalues.traderid, \
+const select = `id, blockNumber, transactionHash, returnvalues.user, returnvalues.traderid, \
   returnvalues.investorcollateralprofitpercent, returnvalues.investordirectprofitpercent, returnvalues.mdate`
 
 module.exports.create = async (event) => {
@@ -49,90 +49,3 @@ module.exports.get = async (id) => {
   
   return null;
 }
-
-module.exports.getByUser = async (id) => {
-
-  console.log("getting trader", id)
-
-  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-trader`)) {
-    return null
-  }
-
-  const query = {
-    sql: `SELECT ${select} FROM traderpaired_trader where returnvalues.user = '${id}'`
-  };
-
-  try {
-    const results = await s3Common.athenaExpress.query(query);
-    if (results.Items.length > 0) {
-      return results.Items[0]
-    }
-  } catch (error) {
-    console.log("athena error", error)
-  }
-  
-  return null;
-}
-
-module.exports.list = async () => {
-
-  console.log("getting traders")
-
-  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-trader`)) {
-    return []
-  }
-
-  const query = {
-    sql: `SELECT ${select} FROM traderpaired_trader`
-  };
-
-  try {
-    const results = await s3Common.athenaExpress.query(query);
-    if (results.Items.length > 0) {
-      return results.Items
-    }
-  } catch (error) {
-    console.log("athena error", error)
-  }
-  
-  return [];
-}
-
-
-module.exports.getLast = async () => {
-
-  console.log("getting last event")
-
-  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-trader`)) {
-    return null
-  }
-
-  const query = {
-    sql: `SELECT ${select} FROM traderpaired_trader ORDER BY blockNumber desc LIMIT 1`
-  };
-
-  try {
-    const results = await s3Common.athenaExpress.query(query);
-    if (results.Items.length > 0) {
-      return results.Items[0]
-    }
-  } catch (error) {
-    console.log("athena error", error)
-  }
-  
-  return null;
-}
-
-const mapTrader = (event) => {
-
-  return {
-    id: event.id,
-    blockNumber: event.blockNumber,
-    user: event.user,
-    traderId: event.traderid,
-    investorCollateralProfitPercent: new BigNumber(event.investorcollateralprofitpercent),
-    investorDirectProfitPercent: new BigNumber(event.investordirectprofitpercent),
-    eventDate: event.mdate
-  }
-}
-

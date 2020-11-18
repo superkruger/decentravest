@@ -1,7 +1,7 @@
 'use strict';
 
 const s3Common = require("../../common/s3Common")
-const select = 'id, blockNumber, returnvalues.user, returnvalues.investorid, returnvalues.mdate'
+const select = 'id, blockNumber, transactionHash, returnvalues.user, returnvalues.investorid, returnvalues.mdate'
 
 module.exports.create = async (event) => {
 
@@ -46,88 +46,3 @@ module.exports.get = async (id) => {
   
   return null;
 }
-
-module.exports.getByUser = async (id) => {
-
-  console.log("get event", id)
-
-  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-investor`)) {
-    return null
-  }
-
-  const query = {
-    sql: `SELECT ${select} FROM traderpaired_investor where returnvalues.user = '${id}'`
-  };
-
-  try {
-    const results = await s3Common.athenaExpress.query(query);
-    if (results.Items.length > 0) {
-      return results.Items[0]
-    }
-  } catch (error) {
-    console.log("athena error", error);
-  }
-  
-  return null;
-}
-
-module.exports.list = async () => {
-
-  console.log("list events")
-
-  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-investor`)) {
-    return []
-  }
-
-  const query = {
-    sql: `SELECT ${select} FROM traderpaired_investor`
-  };
-
-  try {
-    const results = await s3Common.athenaExpress.query(query);
-    if (results.Items.length > 0) {
-      return results.Items
-    }
-  } catch (error) {
-    console.log("athena error", error);
-  }
-  
-  return [];
-}
-
-module.exports.getLast = async () => {
-
-  console.log("getting last event")
-
-  if (!s3Common.hasData(`${process.env.eventbucket}/traderpaired-investor`)) {
-    return null
-  }
-
-  const query = {
-    sql: `SELECT ${select} FROM traderpaired_investor ORDER BY blockNumber desc LIMIT 1`
-  };
-
-  try {
-    const results = await s3Common.athenaExpress.query(query);
-    if (results.Items.length > 0) {
-      return results.Items[0]
-    }
-  } catch (error) {
-    console.log("athena error", error);
-  }
-  
-  return null;
-}
-
-
-const mapInvestor = (event) => {
-
-  return {
-    id: event.id,
-    blockNumber: event.blockNumber,
-    user: event.user,
-    investorId: event.investorid,
-    eventDate: event.mdate
-  }
-}
-

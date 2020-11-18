@@ -87,7 +87,7 @@ class Trader extends Component {
           <br/>
           <Row>
             <Col sm={4}>
-              <SmallCurrencyAmounts title="Collateral Allocations" amounts={mapAllocations(traderAllocations, "formattedTotal")} icon="fa-university" border="secondary" />
+              <SmallCurrencyAmounts title="Collateral Limits" amounts={mapAllocations(traderAllocations, "formattedTotal")} icon="fa-university" border="secondary" />
             </Col>
             <Col sm={4}>
               <SmallCurrencyAmounts title="Collateral Investments" amounts={mapAllocations(traderAllocations, "formattedInvested")} icon="fa-university" border="secondary" />
@@ -99,7 +99,7 @@ class Trader extends Component {
           <br/>
           <Row>
             <Col sm={4}>
-              <SmallCurrencyAmounts title="Direct Allocations" amounts={mapNameValueObject(traderStatistics.limits.formattedDirectLimits)} icon="fa-handshake" border="dark" />
+              <SmallCurrencyAmounts title="Direct Limits" amounts={mapNameValueObject(traderStatistics.limits.formattedDirectLimits)} icon="fa-handshake" border="dark" />
             </Col>
             <Col sm={4}>
               <SmallCurrencyAmounts title="Direct Investments" amounts={mapNameValueObject(traderStatistics.limits.formattedDirectInvested)} icon="fa-handshake" border="dark" />

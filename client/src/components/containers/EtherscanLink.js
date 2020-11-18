@@ -8,10 +8,12 @@ import {
 class EtherscanLink extends Component {
 
   render() {
-    const { network, address, target } = this.props
+    const { network, type, address, target } = this.props
+
+
 
     return (
-      <a title={`${address}`} href={`https://` + process.env['REACT_APP_'+network+'_ETHERSCAN_BASE'] + `.etherscan.io/address/${address}`} target="_blank" rel="noopener">
+      <a title={`${address}`} href={`https://` + process.env['REACT_APP_'+network+'_ETHERSCAN_BASE'] + `.etherscan.io/${type}/${address}`} target="_blank" rel="noopener">
         {address}
       </a>
     )

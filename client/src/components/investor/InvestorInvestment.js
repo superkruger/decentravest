@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Container, Row, Col, Button, Badge, Alert } from 'react-bootstrap'
 import AddressImage from '../AddressImage'
+import EtherscanLink from '../containers/EtherscanLink'
 import Token from '../Token'
 import WalletInstruction from '../cards/WalletInstruction'
 import { 
@@ -117,6 +118,19 @@ class InvestorInvestment extends Component {
                           </tbody>
                         </table>
                       </span>
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col sm={12}>
+                    {
+                      {
+                        0: <EtherscanLink network={network} type="tx" address={investment.investTxHash} />,
+                        1: <EtherscanLink network={network} type="tx" address={investment.stopTxHash} />,
+                        2: <EtherscanLink network={network} type="tx" address={investment.requestTxHash} />,
+                        3: <EtherscanLink network={network} type="tx" address={investment.requestTxHash} />,
+                        4: <EtherscanLink network={network} type="tx" address={investment.approveTxHash} />
+                      }[investment.state]
+                    }
                     </Col>
                   </Row>
                   <Row>

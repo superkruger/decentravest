@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Container, Row, Col, Button, Badge, Alert, Form } from 'react-bootstrap'
 import AddressImage from '../AddressImage'
+import EtherscanLink from '../containers/EtherscanLink'
 import Token from '../Token'
 import Help from '../containers/Help'
 import WalletInstruction from '../cards/WalletInstruction'
@@ -100,7 +101,7 @@ function switchFilterCurrentInvestments (event, component) {
 }
 
 function showInvestments(component) {
-  const { investments } = component.props
+  const { network, investments } = component.props
 
   return (
     <div className="col-sm-12">
@@ -196,6 +197,19 @@ function showInvestments(component) {
                               </tbody>
                             </table>
                           </span>
+                        </Col>
+                      </Row>
+                      <Row>
+                        <Col sm={12}>
+                        {
+                          {
+                            0: <EtherscanLink network={network} type="tx" address={investment.investTxHash} />,
+                            1: <EtherscanLink network={network} type="tx" address={investment.stopTxHash} />,
+                            2: <EtherscanLink network={network} type="tx" address={investment.requestTxHash} />,
+                            3: <EtherscanLink network={network} type="tx" address={investment.requestTxHash} />,
+                            4: <EtherscanLink network={network} type="tx" address={investment.approveTxHash} />
+                          }[investment.state]
+                        }
                         </Col>
                       </Row>
                     </div>

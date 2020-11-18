@@ -6,6 +6,7 @@ const axios = require('axios')
 const mysqlCommon = require('./common/mysql')
 
 const TraderPaired = require('./abis/TraderPaired.json')
+const MultiSigFundWalletFactory = require('./abis/MultiSigFundWalletFactory.json')
 const MultiSigFundWallet = require('./abis/MultiSigFundWallet.json')
 
 const traderDao = require('./dao/traderpaired/trader')
@@ -17,7 +18,13 @@ const rejectExitDao = require('./dao/traderpaired/rejectExit')
 const approveExitDao = require('./dao/traderpaired/approveExit')
 const allocateDao = require('./dao/traderpaired/allocate')
 const stopDao = require('./dao/traderpaired/stop')
+const contractInstantiationDao = require('./dao/multisigfundwalletfactory/contractInstantiation')
+const fundDao = require('./dao/multisigfundwallet/fund')
+const stoppedDao = require('./dao/multisigfundwallet/stopped')
 const disbursementCreatedDao = require('./dao/multisigfundwallet/disbursementCreated')
+const disbursementRejectedDao = require('./dao/multisigfundwallet/disbursementRejected')
+const disbursementCompletedDao = require('./dao/multisigfundwallet/disbursementCompleted')
+const payoutDao = require('./dao/multisigfundwallet/payout')
 
 const traderMysql = require('./mysql/traderpaired/trader')
 const investorMysql = require('./mysql/traderpaired/investor')
@@ -28,7 +35,13 @@ const rejectExitMysql = require('./mysql/traderpaired/rejectExit')
 const approveExitMysql = require('./mysql/traderpaired/approveExit')
 const allocateMysql = require('./mysql/traderpaired/allocate')
 const stopMysql = require('./mysql/traderpaired/stop')
+const contractInstantiationMysql = require('./mysql/multisigfundwalletfactory/contractInstantiation')
+const fundMysql = require('./mysql/multisigfundwallet/fund')
+const stoppedMysql = require('./mysql/multisigfundwallet/stopped')
 const disbursementCreatedMysql = require('./mysql/multisigfundwallet/disbursementCreated')
+const disbursementRejectedMysql = require('./mysql/multisigfundwallet/disbursementRejected')
+const disbursementCompletedMysql = require('./mysql/multisigfundwallet/disbursementCompleted')
+const payoutMysql = require('./mysql/multisigfundwallet/payout')
 
 const positionsHandler = require('./dydx/positions')
 
@@ -46,24 +59,13 @@ const statisticsController = require('./controller/statistics')
 const helpers = require('./helpers')
 
 const loadWeb3 = async () => {
-	console.log('loadWeb3, making axios request');
 
-	try {
-		let response = await axios.get('https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY')
-	
-		console.log("axios success", response.data.url)
-		console.log("axios success", response.data.explanation)
-	} catch(error) {
-		console.log("axios error", error)
-	}
-
-	console.log('INFURA_BASE_URL: ', process.env.INFURA_BASE_URL);
-	console.log('INFURA_API_KEY: ', process.env.INFURA_API_KEY);
+	// console.log('INFURA_BASE_URL: ', process.env.INFURA_BASE_URL);
+	// console.log('INFURA_API_KEY: ', process.env.INFURA_API_KEY);
 	
 	let web3 = new Web3(new Web3.providers.HttpProvider(`https://${process.env.INFURA_BASE_URL}.infura.io/v3/${process.env.INFURA_API_KEY}`));
 	// web3 = new Web3(Web3.givenProvider || 'http://127.0.0.1:8545')
-	console.log("web3", web3);
-
+	
 	if (web3) {
 		let networkType = await web3.eth.net.getNetworkType()
 		console.log("networkType", networkType)
@@ -79,27 +81,43 @@ const loadWeb3 = async () => {
 exports.loadWeb3 = loadWeb3
 
 const loadTraderPaired = async (web3, networkId) => {
+	let traderPaired
+
 	try {
 		if (TraderPaired.networks[networkId] !== undefined) {
 			console.log("TraderPaired address: ", TraderPaired.networks[networkId].address)
-			let traderPaired = await new web3.eth.Contract(TraderPaired.abi, TraderPaired.networks[networkId].address, {handleRevert: true})
-			return traderPaired
+			traderPaired = await new web3.eth.Contract(TraderPaired.abi, TraderPaired.networks[networkId].address, {handleRevert: true})
 		}
+
 	} catch (error) {
-		console.log('Contract not deployed to the current network', error)
+		console.error('Contract not deployed to the current network', error)
 	}
-	return null
+	return traderPaired
 }
 exports.loadTraderPaired = loadTraderPaired
 
-const processAllEvents = async (web3, traderPaired) => {
+const loadWalletFactory = async (web3, networkId) => {
+	let walletFactory
+
+	try {
+		if (MultiSigFundWalletFactory.networks[networkId] !== undefined) {
+			console.log("MultiSigFundWalletFactory address: ", MultiSigFundWalletFactory.networks[networkId].address)
+			walletFactory = await new web3.eth.Contract(MultiSigFundWalletFactory.abi, MultiSigFundWalletFactory.networks[networkId].address, {handleRevert: true})
+		}
+			
+	} catch (error) {
+		console.error('Contract not deployed to the current network', error)
+	}
+	return walletFactory
+}
+exports.loadWalletFactory = loadWalletFactory
+
+const processAllEvents = async (web3, traderPaired, walletFactory) => {
 	console.log('processAllEvents START')
 
 	// await mysqlCommon.dropTables() // TODO: remove!!
 
 	await mysqlCommon.createTables()
-
-	// let client = mysqlCommon.getClient()
 
 	let lastBlock = 0;
 	let result = true
@@ -116,7 +134,13 @@ const processAllEvents = async (web3, traderPaired) => {
 		result = await processInvestorEvents(traderPaired)
 	}
 	
-	// Investor
+	// ContractInstantiation
+	//
+	if (result) {
+		result = await processContractInstantiationEvents(walletFactory)
+	}
+	
+	// Investment
 	//
 	if (result) {
 		result = await processInvestmentEvents(web3, traderPaired)
@@ -193,7 +217,7 @@ const processTraderEvents = async (traderPaired) => {
 		}
 
 		result = await traderMysql.createOrUpdate(result)
-		console.log('traderMysql.create', result)
+		console.log('traderMysql.createOrUpdate', result)
 		if (!result) {
 			return false
 		}
@@ -227,7 +251,40 @@ const processInvestorEvents = async (traderPaired) => {
 		}
 
 		result = await investorMysql.createOrUpdate(result)
-		console.log('investorMysql.create', result)
+		console.log('investorMysql.createOrUpdate', result)
+		if (!result) {
+			return false
+		}
+	}
+	return true
+}
+
+const processContractInstantiationEvents = async (walletFactory) => {
+	let last = await contractInstantiationMysql.getLast()
+	console.log("ContractInstantiation last", last)
+	let lastBlock = last ? last.blockNumber + 1 : 0
+	console.log("ContractInstantiation blockNumber", lastBlock)
+
+	let stream = await walletFactory.getPastEvents(
+		'ContractInstantiation', {filter: {},fromBlock: lastBlock}
+	)
+	let events = stream.map(event => event)
+	console.log(`${events.length} ContractInstantiation Events`)
+	for (let i=0; i<events.length; i++) {
+		console.log("ContractInstantiation", events[i])
+
+		let result = await contractInstantiationDao.create(events[i])
+		if (!result) {
+			return false
+		}
+
+		result = await contractInstantiationDao.get(events[i].id)
+		if (!result) {
+			return false
+		}
+
+		result = await contractInstantiationMysql.createOrUpdate(result)
+		console.log('contractInstantiationMysql.createOrUpdate', result)
 		if (!result) {
 			return false
 		}
@@ -260,7 +317,7 @@ const processInvestmentEvents = async (web3, traderPaired) => {
 		}
 
 		result = await investmentMysql.createOrUpdate(result)
-		console.log('investmentMysql.create', result)
+		console.log('investmentMysql.createOrUpdate', result)
 		if (!result) {
 			return false
 		}
@@ -289,11 +346,103 @@ const processInvestmentEvents = async (web3, traderPaired) => {
 
 const processWalletEvents = async (walletAddress, walletContract) => {
 	console.log("processWalletEvents", walletAddress)
-	let result = await processDisbursementCreatedEvents(walletAddress, walletContract)
+
+	let result = await processFundEvents(walletAddress, walletContract)
 	if (!result) {
 		return false
 	}
 
+	result = await processStoppedEvents(walletAddress, walletContract)
+	if (!result) {
+		return false
+	}
+
+	result = await processDisbursementCreatedEvents(walletAddress, walletContract)
+	if (!result) {
+		return false
+	}
+
+	result = await processDisbursementRejectedEvents(walletAddress, walletContract)
+	if (!result) {
+		return false
+	}
+
+	result = await processDisbursementCompletedEvents(walletAddress, walletContract)
+	if (!result) {
+		return false
+	}
+
+	result = await processPayoutEvents(walletAddress, walletContract)
+	if (!result) {
+		return false
+	}
+
+	return true
+}
+
+const processFundEvents = async (walletAddress, walletContract) => {
+	let last = await fundMysql.getLast(walletAddress)
+	console.log("Fund last", last)
+	let lastBlock = last ? last.blockNumber + 1 : 0
+	console.log("Fund blockNumber", lastBlock)
+
+	let stream = await walletContract.getPastEvents(
+		'Fund', {filter: {},fromBlock: lastBlock}
+	)
+	let events = stream.map(event => event)
+
+	for (let i=0; i<events.length; i++) {
+		console.log("Fund", events[i])
+
+		let result = await fundDao.create(walletAddress, events[i])
+		if (!result) {
+			return false
+		}
+
+		result = await fundDao.get(walletAddress, events[i].id)
+		if (!result) {
+			return false
+		}
+
+		result = await fundMysql.createOrUpdate(walletAddress, result)
+		console.log('fundMysql.createOrUpdate', result)
+		if (!result) {
+			return false
+		}
+	}
+	return true
+}
+
+const processStoppedEvents = async (walletAddress, walletContract) => {
+	let last = await stoppedMysql.getLast(walletAddress)
+	console.log("Stopped last", last)
+	let lastBlock = last ? last.blockNumber + 1 : 0
+	console.log("Stopped blockNumber", lastBlock)
+
+	let stream = await walletContract.getPastEvents(
+		'Stopped', {filter: {},fromBlock: lastBlock}
+	)
+	let events = stream.map(event => event)
+
+	for (let i=0; i<events.length; i++) {
+		console.log("Stopped", events[i])
+
+		let result = await stoppedDao.create(walletAddress, events[i])
+		if (!result) {
+			return false
+		}
+
+		result = await stoppedDao.get(walletAddress, events[i].id)
+		if (!result) {
+			return false
+		}
+
+		result = await stoppedMysql.createOrUpdate(walletAddress, result)
+		console.log('stoppedMysql.createOrUpdate', result)
+		if (!result) {
+			return false
+		}
+	}
 	return true
 }
 
@@ -323,6 +472,105 @@ const processDisbursementCreatedEvents = async (walletAddress, walletContract) =
 
 		result = await disbursementCreatedMysql.createOrUpdate(walletAddress, result)
 		console.log('disbursementCreatedMysql.createOrUpdate', result)
+		if (!result) {
+			return false
+		}
+	}
+	return true
+}
+
+const processDisbursementRejectedEvents = async (walletAddress, walletContract) => {
+	let last = await disbursementRejectedMysql.getLast(walletAddress)
+	console.log("DisbursementRejected last", last)
+	let lastBlock = last ? last.blockNumber + 1 : 0
+	console.log("DisbursementRejected blockNumber", lastBlock)
+
+	let stream = await walletContract.getPastEvents(
+		'DisbursementRejected', {filter: {},fromBlock: lastBlock}
+	)
+	let events = stream.map(event => event)
+
+	for (let i=0; i<events.length; i++) {
+		console.log("DisbursementRejected", events[i])
+
+		let result = await disbursementRejectedDao.create(walletAddress, events[i])
+		if (!result) {
+			return false
+		}
+
+		result = await disbursementRejectedDao.get(walletAddress, events[i].id)
+		if (!result) {
+			return false
+		}
+
+		result = await disbursementRejectedMysql.createOrUpdate(walletAddress, result)
+		console.log('disbursementRejectedMysql.createOrUpdate', result)
+		if (!result) {
+			return false
+		}
+	}
+	return true
+}
+
+const processDisbursementCompletedEvents = async (walletAddress, walletContract) => {
+	let last = await disbursementCompletedMysql.getLast(walletAddress)
+	console.log("DisbursementCompleted last", last)
+	let lastBlock = last ? last.blockNumber + 1 : 0
+	console.log("DisbursementCompleted blockNumber", lastBlock)
+
+	let stream = await walletContract.getPastEvents(
+		'DisbursementCompleted', {filter: {},fromBlock: lastBlock}
+	)
+	let events = stream.map(event => event)
+
+	for (let i=0; i<events.length; i++) {
+		console.log("DisbursementCompleted", events[i])
+
+		let result = await disbursementCompletedDao.create(walletAddress, events[i])
+		if (!result) {
+			return false
+		}
+
+		result = await disbursementCompletedDao.get(walletAddress, events[i].id)
+		if (!result) {
+			return false
+		}
+
+		result = await disbursementCompletedMysql.createOrUpdate(walletAddress, result)
+		console.log('disbursementCompletedMysql.createOrUpdate', result)
+		if (!result) {
+			return false
+		}
+	}
+	return true
+}
+
+const processPayoutEvents = async (walletAddress, walletContract) => {
+	let last = await payoutMysql.getLast(walletAddress)
+	console.log("Payout last", last)
+	let lastBlock = last ? last.blockNumber + 1 : 0
+	console.log("Payout blockNumber", lastBlock)
+
+	let stream = await walletContract.getPastEvents(
+		'Payout', {filter: {},fromBlock: lastBlock}
+	)
+	let events = stream.map(event => event)
+
+	for (let i=0; i<events.length; i++) {
+		console.log("Payout", events[i])
+
+		let result = await payoutDao.create(walletAddress, events[i])
+		if (!result) {
+			return false
+		}
+
+		result = await payoutDao.get(walletAddress, events[i].id)
+		if (!result) {
+			return false
+		}
+
+		result = await payoutMysql.createOrUpdate(walletAddress, result)
+		console.log('payoutMysql.createOrUpdate', result)
 		if (!result) {
 			return false
 		}
@@ -609,6 +857,7 @@ const processStopEventsForInvestments = async (traderPaired) => {
 		investment.stopBlockNumber = events[i].blockNumber
 		investment.endDate = moment.unix(parseInt(events[i].eventDate, 10))
 		investment.state = helpers.INVESTMENT_STATE_STOPPED
+		investment.stopTxHash = events[i].txHash
 
 		let result = await positionsHandler.loadTraderPositions(investment.trader)
 		if (!result) {
@@ -661,6 +910,7 @@ const processRequestExitEventsForInvestments = async (web3, traderPaired) => {
 		investment.requestBlockNumber = events[i].blockNumber
 		investment.state = events[i].requestFrom === events[i].investor ? helpers.INVESTMENT_STATE_EXITREQUESTED_INVESTOR : helpers.INVESTMENT_STATE_EXITREQUESTED_TRADER
 		investment.value = events[i].value
+		investment.requestTxHash = events[i].txHash
 
 		disbursement = await disbursementCreatedMysql.getLastForInvestment(walletAddress, investment.id)
 		console.log("DisbursementCreated last", disbursement)
@@ -709,6 +959,7 @@ const processRejectExitEventsForInvestments = async (traderPaired) => {
 		investment.rejectBlockNumber = events[i].blockNumber
 		investment.state = helpers.INVESTMENT_STATE_INVESTED
 		investment.disbursementId = 0
+		investment.rejectTxHash = events[i].txHash
 
 		let result = await investmentsController.update(investment)
 		if (!result) {
@@ -746,6 +997,7 @@ const processApproveExitEventsForInvestments = async (traderPaired) => {
 
 		investment.approveBlockNumber = events[i].blockNumber
 		investment.state = helpers.INVESTMENT_STATE_EXITAPPROVED
+		investment.approveTxHash = events[i].txHash
 
 		let result = await investmentsController.update(investment)
 		if (!result) {
@@ -836,6 +1088,23 @@ const createdInvestment = async (investmentId, traderPaired) => {
 		return null
 	}
 
+	let invest = await investMysql.get(investmentId)
+	if (!invest) {
+		return null
+	}
+
+	const walletContract = await new web3.eth.Contract(MultiSigFundWallet.abi, invest.wallet, {handleRevert: true})
+
+	if (!walletContract) {
+		console.error("Invalid wallet for invest", invest)
+		return false
+	}
+
+	result = await processFundEvents(invest.wallet, walletContract)
+	if (!result) {
+		return false
+	}
+
 	result = await processInvestEventsForInvestments(traderPaired)
 
 	if (!result) {
@@ -860,6 +1129,23 @@ const stoppedInvestment = async (investmentId, traderPaired) => {
 
 	if (!result) {
 		return null
+	}
+
+	let invest = await investMysql.get(investmentId)
+	if (!invest) {
+		return null
+	}
+
+	const walletContract = await new web3.eth.Contract(MultiSigFundWallet.abi, invest.wallet, {handleRevert: true})
+
+	if (!walletContract) {
+		console.error("Invalid wallet for invest", invest)
+		return false
+	}
+
+	result = await processStoppedEvents(invest.wallet, walletContract)
+	if (!result) {
+		return false
 	}
 
 	result = await processStopEventsForInvestments(traderPaired)
@@ -888,6 +1174,23 @@ const exitRequested = async (investmentId, web3, traderPaired) => {
 		return null
 	}
 
+	let invest = await investMysql.get(investmentId)
+	if (!invest) {
+		return null
+	}
+
+	const walletContract = await new web3.eth.Contract(MultiSigFundWallet.abi, invest.wallet, {handleRevert: true})
+
+	if (!walletContract) {
+		console.error("Invalid wallet for invest", invest)
+		return false
+	}
+
+	result = await processDisbursementCreatedEvents(invest.wallet, walletContract)
+	if (!result) {
+		return false
+	}
+
 	result = await processRequestExitEventsForInvestments(web3, traderPaired)
 
 	if (!result) {
@@ -907,6 +1210,23 @@ const exitRejected = async (investmentId, traderPaired) => {
 
 	if (!result) {
 		return null
+	}
+
+	let invest = await investMysql.get(investmentId)
+	if (!invest) {
+		return null
+	}
+
+	const walletContract = await new web3.eth.Contract(MultiSigFundWallet.abi, invest.wallet, {handleRevert: true})
+
+	if (!walletContract) {
+		console.error("Invalid wallet for invest", invest)
+		return false
+	}
+
+	result = await processDisbursementRejectedEvents(invest.wallet, walletContract)
+	if (!result) {
+		return false
 	}
 
 	result = await processRejectExitEventsForInvestments(traderPaired)
@@ -930,6 +1250,28 @@ const exitApproved = async (investmentId, traderPaired) => {
 		return null
 	}
 
+	let invest = await investMysql.get(investmentId)
+	if (!invest) {
+		return null
+	}
+
+	const walletContract = await new web3.eth.Contract(MultiSigFundWallet.abi, invest.wallet, {handleRevert: true})
+
+	if (!walletContract) {
+		console.error("Invalid wallet for invest", invest)
+		return false
+	}
+
+	result = await processDisbursementCompletedEvents(invest.wallet, walletContract)
+	if (!result) {
+		return false
+	}
+	
+	result = await processPayoutEvents(invest.wallet, walletContract)
+	if (!result) {
+		return false
+	}
+
 	result = await processApproveExitEventsForInvestments(traderPaired)
 
 	if (!result) {
@@ -945,7 +1287,7 @@ exports.exitApproved = exitApproved
 const calculateTraderStatistics = async (trader) => {
 	// Traders
 	//
-	let traders = await traderDao.list()
+	let traders = await traderMysql.list()
 
 	const statistics = await statisticsHandler.calculateTraderStatistics(trader, traders)
 

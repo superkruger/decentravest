@@ -6,27 +6,25 @@ const mysqlCommon = require("../../common/mysql")
 
 const create = async (event) => {
 
-  console.log("creating investment", event)
+  console.log("creating contractInstantiation", event)
 
   const client = mysqlCommon.getClient()
 
-  // id char(36) not null
+  // id char(36) not null,
   // blockNumber INT UNSIGNED not null, 
   // txHash char(60) not null,
-  // wallet char(50) not null,
-  // investor char(50) not null, 
-  // eventDate INT UNSIGNED not null,
+  // creator char(50) not null,
+  // instantiation char(50) not null,
 
-  let resp = await client.query('INSERT INTO event_traderpaired_investment \
-    (id, blockNumber, txHash, wallet, investor, eventDate) \
-    VALUES(?,?,?,?,?,?)', 
+  let resp = await client.query('INSERT INTO event_multisigfundwalletfactory_contractinstantiation \
+    (id, blockNumber, txHash, creator, instantiation) \
+    VALUES(?,?,?,?,?)', 
     [
       event.id,
       event.blockNumber, 
       event.transactionHash,
-      event.wallet,
-      event.investor,
-      event.mdate
+      event.creator,
+      event.instantiation
     ]);
   return resp;
 }
@@ -34,11 +32,11 @@ module.exports.create = create
 
 const get = async (id) => {
 
-  // console.log("getting investment", id)
+  console.log("getting contractInstantiation", id)
 
   const client = mysqlCommon.getClient()
 
-  let dbRes = await client.query(`select * from event_traderpaired_investment where id = ?`, [id])
+  let dbRes = await client.query(`select * from event_multisigfundwalletfactory_contractinstantiation where id = ?`, [id])
   if (dbRes.length == 0) {
       return null;
   }
@@ -51,19 +49,18 @@ module.exports.get = get
 
 const update = async (event) => {
 
-  console.log("updating investment", event)
+  console.log("updating contractInstantiation", event)
 
   const client = mysqlCommon.getClient()
 
-  let resp = await client.query('UPDATE event_traderpaired_investment \
-    set blockNumber = ?, txHash = ?, wallet = ?, investor = ?, eventDate = ? \
+  let resp = await client.query('UPDATE event_multisigfundwalletfactory_contractinstantiation \
+    set blockNumber = ?, txHash = ?, creator = ?, instantiation = ? \
     WHERE id = ?', 
     [
       event.blockNumber, 
       event.transactionHash,
-      event.wallet,
-      event.investor,
-      event.mdate,
+      event.creator,
+      event.instantiation,
       event.id
     ]);
   return resp;
@@ -72,7 +69,7 @@ module.exports.update = update
 
 module.exports.createOrUpdate = async (event) => {
 
-  console.log("createOrUpdate investment", event)
+  console.log("createOrUpdate contractInstantiation", event)
   let resp
 
   const obj = await get(event.id)
@@ -87,22 +84,18 @@ module.exports.createOrUpdate = async (event) => {
 
 module.exports.list = async () => {
 
-  // console.log("getting investments")
-
   const client = mysqlCommon.getClient()
 
-  let dbRes = await client.query(`select * from event_traderpaired_investment`)
+  let dbRes = await client.query(`select * from event_multisigfundwalletfactory_contractinstantiation`)
 
   return dbRes;
 }
 
 module.exports.getLast = async () => {
 
-  // console.log("getting last event")
-
   const client = mysqlCommon.getClient()
 
-  let dbRes = await client.query(`select * from event_traderpaired_investment order by blockNumber desc limit 1`)
+  let dbRes = await client.query(`select * from event_multisigfundwalletfactory_contractinstantiation order by blockNumber desc limit 1`)
   if (dbRes.length == 0) {
       return null;
   }
@@ -111,3 +104,4 @@ module.exports.getLast = async () => {
 
   return resp;
 }
+

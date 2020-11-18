@@ -12,6 +12,7 @@ const create = async (event) => {
 
   // id char(36) not null
   // blockNumber INT UNSIGNED not null, 
+  // txHash char(60) not null,
   // investmentId BIGINT UNSIGNED not null, 
   // wallet char(50) not null,
   // trader char(50) not null,
@@ -20,11 +21,12 @@ const create = async (event) => {
   // eventDate INT UNSIGNED not null,
 
   let resp = await client.query('INSERT INTO event_traderpaired_stop \
-    (id, blockNumber, investmentId, wallet, trader, investor, stopFrom, eventDate) \
-    VALUES(?,?,?,?,?,?,?,?)', 
+    (id, blockNumber, txHash, investmentId, wallet, trader, investor, stopFrom, eventDate) \
+    VALUES(?,?,?,?,?,?,?,?,?)', 
     [
       event.id,
       event.blockNumber, 
+      event.transactionHash,
       event.investmentid, 
       event.wallet,
       event.trader,
@@ -60,10 +62,11 @@ const update = async (event) => {
   const client = mysqlCommon.getClient()
 
   let resp = await client.query('UPDATE event_traderpaired_stop \
-    set blockNumber = ?, investmentId = ?, wallet = ?, trader = ?, investor = ?, stopFrom = ?, eventDate = ? \
+    set blockNumber = ?, txHash = ?, investmentId = ?, wallet = ?, trader = ?, investor = ?, stopFrom = ?, eventDate = ? \
     WHERE id = ?', 
     [
       event.blockNumber, 
+      event.transactionHash,
       event.investmentid, 
       event.wallet,
       event.trader,

@@ -12,16 +12,18 @@ const create = async (event) => {
 
   // id char(36) not null
   // blockNumber INT UNSIGNED not null, 
+  // txHash char(60) not null,
   // user char(50) not null,
   // investorId INT UNSIGNED not null, 
   // eventDate INT UNSIGNED not null,
 
   let resp = await client.query('INSERT INTO event_traderpaired_investor \
-    (id, blockNumber, user, investorId, eventDate) \
-    VALUES(?,?,?,?,?)', 
+    (id, blockNumber, txHash, user, investorId, eventDate) \
+    VALUES(?,?,?,?,?,?)', 
     [
       event.id,
       event.blockNumber, 
+      event.transactionHash,
       event.user,
       event.investorid,
       event.mdate
@@ -54,10 +56,11 @@ const update = async (event) => {
   const client = mysqlCommon.getClient()
 
   let resp = await client.query('UPDATE event_traderpaired_investor \
-    set blockNumber = ?, user = ?, investorId = ?, eventDate = ? \
+    set blockNumber = ?, txHash = ?, user = ?, investorId = ?, eventDate = ? \
     WHERE id = ?', 
     [
       event.blockNumber, 
+      event.transactionHash,
       event.user,
       event.investorid,
       event.mdate,

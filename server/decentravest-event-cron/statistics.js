@@ -16,15 +16,18 @@ const investmentsMysql = require('./mysql/investments')
 
 const helpers = require('./helpers')
 
+const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000
+const ONE_YEAR_DAYS = 365
+
 const levelRequirements = [
-	{collateralReq: 0,   directReq: 0, 	  trustReq: 0,  directLimit: 0},	// 0 - intern
-	{collateralReq: 5,   directReq: 0, 	  trustReq: 7,  directLimit: 2},	// 1 - junior
-	{collateralReq: 10,  directReq: 10,   trustReq: 8,  directLimit: 5},	// 2 - analyst
-	{collateralReq: 20,  directReq: 50,   trustReq: 8,  directLimit: 10},	// 3 - specialist
-	{collateralReq: 50,  directReq: 100,  trustReq: 9,  directLimit: 20},	// 4 - associate
-	{collateralReq: 100, directReq: 500,  trustReq: 9,  directLimit: 50},	// 5 - entrepreneur
-	{collateralReq: 200, directReq: 1000, trustReq: 10, directLimit: 100},	// 6 - tycoon
-	{collateralReq: 500, directReq: 5000, trustReq: 10, directLimit: 500}	// 7 - elite
+  {title: "intern",       collateralReq: 0,   directReq: 0,    trustReq: 0,  directLimit: 0},
+  {title: "junior",       collateralReq: 1,   directReq: 0,    trustReq: 7,  directLimit: 5},
+  {title: "analyst",      collateralReq: 2,   directReq: 20,   trustReq: 8,  directLimit: 20},
+  {title: "specialist",   collateralReq: 5,   directReq: 50,   trustReq: 9,  directLimit: 50},
+  {title: "associate",    collateralReq: 10,  directReq: 100,  trustReq: 9,  directLimit: 100},
+  {title: "entrepreneur", collateralReq: 20,  directReq: 200,  trustReq: 10, directLimit: 200},
+  {title: "tycoon",       collateralReq: 50,  directReq: 500,  trustReq: 10, directLimit: 500},
+  {title: "elite",        collateralReq: 100, directReq: 1000, trustReq: 10, directLimit: 1000}
 ]
 
 const tokenSymbols = ["ETH", "DAI", "USDC"]
@@ -32,9 +35,7 @@ const tokenSymbols = ["ETH", "DAI", "USDC"]
 module.exports.calculateTraderStatistics = async (account, allTraders) => {
 
 	let investments = await investMysql.getByTrader(account)
-	for (let i=0; i<investments.length; i++) {
-		investments[i] = await mapInvest(investments[i])
-	}
+	investments = investments.map(mapInvest)
 
 	const stops = await stopMysql.getByTrader(account)
 
@@ -44,6 +45,18 @@ module.exports.calculateTraderStatistics = async (account, allTraders) => {
 			investments[index] = {
 				...investments[index],
 				...mapStop(stop)
+			}
+		}
+	})
+
+	const rejectExits = await rejectExitMysql.getByTrader(account)
+
+	rejectExits.forEach((rejectExit) => {
+		let index = investments.findIndex(investment => investment.investmentId === rejectExit.investmentId)
+		if (index !== -1) {
+			investments[index] = {
+				...investments[index],
+				...mapRejectExit(rejectExit)
 			}
 		}
 	})
@@ -72,17 +85,11 @@ module.exports.calculateTraderStatistics = async (account, allTraders) => {
 		}
 	})
 
-	const rejectExits = await rejectExitMysql.getByTrader(account)
+	for (let i=0; i<investments.length; i++) {
+		await setInvestmentValue(investments[i])
 
-	rejectExits.forEach((rejectExit) => {
-		let index = investments.findIndex(investment => investment.investmentId === rejectExit.investmentId)
-		if (index !== -1) {
-			investments[index] = {
-				...investments[index],
-				...mapRejectExit(rejectExit)
-			}
-		}
-	})
+		//console.log("calculateTraderStatistics", investments[i])
+	}
 
 	const counts = await calculateInvestmentCounts(investments)
 	const trustRating = await calculateTrustRating(account, investments)
@@ -119,6 +126,18 @@ module.exports.calculateInvestorStatistics = async (account) => {
 		}
 	})
 
+	// const rejectExits = await rejectExitMysql.getByInvestor(account)
+
+	// rejectExits.forEach((rejectExit) => {
+	// 	let index = investments.findIndex(investment => investment.investmentId === rejectExit.investmentId)
+	// 	if (index !== -1) {
+	// 		investments[index] = {
+	// 			...investments[index],
+	// 			...mapRejectExit(rejectExit)
+	// 		}
+	// 	}
+	// })
+
 	const requestExits = await requestExitMysql.getByInvestor(account)
 
 	requestExits.forEach((requestExit) => {
@@ -142,6 +161,10 @@ module.exports.calculateInvestorStatistics = async (account) => {
 			}
 		}
 	})
+
+	for (let i=0; i<investments.length; i++) {
+		await setInvestmentValue(investments[i])
+	}
 
 	const counts = await calculateInvestmentCounts(investments)
 
@@ -169,39 +192,44 @@ const calculateInvestmentCounts = async (investments) => {
 
 		if (investment.approveFrom) {
 			// approved
-			incrementInvestmentCount(counter, "approved", investment.nettValue.minus(investment.amount))
+			incrementInvestmentCount(counter, "approved", investment)
 		} else if (investment.rejectFrom) {
 			// rejected
-			incrementInvestmentCount(counter, "rejected", investment.nettValue.minus(investment.amount))
+			incrementInvestmentCount(counter, "rejected", investment)
 		} else if (investment.requestFrom || investment.stopFrom) {
 			// pending
-			incrementInvestmentCount(counter, "pending", investment.nettValue.minus(investment.amount))
+			incrementInvestmentCount(counter, "pending", investment)
 		} else {
 			// active
-			incrementInvestmentCount(counter, "active", investment.nettValue.minus(investment.amount))
+			incrementInvestmentCount(counter, "active", investment)
 		}
 	})
 
 	return investmentCounts
 }
 
-const incrementInvestmentCount = (counter, state, amount) => {
+const incrementInvestmentCount = (counter, state, investment) => {
 	if (!counter[state]) {
 		counter[state] = {}
 	}
 
 	let side = "positive"
 
-	if (amount.lt(0)) {
+	if (!investment.grossProfit.isPositive()) {
 		side = "negative"
-		amount = amount.abs()
 	}
 
 	if (!counter[state][side]) {
-		counter[state][side] = {"count": 1, "total": amount.toString()}
+		counter[state][side] = {
+			"count": 1, 
+			"totalGrossProfit": investment.grossProfit.abs().toString(),
+			"totalInvestorProfit": investment.investorProfit.abs().toString(),
+			"totalTraderProfit": investment.traderProfit.abs().toString()}
 	} else {
 		counter[state][side].count = counter[state][side].count + 1
-		counter[state][side].total = new BigNumber(counter[state][side].total).plus(amount).toString()
+		counter[state][side].totalGrossProfit = new BigNumber(counter[state][side].totalGrossProfit).plus(investment.grossProfit.abs()).toString()
+		counter[state][side].totalInvestorProfit = new BigNumber(counter[state][side].totalInvestorProfit).plus(investment.investorProfit.abs()).toString()
+		counter[state][side].totalTraderProfit = new BigNumber(counter[state][side].totalTraderProfit).plus(investment.traderProfit.abs()).toString()
 	}
 }
 
@@ -238,7 +266,11 @@ const calculateLevel = async (investments, trustRating) => {
 const calculateTrustRating = async (account, investments) => {
 
 	let total = 0
-	let bad = 0
+	let badValues = []
+	let pastLateApprovals = []
+	let currentLateApprovals = []
+
+	const NOW = moment()
 
 	investments.forEach((investment) => {
 
@@ -247,42 +279,70 @@ const calculateTrustRating = async (account, investments) => {
 
 			if (investment.requestFrom === account) {
 				// trader requested exit, check value
-				if (investment.grossValue.lt(investment.value)) {
-					// trader requested wrong value
-					bad = bad + 1
+				if (investment.value.lt(investment.grossValue)) {
+					// trader requested wrong value, too small
+					let daysSince = NOW.diff(investment.requestExitDate, 'days')
+					if (daysSince < ONE_YEAR_DAYS) {
+						badValues.push(ONE_YEAR_DAYS - daysSince)
+					}
 				}
 
 			} else {
 				// investor requested exit
 				let now = moment()
 				if (investment.approveFrom) {
-					if (investment.approveExitDate.diff(investment.requestExitDate) > 48 * 60 * 60 * 1000) {
-						bad = bad + 1
+					if (investment.approveExitDate.diff(investment.requestExitDate) > ONE_WEEK_MS) {
+
+						let daysSince = NOW.diff(investment.approveExitDate, 'days')
+						if (daysSince < ONE_YEAR_DAYS) {
+							pastLateApprovals.push(ONE_YEAR_DAYS - daysSince)
+						}
 					}
 
 				} else if (investment.rejectFrom) {
-					if (investment.grossValue.lt(investment.rejectValue)) {
-						// trader rejected wrong value
-						// console.log("trader rejected with wrong value", investment.grossValue.toString(), investment.value.toString(), investment.rejectValue.toString())
-						bad = bad + 1
+					if (investment.rejectValue.lt(investment.grossValue)) {
+						// trader rejected with wrong value
+						let daysSince = NOW.diff(investment.rejectExitDate, 'days')
+						if (daysSince < ONE_YEAR_DAYS) {
+							badValues.push(ONE_YEAR_DAYS - daysSince)
+						}
 					}
 				} else {
 					// still waiting
-					if (now.diff(investment.requestExitDate) > 48 * 60 * 60 * 1000) {
-						bad = bad + 1
-					}
+					if (NOW.diff(investment.requestExitDate) > ONE_WEEK) {
+						currentLateApprovals.push(NOW.diff(investment.requestExitDate, 'days'))
+					}	
 				}
 			}
 		}
 	})
 
-	let trustRating = new BigNumber(0)
+	let trustRating = 10
 
 	if (total > 0) {
-		trustRating = new BigNumber(total - bad).dividedBy(total).multipliedBy(10)
+
+		let penalty = getPenaltyScore(badValues, 2)
+		penalty += getPenaltyScore(pastLateApprovals, 0.1)
+		penalty += getPenaltyScore(currentLateApprovals, 100)
+
+		if (penalty > 10) {
+			penalty = 10
+		}
+
+		trustRating = 10 - penalty
 	}
 
-	return trustRating.toString()
+	console.log("trustRating", trustRating)
+
+	return trustRating
+}
+
+const getPenaltyScore = (scores, weight) => {
+	let score = scores.reduce((total, value) => {
+		return total + (value / ONE_YEAR_DAYS) * weight
+	}, 0)
+
+	return score
 }
 
 const calculateLimits = async (account, investments, level) => {
@@ -427,7 +487,9 @@ const calculateTradingRatings = async (account, allTraders) => {
 		for (let tradeIndex=0; tradeIndex<trades.length; tradeIndex++) {
 			let trade = trades[tradeIndex]
 
-			const relativeProfit = trade.profit.dividedBy(trade.initialAmount)
+			const relativeProfit = trade.profit
+				.dividedBy(trade.initialAmount)
+				.dividedBy(trade.end.diff(trade.start, 'days', true))
 			const profit = trade.profit
 
 			traderTotalRel[trade.asset] = traderTotalRel[trade.asset].plus(relativeProfit)
@@ -579,6 +641,20 @@ const calculateProfitRatings = async (account, allTraders) => {
 			investments[i] = await mapInvest(investments[i])
 		}
 
+		const stops = await stopMysql.getByTrader(trader.user)
+
+		stops.forEach((stop) => {
+			// console.log("Stop", stop)
+			let index = investments.findIndex(investment => investment.investmentId === stop.investmentId)
+			// console.log ("index", index)
+			if (index !== -1) {
+				investments[index] = {
+					...investments[index],
+					...mapStop(stop)
+				}
+			}
+		})
+
 		const requestExits = await requestExitMysql.getByTrader(trader.user)
 
 		requestExits.forEach((requestExit) => {
@@ -608,10 +684,12 @@ const calculateProfitRatings = async (account, allTraders) => {
 
 		for (let investmentIndex=0; investmentIndex<investments.length; investmentIndex++) {
 			let investment = investments[investmentIndex]
-			console.log("calculateProfitRatings - investment", investment)
+			// console.log("calculateProfitRatings - investment", investment)
 			const tokenSymbol = helpers.tokenSymbolForAddress(investment.token)
 
-			const relativeProfit = (investment.nettValue.minus(investment.amount)).dividedBy(investment.amount)
+			const relativeProfit = (investment.nettValue.minus(investment.amount))
+				.dividedBy(investment.amount)
+				.dividedBy(investment.end.diff(investment.start, 'days', true))
 			const profit = investment.nettValue.minus(investment.amount)
 
 			traderTotalRel[tokenSymbol] = traderTotalRel[tokenSymbol].plus(relativeProfit)
@@ -679,8 +757,8 @@ const calculateProfitRatings = async (account, allTraders) => {
 const mapTrade = (trade) => {
 	return {
 		...trade,
-		start: moment(trade.start),
-		end: moment(trade.end),
+		start: moment.unix(trade.start),
+		end: moment.unix(trade.end),
 		profit: new BigNumber(trade.profit),
 		initialAmount: new BigNumber(trade.initialAmount)
 	}
@@ -695,7 +773,7 @@ const mapAllocate = (event) => {
 	}
 }
 
-const mapInvest = async (event) => {
+const mapInvest = (event) => {
 
 	let investment = {
 		...event,
@@ -710,8 +788,6 @@ const mapInvest = async (event) => {
 		invested: new BigNumber(event.invested),
 		state: 0
 	}
-
-	investment = await getInvestmentValue(investment)
 
 	return investment
 }
@@ -774,17 +850,21 @@ const mapRejectExit = (event) => {
 }
 
 
-const getInvestmentValue = async (investment) => {
+const setInvestmentValue = async (investment) => {
 	
+	let traderProfitPercent = new BigNumber(1)
 	let investorProfitPercent = investment.investorProfitPercent.dividedBy(10000)
+	traderProfitPercent = traderProfitPercent.minus(investorProfitPercent)
 
 	// get all trades for this investment
 	let trades = await tradesMysql.getByTrader(investment.trader)
+
 
 	trades = trades.filter(
 		(trade) => helpers.tokenAddressForSymbol(trade.asset) === investment.token)
 
 	trades = trades.map(mapTrade)
+
 
 	trades = trades.filter(trade =>
 		trade.start.isAfter(investment.start) 
@@ -794,7 +874,8 @@ const getInvestmentValue = async (investment) => {
 
 	// console.log("P", trades)
 
-	const allocations = await allocateMysql.getByTraderAndToken(investment.trader, investment.token)
+	let allocations = await allocateMysql.getByTraderAndToken(investment.trader, investment.token)
+	allocations = allocations.map(mapAllocate)
 
 	// console.log("A", allocations)
 
@@ -805,7 +886,8 @@ const getInvestmentValue = async (investment) => {
 	// for each trade get all investments that it should be split over
 	// and calculate profit/loss
 	let grossProfit = new BigNumber(0)
-	await trades.forEach(async (trade) => {
+	for (let i=0; i<trades.length; i++) {
+		let trade = trades[i]
 
 		// find the allocation just before the start of this trade
 		let allocation = allocations.find(allocation => allocation.eventDate.isBefore(trade.start))
@@ -819,10 +901,9 @@ const getInvestmentValue = async (investment) => {
 		// console.log("allocation total", allocation.total.toString())
 
 		// console.log("trade.profit", trade.profit.toString())
-		let totalAmount = await getTradeInvestmentsAmount(trade, traderInvestments)
-		// console.log("totalAmount", totalAmount.toString())
-
-		let investorsShare = totalAmount.dividedBy(allocation.total)
+		let {totalAmount, totalLimit} = await getTradeInvestmentsAmountAndTotalLimit(trade, allocation, investment, traderInvestments)
+		
+		let investorsShare = totalAmount.dividedBy(totalLimit)
 		// console.log("investorsShare", investorsShare.toString())
 
 		// split profit according to share of total amount
@@ -833,29 +914,43 @@ const getInvestmentValue = async (investment) => {
 		// console.log("tradeProfit", tradeProfit.toString())
 
 		grossProfit = grossProfit.plus(tradeProfit)
-	})
+	}
 
 	if (investment.amount.plus(grossProfit).isNegative()) {
 		// if losses would amount to a negative valuation, just make the loss equal to the investment amount
 		grossProfit = investment.amount.negated()
 	}
 
-	let nettProfit = grossProfit
-	if (nettProfit.isPositive()) {
-		nettProfit = nettProfit.multipliedBy(investorProfitPercent).multipliedBy(0.99)
+	let investorProfit = grossProfit
+	if (grossProfit.isPositive()) {
+		investorProfit = investorProfit.multipliedBy(investorProfitPercent).multipliedBy(0.99)
 	}
+
+	let traderProfit = grossProfit.multipliedBy(traderProfitPercent).multipliedBy(0.99)
+
 	console.log("grossProfit", grossProfit.toString())
-	console.log("nettProfit", nettProfit.toString())
+	console.log("investorProfit", investorProfit.toString())
+	console.log("traderProfit", traderProfit.toString())
 	investment.grossValue = investment.amount.plus(grossProfit)
-	investment.nettValue = investment.amount.plus(nettProfit)
-	return investment
+	investment.nettValue = investment.amount.plus(investorProfit)
+
+	investment.grossProfit = grossProfit
+	investment.investorProfit = investorProfit
+	investment.traderProfit = traderProfit
+
+	console.log("grossValue", investment.grossValue.toString())
+	console.log("nettValue", investment.nettValue.toString())
+	// return investment
 }
 
 const getTraderInvestments = async (account, token) => {
 	let result = []
 	try {
 		let investList = await investMysql.getByTraderAndToken(account, token)
+		investList = investList.map(mapInvest)
+
 		let stopList = await stopMysql.getByTrader(account)
+		stopList = stopList.map(mapStop)
 
 		investList.forEach((investment) => {
 			let index = stopList.findIndex(stopped => stopped.investmentId === investment.investmentId)
@@ -874,17 +969,33 @@ const getTraderInvestments = async (account, token) => {
 }
 
 
-const getTradeInvestmentsAmount = async (trade, traderInvestments) => {
-	let investments = traderInvestments.filter((investment) => helpers.tokenAddressForSymbol(trade.asset) === investment.token)
+const getTradeInvestmentsAmountAndTotalLimit = async (trade, allocation, investment, traderInvestments) => {
+	let investments = traderInvestments.filter((inv) => helpers.tokenAddressForSymbol(trade.asset) === inv.token)
 	
-	investments = investments.filter(investment =>
-		trade.start.isAfter(investment.start) 
+	investments = investments.filter(inv =>
+		trade.start.isAfter(inv.start) 
 			&& (
-				(investment.end.unix() === 0 || investment.state === 0) 
-					|| trade.end.isBefore(investment.end)))
+				(inv.end.unix() === 0 || inv.state === 0) 
+					|| trade.end.isBefore(inv.end)))
 	
 	
-	let totalAmount = investments.reduce((total, investment) => total.plus(investment.amount), new BigNumber(0))
-	return totalAmount
+	// totalAmount is the total of all investment amounts for this trade
+	let totalAmount = investments.reduce((total, inv) => total.plus(inv.amount), new BigNumber(0))
+
+	// totalLimit is the upper limit across which profits will be divided for this trade
+	// in the case of collateral investments, it's the collateral limit set at the time of investment
+	// but we also have to include all direct investment amounts, since they add to the ceiling
+	let totalLimit = investments.reduce((total, inv) => {
+
+		if (inv.investmentId === investment.investmentId) {
+			return total.plus(allocation.total)
+		} else if (inv.investmentType === helpers.INVESTMENT_DIRECT) {
+			return total.plus(inv.amount)
+		} else {
+			return total
+		}
+	}, new BigNumber(0))
+
+	return {totalAmount, totalLimit}
 }
 

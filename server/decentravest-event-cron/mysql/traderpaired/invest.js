@@ -2,6 +2,8 @@
 
 const mysqlCommon = require("../../common/mysql")
 
+const helpers = require('../../helpers')
+
 const create = async (event) => {
 
   console.log("creating invest", event)
@@ -10,6 +12,7 @@ const create = async (event) => {
 
   // id char(36) not null
   // blockNumber INT UNSIGNED not null, 
+  // txHash char(60) not null,
   // investmentId BIGINT UNSIGNED not null, 
   // wallet char(50) not null,
   // trader char(50) not null,
@@ -23,12 +26,13 @@ const create = async (event) => {
   // eventDate INT UNSIGNED not null,
 
   let resp = await client.query('INSERT INTO event_traderpaired_invest \
-    (id, blockNumber, investmentId, wallet, trader, investor, token, amount, \
+    (id, blockNumber, txHash, investmentId, wallet, trader, investor, token, amount, \
     investorProfitPercent, investmentType, allocationInvested, allocationTotal, eventDate) \
-    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)', 
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)', 
     [
       event.id,
       event.blockNumber, 
+      event.transactionHash,
       event.investmentid, 
       event.wallet,
       event.trader,
@@ -69,11 +73,12 @@ const update = async (event) => {
   const client = mysqlCommon.getClient()
 
   let resp = await client.query('UPDATE event_traderpaired_invest \
-    set blockNumber = ?, investmentId = ?, wallet = ?, trader = ?, investor = ?, token = ?, amount = ?, \
+    set blockNumber = ?, txHash = ?, investmentId = ?, wallet = ?, trader = ?, investor = ?, token = ?, amount = ?, \
     investorProfitPercent = ?, investmentType = ?, allocationInvested = ?, allocationTotal = ?, eventDate = ? \
     WHERE id = ?', 
     [
       event.blockNumber, 
+      event.transactionHash,
       event.investmentid, 
       event.wallet,
       event.trader,
@@ -192,13 +197,14 @@ module.exports.getByTraderAndToken = async (trader, token) => {
   return dbRes;
 }
 
-module.exports.getByTraderAndTokenBefore = async (trader, token, beforeDate) => {
+module.exports.getDirectByTraderAndTokenBefore = async (trader, token, beforeDate) => {
 
   // console.log("getting invests for trader before", trader, token, beforeDate)
 
   const client = mysqlCommon.getClient()
 
-  let dbRes = await client.query(`select * from event_traderpaired_invest WHERE trader = ? AND token = ? AND eventDate < ?`, [trader, token, beforeDate])
+  let dbRes = await client.query(`select * from event_traderpaired_invest WHERE investmentType = ? AND trader = ? AND token = ? AND eventDate < ?`, 
+    [helpers.INVESTMENT_DIRECT, trader, token, beforeDate])
 
   return dbRes;
 }

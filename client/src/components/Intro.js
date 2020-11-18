@@ -86,7 +86,7 @@ function JoinTraderButton(props) {
       <div className="card-body">
         <div className="text-center">
           <PageLink page={Page.JOIN_TRADER}>
-            <img className="img-fluid px-3 px-sm-4 mt-3 mb-4" style={{height: "10rem"}} src="/img/trader.jpg" alt=""/>
+            <img className="img-fluid px-3 px-sm-4 mt-3 mb-4" style={{height: "5rem"}} src="/img/trader.jpg" alt=""/>
           </PageLink>
         </div>
       </div>
@@ -104,7 +104,7 @@ function JoinInvestorButton(props) {
       <div className="card-body">
         <div className="text-center">
           <PageLink page={Page.JOIN_INVESTOR}>
-            <img className="img-fluid px-3 px-sm-4 mt-3 mb-4" style={{height: "10rem"}} src="/img/investor.jpg" alt=""/>
+            <img className="img-fluid px-3 px-sm-4 mt-3 mb-4" style={{height: "5rem"}} src="/img/investor.jpg" alt=""/>
           </PageLink>
         </div>
       </div>

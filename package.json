@@ -35,6 +35,7 @@
   },
   "scripts": {
     "test": "oz compile && mocha --exit --recursive --require @babel/register test",
+    "buildclient": "cd client && npm run build",
     "client": "cd client && npm run start",
     "server": "cd server && npm run start",
     "start": "concurrently --kill-others \"npm run server\" \"npm run client\""

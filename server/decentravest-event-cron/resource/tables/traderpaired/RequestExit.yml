@@ -15,6 +15,8 @@ Properties:
       Columns:
       - Name: blockNumber
         Type: int
+      - Name: transactionHash
+        Type: string
       - Name: id
         Type: string
       - Name: returnValues

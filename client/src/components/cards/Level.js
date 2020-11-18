@@ -5,14 +5,14 @@ import { Popover, OverlayTrigger, Tooltip } from 'react-bootstrap'
 import './step-progress.css';
 
 const levelRequirements = [
-  {title: "intern",       collateralReq: 0,   directReq: 0,     trustReq: 0,  directLimit: 0},
-  {title: "junior",       collateralReq: 5,   directReq: 0,     trustReq: 7,  directLimit: 2},
-  {title: "analyst",      collateralReq: 10,  directReq: 10,    trustReq: 8,  directLimit: 5},
-  {title: "specialist",   collateralReq: 20,  directReq: 50,    trustReq: 8,  directLimit: 10},
-  {title: "associate",    collateralReq: 50,  directReq: 100,   trustReq: 9,  directLimit: 20},
-  {title: "entrepreneur", collateralReq: 100, directReq: 500,   trustReq: 9,  directLimit: 50},
-  {title: "tycoon",       collateralReq: 200, directReq: 1000,  trustReq: 10, directLimit: 100},
-  {title: "elite",        collateralReq: 500, directReq: 5000,  trustReq: 10, directLimit: 500}
+  {title: "intern",       collateralReq: 0,   directReq: 0,    trustReq: 0,  directLimit: 0},
+  {title: "junior",       collateralReq: 1,   directReq: 0,    trustReq: 7,  directLimit: 5},
+  {title: "analyst",      collateralReq: 2,   directReq: 20,   trustReq: 8,  directLimit: 20},
+  {title: "specialist",   collateralReq: 5,   directReq: 50,   trustReq: 9,  directLimit: 50},
+  {title: "associate",    collateralReq: 10,  directReq: 100,  trustReq: 9,  directLimit: 100},
+  {title: "entrepreneur", collateralReq: 20,  directReq: 200,  trustReq: 10, directLimit: 200},
+  {title: "tycoon",       collateralReq: 50,  directReq: 500,  trustReq: 10, directLimit: 500},
+  {title: "elite",        collateralReq: 100, directReq: 1000, trustReq: 10, directLimit: 1000}
 ]
 
 class Level extends Component {

@@ -12,17 +12,6 @@ const approveExitMysql = require('../mysql/traderpaired/approveExit')
 
 const helpers = require('../helpers')
 
-const levelRequirements = [
-	{collateralReq: 0,   directReq: 0, 	  trustReq: 0,  directLimit: 0},	// 0 - intern
-	{collateralReq: 5,   directReq: 0, 	  trustReq: 7,  directLimit: 2},	// 1 - junior
-	{collateralReq: 10,  directReq: 10,   trustReq: 8,  directLimit: 5},	// 2 - analyst
-	{collateralReq: 20,  directReq: 50,   trustReq: 8,  directLimit: 10},	// 3 - specialist
-	{collateralReq: 50,  directReq: 100,  trustReq: 9,  directLimit: 20},	// 4 - associate
-	{collateralReq: 100, directReq: 500,  trustReq: 9,  directLimit: 50},	// 5 - entrepreneur
-	{collateralReq: 200, directReq: 1000, trustReq: 10, directLimit: 100},	// 6 - tycoon
-	{collateralReq: 500, directReq: 5000, trustReq: 10, directLimit: 500}	// 7 - elite
-]
-
 const tokenSymbols = ["ETH", "DAI", "USDC"]
 
 module.exports.getTotalInvestedForInvestment = async (investment) => {
@@ -37,14 +26,14 @@ module.exports.getTotalInvestedForInvestment = async (investment) => {
 
 const getTraderDirectInvestmentsBefore = async (account, token, startDate) => {
 	
-	let investments = await investMysql.getByTraderAndTokenBefore(account, token, startDate)
+	let investments = await investMysql.getDirectByTraderAndTokenBefore(account, token, startDate)
 
 	let i = investments.length
 	while (i--) {
 	    investments[i] = await mapInvest(investments[i])
 	    const stop = await stopMysql.getByInvestmentId(investments[i].investmentId)
 
-	    console.log("getTraderDirectInvestmentsBefore", stop)
+	    console.log("getDirectByTraderAndTokenBefore", stop)
 
 	    if (stop && stop.eventDate <= startDate) { 
 	    	// investment was stopped before the reference one started
@@ -65,7 +54,10 @@ const setInvestmentValue = async (investment) => {
 
 	console.log("setInvestmentValue", investment)
 	
+	let traderProfitPercent = new BigNumber(1)
+
 	let investorProfitPercent = investment.investorProfitPercent.dividedBy(10000)
+	traderProfitPercent = traderProfitPercent.minus(investorProfitPercent)
 
 	// get all trades for this investment
 	let trades = await tradesController.getTrades(investment.trader)
@@ -92,10 +84,10 @@ const setInvestmentValue = async (investment) => {
 		const trade = trades[i]
 
 		// console.log("trade.profit", trade.profit.toString())
-		let totalAmount = await getTradeInvestmentsAmount(trade, traderInvestments)
-		// console.log("totalAmount", totalAmount.toString())
+		let {totalAmount, totalLimit} = await getTradeInvestmentsAmountAndTotalLimit(trade, investment, traderInvestments)
+		// console.log("totalAmount, totalLimit", totalAmount.toString(), totalLimit.toString())
 
-		let investorsShare = totalAmount.dividedBy(investment.traderLimit)
+		let investorsShare = totalAmount.dividedBy(totalLimit)
 		// console.log("investorsShare", investorsShare.toString())
 
 		// split profit according to share of total amount
@@ -113,14 +105,22 @@ const setInvestmentValue = async (investment) => {
 		grossProfit = investment.amount.negated()
 	}
 
-	let nettProfit = grossProfit
-	if (nettProfit.isPositive()) {
-		nettProfit = nettProfit.multipliedBy(investorProfitPercent).multipliedBy(0.99)
+	let investorProfit = grossProfit
+	if (grossProfit.isPositive()) {
+		investorProfit = investorProfit.multipliedBy(investorProfitPercent).multipliedBy(0.99)
 	}
+
+	let traderProfit = grossProfit.multipliedBy(traderProfitPercent).multipliedBy(0.99)
+
 	console.log("grossProfit", grossProfit.toString())
-	console.log("nettProfit", nettProfit.toString())
+	console.log("investorProfit", investorProfit.toString())
+	console.log("traderProfit", traderProfit.toString())
 	investment.grossValue = investment.amount.plus(grossProfit)
-	investment.nettValue = investment.amount.plus(nettProfit)
+	investment.nettValue = investment.amount.plus(investorProfit)
+
+	investment.grossProfit = grossProfit.toString()
+	investment.investorProfit = investorProfit.toString()
+	investment.traderProfit = traderProfit.toString()
 
 	console.log("grossValue", investment.grossValue.toString())
 	console.log("nettValue", investment.nettValue.toString())
@@ -129,17 +129,33 @@ const setInvestmentValue = async (investment) => {
 }
 module.exports.setInvestmentValue = setInvestmentValue
 
-const getTradeInvestmentsAmount = async (trade, traderInvestments) => {
-	let investments = traderInvestments.filter((investment) => trade.asset === helpers.tokenSymbolForAddress(investment.token))
+const getTradeInvestmentsAmountAndTotalLimit = async (trade, investment, traderInvestments) => {
+	// let investments = traderInvestments.filter((inv) => trade.asset === helpers.tokenSymbolForAddress(inv.token))
 	
-	investments = investments.filter(investment =>
-		trade.start.isAfter(investment.startDate) 
+	let investments = traderInvestments.filter(inv =>
+		trade.start.isAfter(inv.startDate) 
 			&& (
-				(investment.endDate.unix() === 0 || investment.state === helpers.INVESTMENT_STATE_INVESTED) 
-					|| trade.end.isBefore(investment.endDate)))
+				(inv.endDate.unix() === 0 || inv.state === helpers.INVESTMENT_STATE_INVESTED) 
+					|| trade.end.isBefore(inv.endDate)))
 	
-	let totalAmount = investments.reduce((total, investment) => total.plus(investment.amount), new BigNumber(0))
-	return totalAmount
+	// totalAmount is the total of all investment amounts for this trade
+	let totalAmount = investments.reduce((total, inv) => total.plus(inv.amount), new BigNumber(0))
+
+	// totalLimit is the upper limit across which profits will be divided for this trade
+	// in the case of collateral investments, it's the collateral limit set at the time of investment
+	// but we also have to include all direct investment amounts, since they add to the ceiling
+	let totalLimit = investments.reduce((total, inv) => {
+
+		if (inv.investmentId === investment.id) {
+			return total.plus(investment.traderLimit)
+		} else if (inv.investmentType === helpers.INVESTMENT_DIRECT) {
+			return total.plus(inv.amount)
+		} else {
+			return total
+		}
+	}, new BigNumber(0))
+
+	return {totalAmount, totalLimit}
 }
 
 const getTraderInvestments = async (account, token) => {
