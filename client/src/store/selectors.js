@@ -14,6 +14,9 @@ import {
 		log 
 	} from '../helpers'
 
+const ethereumInstalled = (state) => get(state, 'app.ethereumInstalled', false)
+export const ethereumInstalledSelector = createSelector(ethereumInstalled, a => a)
+
 const notifications = (state) => get(state, 'app.notifications', [])
 export const notificationsSelector = createSelector(notifications, a => a)
 

@@ -1,3 +1,8 @@
+export function ethereumInstalled() {
+	return {
+		type: 'ETHEREUM_INSTALLED'
+	}
+}
 
 export function notificationAdded(notification) {
 	return {

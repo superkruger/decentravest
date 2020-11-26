@@ -6,9 +6,10 @@ import Content from './Content'
 import { log } from '../helpers'
 import './App.css'
 import { 
-  loadWebApp,
+  checkEthereum
 } from '../store/interactions'
 import {
+  ethereumInstalledSelector,
   sidebarClosedSelector
 } from '../store/selectors'
 
@@ -18,7 +19,7 @@ class App extends Component {
   }
 
   async loadBlockchainData(dispatch) {
-    await loadWebApp(dispatch)
+    await checkEthereum(dispatch)
   }
 
   render() {

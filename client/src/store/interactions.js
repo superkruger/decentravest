@@ -9,6 +9,7 @@ import MultiSigFundWallet from '../abis/MultiSigFundWallet.json'
 import ERC20 from '../abis/IERC20.json'
 import { log, ZERO_ADDRESS, INVESTMENT_COLLATERAL, INVESTMENT_DIRECT, INVESTMENT_STATE_INVESTED, setTokens, userTokens, toBN, etherToWei, tokenAddressForSymbol, tokenSymbolForAddress, info, fail } from '../helpers'
 import {
+	ethereumInstalled,
 	notificationAdded,
 	notificationRemoved,
 	web3Loaded,
@@ -41,28 +42,24 @@ import {
 	tradeLoaded
 } from './actions.js'
 
+export const checkEthereum = (dispatch) => {
+	if (typeof window.ethereum !== 'undefined') {
+		dispatch(ethereumInstalled())
+	}
+}
+
 export const loadWebApp = async (dispatch) => {
 
-	let web3
-	if (window.ethereum) {
-		web3 = new Web3(window.ethereum)
-		await window.ethereum.request({ method: 'eth_requestAccounts' })
+  	let web3 = new Web3(window.ethereum)
+	await window.ethereum.request({ method: 'eth_requestAccounts' })
 
-		window.ethereum.on('accountsChanged', async function (accounts) {
-			// await loadWebApp(web3, dispatch)
-			document.location = "/"
-		})
+	window.ethereum.on('accountsChanged', async function (accounts) {
+		document.location = "/"
+	})
 
-		window.ethereum.on('chainChanged', () => {
-			document.location = "/"
-		})
-	} else if (window.web3) {
-		web3 = new Web3(window.web3.currentProvider || Web3.givenProvider || 'http://127.0.0.1:8545')
-	}
-	else {
-		log('nothing')
-		// Do nothing....
-	}
+	window.ethereum.on('chainChanged', () => {
+		document.location = "/"
+	})
 
 	if (web3) {
 		web3.eth.handleRevert = true

@@ -6,19 +6,23 @@ import PageLink from './containers/PageLink'
 import { Page } from './containers/pages'
 import { info } from '../helpers'
 import {
+  ethereumInstalledSelector,
   accountSelector,
   mainTraderSelector,
   traderPairedLoadedSelector
 } from '../store/selectors'
-import { 
+import {
   sidebarToggled,
   notificationAdded
 } from '../store/actions'
+import { 
+  loadWebApp
+} from '../store/interactions'
 
 class Topbar extends Component {
 
   render() {
-    const { account, traderPairedLoaded, mainTrader } = this.props
+    const { ethereumInstalled, account, traderPairedLoaded, mainTrader } = this.props
 
     return (
       <nav className="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
@@ -49,7 +53,7 @@ class Topbar extends Component {
               ? 
                 <div>
                 {
-                  (typeof window.ethereum !== 'undefined') ?
+                  (ethereumInstalled) ?
                     <ConnectButton props={this.props} /> :
                   <span>
                     Please install <a href="https://metamask.io" target="_blank" rel="noopener">Metamask</a> first.
@@ -79,7 +83,7 @@ function ConnectButton(props) {
 
   const handleClick = () => {
     dispatch(notificationAdded(info("metamask", "Connecting...")))
-    window.ethereum.request({ method: 'eth_requestAccounts' })
+    loadWebApp(dispatch)
   }
 
   return (
@@ -88,7 +92,7 @@ function ConnectButton(props) {
         variant="primary"
         onClick={handleClick}
         >
-        Connect Metamask
+        Connect Ethereum
       </Button>
     </div>
   );
@@ -106,6 +110,7 @@ function SidebarToggleTop(props) {
 
 function mapStateToProps(state) {
   return {
+    ethereumInstalled: ethereumInstalledSelector(state),
     account: accountSelector(state),
     mainTrader: mainTraderSelector(state),
     traderPairedLoaded: traderPairedLoadedSelector(state)

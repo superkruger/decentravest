@@ -3,6 +3,8 @@ import { combineReducers } from 'redux'
 function app (state = {}, action ) {
 	switch (action.type) {
 
+		case 'ETHEREUM_INSTALLED':
+			return { ...state, ethereumInstalled: true }
 		case 'JOINING':
 			return { ...state, joining: action.busy }
 		case 'NOTIFICATION_ADDED':
