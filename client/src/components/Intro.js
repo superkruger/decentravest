@@ -1,10 +1,13 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import { Container, Row, Col, Button } from 'react-bootstrap'
+import Spinner from './Spinner'
 import { info } from '../helpers'
 import PageLink from './containers/PageLink'
 import { Page } from './containers/pages'
 import {
+  ethereumInstalledSelector,
+  web3Selector,
   traderPairedSelector,
   traderPairedLoadedSelector,
   accountSelector,
@@ -19,32 +22,81 @@ import {
 class Intro extends Component {
 
   render() {
-    const {isAdmin, traderPairedLoaded, joined} = this.props
-    return (
-        <Container>
-          <Row>
-            <Col sm={12}>
-              <div>
-              { 
-                traderPairedLoaded && (!joined && !isAdmin) ?
-                
-                <JoinSelection props={this.props} /> :
+    const {ethereumInstalled, web3, isAdmin, traderPairedLoaded, joined} = this.props
 
-                <div>
-                  <h3>Welcome to the Decentravest portal for traders and investors</h3>
-                </div>
-              }
-              </div>
-            </Col>
-          </Row>
-          <Row>
-            <Col sm={12}>
-              <p></p>
-            </Col>
-          </Row>
-        </Container>
+    let content
+
+    if (!ethereumInstalled) {
+      content = (<InstallEthereum />)
+    } else if (!web3) {
+      content = (<ConnectEthereum />)
+    } else if (!traderPairedLoaded) {
+      content = (<Spinner />)
+    } else if (!joined && !isAdmin) {
+      content = (<JoinSelection props={this.props} />)
+    } else {
+      content = (<Members />)
+    }
+
+    return (
+      <Container>
+        <Row>
+          <Col sm={12}>
+            { 
+              content
+            }
+          </Col>
+        </Row>
+        <Row>
+          <Col sm={12}>
+            <p></p>
+          </Col>
+        </Row>
+      </Container>
     )
   }
+}
+
+function InstallEthereum() {
+  return (
+    <div>
+      <h3>Install An Ethereum Wallet</h3>
+
+      To use this app, you'll need an ethereum wallet, and a metamask extension.<br/>
+      This app works best in <a href="https://brave.com" target="_blank" rel="noopener">Brave</a> or <a href="https://www.google.com/chrome/" target="_blank" rel="noopener">Chrome</a> browsers.<br/><br/>
+
+      <h5>Installing Metamask</h5>
+      <ol>
+        <li>Go to the <a href="https://metamask.io" target="_blank" rel="noopener">Metamask</a> website.</li>
+        <li>Click “Get Chrome Extension” to install Metamask.</li>
+        <li>Click “Add to Chrome” in the upper right.</li>
+        <li>Click “Add Extension” to complete the installation.</li>
+      </ol>
+
+      You will know Metamask has been installed when you see the fox logo on the upper right hand corner of your browser.<br/><br/>
+
+      Here's a more in-depth <a href="https://blog.wetrust.io/how-to-install-and-use-metamask-7210720ca047" target="_blank" rel="noopener">article</a>
+    </div>
+  )
+}
+
+function ConnectEthereum() {
+  return (
+    <div>
+      <h3>Connect Your Wallet</h3>
+
+      To unlock all functionality, you'll need to connect your wallet to this app.<br/>
+      Click the button top-right.
+    </div>
+  )
+}
+
+function Members() {
+  return (
+    <div>
+      <h3>Welcome to the Decentravest portal for traders and investors</h3>
+    </div>
+  )
 }
 
 function JoinSelection(props) {
@@ -118,6 +170,8 @@ function mapStateToProps(state) {
   const investor = investorSelector(state)
 
   return {
+    ethereumInstalled: ethereumInstalledSelector(state),
+    web3: web3Selector(state),
     account: account,
     isAdmin: isAdminSelector(state),
     traderPaired: traderPairedSelector(state),
