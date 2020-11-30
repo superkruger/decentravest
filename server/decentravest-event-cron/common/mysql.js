@@ -21,6 +21,8 @@ const getClient = () => {
 exports.getClient = getClient
 
 const quitClient = () => {
+
+    console.log("quitClient")
     if (mysqlClient) {
         mysqlClient.quit()
         mysqlClient = null

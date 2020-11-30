@@ -20,7 +20,7 @@ const loadWalletFactory = async (web3, networkId) => {
 
 module.exports.processAllEvents = (event, context) => {
 	const time = new Date();
-	console.log(`Your cron function "${context.functionName}" ran at ${time}`);
+	console.log(`processAllEvents ran at ${time}`);
 
 	localProcessAllEvents()
 
@@ -31,7 +31,7 @@ module.exports.processAllEvents = (event, context) => {
 
 module.exports.processAllTrades = (event, context) => {
 	const time = new Date();
-	console.log(`Your cron function "${context.functionName}" ran at ${time}`);
+	console.log(`processAllTrades ran at ${time}`);
 
 	localProcessAllTrades()
 
@@ -42,7 +42,7 @@ module.exports.processAllTrades = (event, context) => {
 
 module.exports.calculateAllTradersStatistics = (event, context) => {
 	const time = new Date();
-	console.log(`Your cron function "${context.functionName}" ran at ${time}`);
+	console.log(`calculateAllTradersStatistics ran at ${time}`);
 
 	localCalculateAllTradersStatistics()
 
@@ -53,7 +53,7 @@ module.exports.calculateAllTradersStatistics = (event, context) => {
 
 module.exports.calculateAllInvestorsStatistics = (event, context) => {
   const time = new Date();
-  console.log(`Your cron function "${context.functionName}" ran at ${time}`);
+  console.log(`calculateAllInvestorsStatistics ran at ${time}`);
 
   localCalculateAllInvestorsStatistics()
 
@@ -64,7 +64,7 @@ module.exports.calculateAllInvestorsStatistics = (event, context) => {
 
 module.exports.calculateAllInvestmentValues = (event, context) => {
   const time = new Date();
-  console.log(`Your cron function "${context.functionName}" ran at ${time}`);
+  console.log(`calculateAllInvestmentValues ran at ${time}`);
 
   localCalculateAllInvestmentValues()
 
@@ -116,7 +116,7 @@ module.exports.trades = async (event, context) => {
 
 module.exports.userAction = (event, context) => {
   const time = new Date();
-  console.log(`Your cron function "${context.functionName}" ran at ${time}`);
+  console.log(`userAction ran at ${time}`);
 
   const data = JSON.parse(event.body)
   if (typeof data.action !== 'string') {
@@ -224,14 +224,12 @@ const localProcessAllEvents = async () => {
   const walletFactory = await loadWalletFactory(web3, networkId)
 	
 	await interactions.processAllEvents(web3, traderPaired, walletFactory)
-
   mysqlCommon.quitClient()
 }
 module.exports.localProcessAllEvents = localProcessAllEvents
 
 const localProcessAllTrades = async () => {
-	await interactions.processAllTrades();
-
+	await interactions.processAllTrades()
   mysqlCommon.quitClient()
 }
 module.exports.localProcessAllTrades = localProcessAllTrades
@@ -247,6 +245,7 @@ const localCreateTables = async () => {
     console.error("could not create tables", error)
     return encode.error(error, "could not create tables")
   }
+  mysqlCommon.quitClient()
 }
 
 const localJoinedTrader = async (trader) => {
@@ -263,8 +262,8 @@ const localJoinedTrader = async (trader) => {
     console.error("could not join trader", error)
     result = encode.error(error, "could not join trader")
   }
-
   mysqlCommon.quitClient()
+
   return result
 }
 
@@ -282,8 +281,8 @@ const localJoinedInvestor = async (investor) => {
     console.error("could not join investor", error)
     result = encode.error(error, "could not join investor")
   }
-
   mysqlCommon.quitClient()
+
   return result
 }
 
@@ -301,8 +300,8 @@ const localCreatedInvestment = async (investmentId) => {
     console.error("could not create investment", error)
     result = encode.error(error, "could not create investment")
   }
-
   mysqlCommon.quitClient()
+
   return result
 }
 
@@ -320,8 +319,8 @@ const localStoppedInvestment = async (investmentId) => {
     console.error("could not stop investment", error)
     result = encode.error(error, "could not stop investment")
   }
-
   mysqlCommon.quitClient()
+
   return result
 }
 
@@ -339,8 +338,8 @@ const localExitRequested = async (investmentId) => {
     console.error("could not request exit", error)
     result = encode.error(error, "could not request exit")
   }
-
   mysqlCommon.quitClient()
+
   return result
 }
 
@@ -358,8 +357,8 @@ const localExitRejected = async (investmentId) => {
     console.error("could not reject exit", error)
     result = encode.error(error, "could not reject exit")
   }
-
   mysqlCommon.quitClient()
+
   return result
 }
 
@@ -377,26 +376,26 @@ const localExitApproved = async (investmentId) => {
     console.error("could not reject approved", error)
     result = encode.error(error, "could not reject approved")
   }
-
   mysqlCommon.quitClient()
+
   return result
 }
 
 const localCalculateAllTradersStatistics = async () => {
-	await interactions.calculateAllTradersStatistics();
+	await interactions.calculateAllTradersStatistics()
   mysqlCommon.quitClient()
 }
 module.exports.localCalculateAllTradersStatistics = localCalculateAllTradersStatistics
 
 const localCalculateAllInvestorsStatistics = async () => {
-  await interactions.calculateAllInvestorsStatistics();
+  await interactions.calculateAllInvestorsStatistics()
   mysqlCommon.quitClient()
 }
 module.exports.localCalculateAllInvestorsStatistics = localCalculateAllInvestorsStatistics
 
 const localCalculateAllInvestmentValues = async () => {
   try {
-    await interactions.calculateAllInvestmentValues();
+    await interactions.calculateAllInvestmentValues()
   }
   catch(error) {
     console.error("localCalculateAllInvestmentValues error", error)

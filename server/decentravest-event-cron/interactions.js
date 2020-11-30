@@ -51,8 +51,6 @@ const investorStatisticsDao = require('./dao/investorStatistics')
 const investmentsMysql = require('./mysql/investments')
 const investmentsController = require('./controller/investments')
 
-const statisticsHandler = require('./statistics')
-
 const tradesController = require('./controller/trades')
 const statisticsController = require('./controller/statistics')
 
@@ -1289,7 +1287,7 @@ const calculateTraderStatistics = async (trader) => {
 	//
 	let traders = await traderMysql.list()
 
-	const statistics = await statisticsHandler.calculateTraderStatistics(trader, traders)
+	const statistics = await statisticsController.calculateTraderStatistics(trader, traders)
 
 	let result = await traderStatisticsDao.saveStatistics(trader, statistics)
 
@@ -1299,7 +1297,7 @@ const calculateTraderStatistics = async (trader) => {
 
 const calculateInvestorStatistics = async (investor) => {
 	
-	const statistics = await statisticsHandler.calculateInvestorStatistics(investor)
+	const statistics = await statisticsController.calculateInvestorStatistics(investor)
 
 	let result = await investorStatisticsDao.saveStatistics(investor, statistics)
 	
@@ -1318,7 +1316,7 @@ const calculateAllTradersStatistics = async () => {
 	}
 
 	for (let i=0; i<traders.length; i++) {
-		const statistics = await statisticsHandler.calculateTraderStatistics(traders[i].user, traders)
+		const statistics = await statisticsController.calculateTraderStatistics(traders[i].user, traders)
 
   		await traderStatisticsDao.saveStatistics(traders[i].user, statistics)
 	}
@@ -1337,7 +1335,7 @@ const calculateAllInvestorsStatistics = async () => {
 	}
 
 	for (let i=0; i<investors.length; i++) {
-		const statistics = await statisticsHandler.calculateInvestorStatistics(investors[i].user)
+		const statistics = await statisticsController.calculateInvestorStatistics(investors[i].user)
 
   		await investorStatisticsDao.saveStatistics(investors[i].user, statistics)
 	}
