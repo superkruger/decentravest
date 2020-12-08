@@ -5,7 +5,7 @@ module.exports.saveStatistics = async (account, statistics) => {
 
   try {
     let res = await s3Common.s3.putObject({
-      Bucket: `${process.env.investorstatisticsbucket}`,
+      Bucket: `${process.env.statisticsbucket}/investor`,
       Key: account,
       Body: JSON.stringify(statistics)
     }).promise()
@@ -20,7 +20,7 @@ module.exports.saveStatistics = async (account, statistics) => {
 
 module.exports.getStatistics = async (account) => {
   let options = {
-    "Bucket": `${process.env.investorstatisticsbucket}`,
+    "Bucket": `${process.env.statisticsbucket}/investor`,
     "Key": account
   }
 

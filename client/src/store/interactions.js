@@ -38,6 +38,7 @@ import {
 	disbursementCreated,
 	traderStatisticsLoaded,
 	investorStatisticsLoaded,
+	publicStatisticsLoaded,
 	tradeCountLoaded,
 	tradeLoaded
 } from './actions.js'
@@ -1258,6 +1259,26 @@ export const getTrades = async (network, account) => {
 	}
 
 	return []
+}
+
+export const loadPublicStatistics = async (network, dispatch) => {
+	try {
+		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
+					process.env['REACT_APP_' + network + '_API_STATISTICS']
+
+		if (network === 'DEV') {
+			url = url + "/public.json"
+		} else {
+			url = url + "?public=true"
+		}
+
+		console.log("loadPublicStatistics", url)
+		const response = await axios.get(url)
+		dispatch(publicStatisticsLoaded(response.data))
+
+	} catch (error) {
+		log('Could not get public statistics', error)
+	}
 }
 
 function sleep(ms) {

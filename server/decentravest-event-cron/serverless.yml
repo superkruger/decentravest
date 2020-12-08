@@ -21,8 +21,7 @@ provider:
     tradingbucket: ${self:custom.tradingbucket}
     eventbucket: ${self:custom.eventbucket}
     eventbucket_queryresults: ${self:custom.eventbucket_queryresults}
-    traderstatisticsbucket: ${self:custom.traderstatisticsbucket}
-    investorstatisticsbucket: ${self:custom.investorstatisticsbucket}
+    statisticsbucket: ${self:custom.statisticsbucket}
     investmentbucket: ${self:custom.investmentbucket}
     #infura
     INFURA_BASE_URL: ${param:INFURA_BASE_URL}
@@ -46,8 +45,7 @@ custom:
   tradingbucket: "tradingbucket-${opt:stage, 'dev'}-1"
   eventbucket: "eventbucket-${opt:stage, 'dev'}-1"
   eventbucket_queryresults: "resultbucket-${opt:stage, 'dev'}-1"
-  traderstatisticsbucket: "traderstatisticsbucket-${opt:stage, 'dev'}-1"
-  investorstatisticsbucket: "investorstatisticsbucket-${opt:stage, 'dev'}-1"
+  statisticsbucket: "statisticsbucket-${opt:stage, 'dev'}-1"
   investmentbucket: "investmentbucket-${opt:stage, 'dev'}-1"
   athenadb: "blockchain-events-${opt:stage, 'dev'}"
   VPC_CIDR: 10
@@ -60,8 +58,7 @@ resources:
     TradingBucket: ${file(./resource/S3BucketTrades.yml)}
     EventBucket: ${file(./resource/S3BucketEvents.yml)}
     AthenaBucket: ${file(./resource/S3BucketQueryResults.yml)}
-    TraderStatisticsBucket: ${file(./resource/S3BucketTraderStatistics.yml)}
-    InvestorStatisticsBucket: ${file(./resource/S3BucketInvestorStatistics.yml)}
+    StatisticsBucket: ${file(./resource/S3BucketStatistics.yml)}
     InvestmentBucket: ${file(./resource/S3BucketInvestments.yml)}
     LambdaRole: ${file(./resource/LambdaRole.yml)}
     ServerlessInternetGateway: ${file(./resource/ServerlessInternetGateway.yml)}
@@ -118,12 +115,17 @@ functions:
   calculateAllTradersStatistics:
     handler: handler.calculateAllTradersStatistics
     events:
-      - schedule: rate(1 day)
+      - schedule: rate(10 minutes)
 
   calculateAllInvestorsStatistics:
     handler: handler.calculateAllInvestorsStatistics
     events:
-      - schedule: rate(1 day)
+      - schedule: rate(10 minutes)
+
+  calculatePublicStatistics:
+    handler: handler.calculatePublicStatistics
+    events:
+      - schedule: rate(10 minutes)
 
   calculateAllInvestmentValues:
     handler: handler.calculateAllInvestmentValues

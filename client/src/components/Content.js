@@ -7,6 +7,8 @@ import Intro from './Intro'
 import Notifications from './Notifications'
 import JoinTrader from './JoinTrader'
 import JoinInvestor from './JoinInvestor'
+
+import PublicStatistics from './PublicStatistics'
 import Trader from './trader/Trader'
 import Profile from './trader/Profile'
 import Investor from './investor/Investor'
@@ -59,6 +61,7 @@ class Content extends Component {
             : <div className="d-sm-flex align-items-center justify-content-between mb-4">
                 {
                   {
+                    'public_statistics': <PublicStatistics />,
                     'join_trader': <JoinTrader />,
                     'join_investor': <JoinInvestor />,
                     'trader_profile': <Profile page={page} section={section} />,
@@ -92,7 +95,7 @@ class Content extends Component {
 }
 
 function requiresWeb3(page) {
-  return page !== 'trader_profile'
+  return page !== 'trader_profile' && page !== 'public_statistics'
 }
 
 function mapStateToProps(state, ownProps) {

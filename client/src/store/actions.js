@@ -256,6 +256,13 @@ export function investorStatisticsLoaded(investor, statistics) {
 	}
 }
 
+export function publicStatisticsLoaded(statistics) {
+	return {
+		type: 'PUBLIC_STATISTICS_LOADED',
+		statistics
+	}
+}
+
 export function tradeCountLoaded(count) {
 	return {
 		type: 'TRADE_COUNT_LOADED',

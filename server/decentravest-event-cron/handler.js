@@ -5,6 +5,7 @@ const encode = require('./common/encode')
 const interactions = require('./interactions')
 const traderStatisticsDao = require('./dao/traderStatistics')
 const investorStatisticsDao = require('./dao/investorStatistics')
+const publicStatisticsDao = require('./dao/publicStatistics')
 const tradesMysql = require('./mysql/trades')
 const investmentsMysql = require('./mysql/investments')
 
@@ -18,55 +19,66 @@ const loadWalletFactory = async (web3, networkId) => {
   return walletFactory
 }
 
-module.exports.processAllEvents = (event, context) => {
+module.exports.processAllEvents = async (event, context) => {
 	const time = new Date();
 	console.log(`processAllEvents ran at ${time}`);
 
-	localProcessAllEvents()
+	await localProcessAllEvents()
 
   mysqlCommon.quitClient()
 	
 	return "processed all events";
 }
 
-module.exports.processAllTrades = (event, context) => {
+module.exports.processAllTrades = async (event, context) => {
 	const time = new Date();
 	console.log(`processAllTrades ran at ${time}`);
 
-	localProcessAllTrades()
+	await localProcessAllTrades()
 
   mysqlCommon.quitClient()
 
 	return "processed all trades";
 }
 
-module.exports.calculateAllTradersStatistics = (event, context) => {
+module.exports.calculateAllTradersStatistics = async (event, context) => {
 	const time = new Date();
 	console.log(`calculateAllTradersStatistics ran at ${time}`);
 
-	localCalculateAllTradersStatistics()
+	await localCalculateAllTradersStatistics()
 
   mysqlCommon.quitClient()
 
-	return "calculated statistics";
+	return "calculated traders statistics";
 }
 
-module.exports.calculateAllInvestorsStatistics = (event, context) => {
+module.exports.calculateAllInvestorsStatistics = async (event, context) => {
   const time = new Date();
   console.log(`calculateAllInvestorsStatistics ran at ${time}`);
 
-  localCalculateAllInvestorsStatistics()
+  await localCalculateAllInvestorsStatistics()
 
   mysqlCommon.quitClient()
 
-  return "calculated statistics";
+  return "calculated investors statistics";
 }
 
-module.exports.calculateAllInvestmentValues = (event, context) => {
+module.exports.calculatePublicStatistics = async (event, context) => {
+  const time = new Date();
+  console.log(`calculatePublicStatistics ran at ${time}`);
+
+  await localCalculatePublicStatistics()
+
+  mysqlCommon.quitClient()
+
+  return "calculated public statistics";
+}
+
+module.exports.calculateAllInvestmentValues = async (event, context) => {
   const time = new Date();
   console.log(`calculateAllInvestmentValues ran at ${time}`);
 
-  localCalculateAllInvestmentValues()
+  await localCalculateAllInvestmentValues()
 
   mysqlCommon.quitClient()
 
@@ -82,6 +94,8 @@ module.exports.statistics = async (event, context) => {
       result = await investorStatisticsDao.getStatistics(event.queryStringParameters.investor)
     } else if (event.queryStringParameters.trader) {
       result = await traderStatisticsDao.getStatistics(event.queryStringParameters.trader)
+    } else  if (event.queryStringParameters.public) {
+      result = await publicStatisticsDao.getStatistics()
     } else {
       throw "unknown query parameter for statistics"
     }
@@ -114,7 +128,7 @@ module.exports.trades = async (event, context) => {
   return result
 }
 
-module.exports.userAction = (event, context) => {
+module.exports.userAction = async (event, context) => {
   const time = new Date();
   console.log(`userAction ran at ${time}`);
 
@@ -128,14 +142,14 @@ module.exports.userAction = (event, context) => {
 
   switch(data.action) {
     case 'createTables': {
-      result = localCreateTables()
+      result = await localCreateTables()
       break
     }
     case 'traderJoined': {
       if (typeof data.trader !== 'string') {
         result = encode.error(new Error(`${data.action} error`), "action parameters missing")
       } else {
-        result = localJoinedTrader(data.trader)
+        result = await localJoinedTrader(data.trader)
       }
       break
     }
@@ -143,7 +157,7 @@ module.exports.userAction = (event, context) => {
       if (typeof data.investor !== 'string') {
         result = encode.error(new Error(`${data.action} error`), "action parameters missing")
       } else {
-        result = localJoinedInvestor(data.investor)
+        result = await localJoinedInvestor(data.investor)
       }
       break
     }
@@ -151,7 +165,7 @@ module.exports.userAction = (event, context) => {
       if (typeof data.investmentId !== 'string') {
         result = encode.error(new Error(`${data.action} error`), "action parameters missing")
       } else {
-        result = localCreatedInvestment(data.investmentId)
+        result = await localCreatedInvestment(data.investmentId)
       }
       break
     }
@@ -159,7 +173,7 @@ module.exports.userAction = (event, context) => {
       if (typeof data.investmentId !== 'string') {
         result = encode.error(new Error(`${data.action} error`), "action parameters missing")
       } else {
-        result = localStoppedInvestment(data.investmentId)
+        result = await localStoppedInvestment(data.investmentId)
       }
       break
     }
@@ -167,7 +181,7 @@ module.exports.userAction = (event, context) => {
       if (typeof data.investmentId !== 'string') {
         result = encode.error(new Error(`${data.action} error`), "action parameters missing")
       } else {
-        result = localExitRequested(data.investmentId)
+        result = await localExitRequested(data.investmentId)
       }
       break
     }
@@ -175,7 +189,7 @@ module.exports.userAction = (event, context) => {
       if (typeof data.investmentId !== 'string') {
         result = encode.error(new Error(`${data.action} error`), "action parameters missing")
       } else {
-        result = localExitRejected(data.investmentId)
+        result = await localExitRejected(data.investmentId)
       }
       break
     }
@@ -183,7 +197,7 @@ module.exports.userAction = (event, context) => {
       if (typeof data.investmentId !== 'string') {
         result = encode.error(new Error(`${data.action} error`), "action parameters missing")
       } else {
-        result = localExitApproved(data.investmentId)
+        result = await localExitApproved(data.investmentId)
       }
       break
     }
@@ -392,6 +406,12 @@ const localCalculateAllInvestorsStatistics = async () => {
   mysqlCommon.quitClient()
 }
 module.exports.localCalculateAllInvestorsStatistics = localCalculateAllInvestorsStatistics
+
+const localCalculatePublicStatistics = async () => {
+  await interactions.calculatePublicStatistics()
+  mysqlCommon.quitClient()
+}
+module.exports.localCalculatePublicStatistics = localCalculatePublicStatistics
 
 const localCalculateAllInvestmentValues = async () => {
   try {

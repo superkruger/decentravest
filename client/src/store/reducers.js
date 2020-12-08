@@ -226,6 +226,10 @@ function web3 (state = {}, action ) {
 					]
 				}
 			}
+		case 'PUBLIC_STATISTICS_LOADED':
+			{
+				return { ...state, publicstatistics: action.statistics }
+			}
 		case 'DIRECT_LIMIT_LOADED':
 			{
 				let index, data

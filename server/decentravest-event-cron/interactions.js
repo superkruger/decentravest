@@ -47,6 +47,7 @@ const positionsHandler = require('./dydx/positions')
 
 const traderStatisticsDao = require('./dao/traderStatistics')
 const investorStatisticsDao = require('./dao/investorStatistics')
+const publicStatisticsDao = require('./dao/publicStatistics')
 
 const investmentsMysql = require('./mysql/investments')
 const investmentsController = require('./controller/investments')
@@ -1341,6 +1342,13 @@ const calculateAllInvestorsStatistics = async () => {
 	}
 }
 exports.calculateAllInvestorsStatistics = calculateAllInvestorsStatistics
+
+const calculatePublicStatistics = async () => {
+	const statistics = await statisticsController.calculatePublicStatistics()
+
+	await publicStatisticsDao.saveStatistics(statistics)
+}
+exports.calculatePublicStatistics = calculatePublicStatistics
 
 const calculateAllInvestmentValues = async () => {
 	

@@ -49,6 +49,10 @@ class Sidebar extends Component {
           
         }
 
+        <div className="col-sm-12">
+          <StatisticsButton props={this.props} /> 
+        </div>
+
         {/* Divider */}
         <hr className="sidebar-divider d-none d-md-block"/>
 
@@ -71,6 +75,23 @@ function Logo(props) {
     </PageLink>
   )
 
+}
+
+function StatisticsButton(props) {
+  return (
+    <li className="nav-item active">
+      <PageLink page={Page.PUBLIC_STATISTICS} styles="nav-link">
+        <div className="row no-gutters align-items-left">
+          <div className="col-auto">
+            <i className="fas fa-fw fa-chart-bar"></i>
+          </div>
+          <div className="col-auto">
+            <div className="font-weight-bold mb-1">Statistics</div>
+          </div>
+        </div>
+      </PageLink>
+    </li>
+  )
 }
 
 function SidebarToggle(props) {

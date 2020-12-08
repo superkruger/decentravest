@@ -14,14 +14,19 @@
     "web3": "^1.2.11"
   },
   "devDependencies": {
-    "serverless-pseudo-parameters": "^2.4.0"
+    "@babel/register": "^7.9.0",
+    "chai": "^4.2.0",
+    "mocha": "^8.0.1",
+    "serverless-pseudo-parameters": "^2.4.0",
+    "sinon": "^9.2.1"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha --exit --recursive --require @babel/register test",
     "processAllEvents": "node -e 'require(\"./handler\").localProcessAllEvents()'",
     "processAllTrades": "node -e 'require(\"./handler\").localProcessAllTrades()'",
     "calculateAllTradersStatistics": "node -e 'require(\"./handler\").localCalculateAllTradersStatistics()'",
     "calculateAllInvestorsStatistics": "node -e 'require(\"./handler\").localCalculateAllInvestorsStatistics()'",
+    "calculatePublicStatistics": "node -e 'require(\"./handler\").localCalculatePublicStatistics()'",
     "calculateAllInvestmentValues": "node -e 'require(\"./handler\").localCalculateAllInvestmentValues()'"
   },
   "author": "Jaco Kruger <superkruger@gmail.com>",

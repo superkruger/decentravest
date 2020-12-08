@@ -102,6 +102,22 @@ module.exports.getByTraderAndToken = async (trader, token) => {
   return dbRes;
 }
 
+module.exports.getLastForTraderAndToken = async (trader, token) => {
+
+  // console.log("getting allocate", trader, token)
+
+  const client = mysqlCommon.getClient()
+
+  let dbRes = await client.query(`select * from event_traderpaired_allocate where trader = ? and token = ? ORDER by eventDate desc LIMIT 1`, [trader, token])
+  if (dbRes.length == 0) {
+      return null;
+  }
+  
+  let resp = dbRes[0]
+
+  return resp;
+}
+
 module.exports.list = async () => {
 
   // console.log("getting allocates")

@@ -4,6 +4,8 @@ const moment = require('moment')
 
 const tradesController = require('./trades')
 
+const traderMysql = require('../mysql/traderpaired/trader')
+const investorMysql = require('../mysql/traderpaired/investor')
 const investMysql = require('../mysql/traderpaired/invest')
 const stopMysql = require('../mysql/traderpaired/stop')
 const requestExitMysql = require('../mysql/traderpaired/requestExit')
@@ -91,7 +93,7 @@ module.exports.calculateTraderStatistics = async (account, allTraders) => {
 	}
 
 	const counts = await calculateInvestmentCounts(investments)
-	const trustRating = await calculateTrustRating(account, investments)
+	const trustRating = await calculateTrustRating(account, investments, moment())
 	const level = await calculateLevel(investments, trustRating)
 	const limits = await calculateLimits(account, investments, level)
 	const tradingRatings = await calculateTradingRatings(account, allTraders)
@@ -172,6 +174,60 @@ module.exports.calculateInvestorStatistics = async (account) => {
 	}
 }
 
+module.exports.calculatePublicStatistics = async () => {
+	let traderCount = 0
+	let investorCount = 0
+
+	let traders = await traderMysql.list()
+	for (let i=0; i<traders.length; i++) {
+		traders[i] = mapTrader(traders[i])
+
+		traders[i].allocation = {}
+		let hasAllocation = false
+
+		for (let t=0; t<helpers.userTokens.length; t++) {
+
+			let token = helpers.userTokens[t]
+
+			traders[i].allocation[token.symbol] = {}
+			let allocation = traders[i].allocation[token.symbol]
+
+
+			let lastAllocate = await allocateMysql.getLastForTraderAndToken(traders[i].user, token.address)
+			if (lastAllocate) {
+				lastAllocate = mapAllocate(lastAllocate)
+				allocation.total = lastAllocate.total
+
+				if (!hasAllocation) {
+					hasAllocation = lastAllocate.total.gt(0)
+				}
+			} else {
+				allocation.total = new BigNumber(0)
+			}
+
+		}
+
+		if (hasAllocation) {
+			traderCount++
+		}
+	}
+
+	let investors = await investorMysql.list()
+	for (let i=0; i<investors.length; i++) {
+		investors[i] = mapInvestor(investors[i])
+
+		investorCount++
+	}
+
+	console.log("traderCount", traderCount)
+	console.log("investorCount", investorCount)
+
+	return {
+		traderCount: traderCount,
+		investorCount: investorCount
+	}
+}
+
 const calculateInvestmentCounts = async (investments) => {
 	let investmentCounts = {}
 
@@ -206,6 +262,7 @@ const calculateInvestmentCounts = async (investments) => {
 
 	return investmentCounts
 }
+module.exports.calculateInvestmentCounts = calculateInvestmentCounts
 
 const incrementInvestmentCount = (counter, state, investment) => {
 	if (!counter[state]) {
@@ -261,15 +318,14 @@ const calculateLevel = async (investments, trustRating) => {
 
 	return level
 }
+module.exports.calculateLevel = calculateLevel
 
-const calculateTrustRating = async (account, investments) => {
+const calculateTrustRating = async (account, investments, now) => {
 
 	let total = 0
 	let badValues = []
 	let pastLateApprovals = []
 	let currentLateApprovals = []
-
-	const NOW = moment()
 
 	investments.forEach((investment) => {
 
@@ -280,7 +336,7 @@ const calculateTrustRating = async (account, investments) => {
 				// trader requested exit, check value
 				if (investment.value.lt(investment.grossValue)) {
 					// trader requested wrong value, too small
-					let daysSince = NOW.diff(investment.requestExitDate, 'days')
+					let daysSince = now.diff(investment.requestExitDate, 'days')
 					if (daysSince < ONE_YEAR_DAYS) {
 						badValues.push(ONE_YEAR_DAYS - daysSince)
 					}
@@ -288,11 +344,10 @@ const calculateTrustRating = async (account, investments) => {
 
 			} else {
 				// investor requested exit
-				let now = moment()
 				if (investment.approveFrom) {
 					if (investment.approveExitDate.diff(investment.requestExitDate) > ONE_WEEK_MS) {
 
-						let daysSince = NOW.diff(investment.approveExitDate, 'days')
+						let daysSince = now.diff(investment.approveExitDate, 'days')
 						if (daysSince < ONE_YEAR_DAYS) {
 							pastLateApprovals.push(ONE_YEAR_DAYS - daysSince)
 						}
@@ -301,15 +356,15 @@ const calculateTrustRating = async (account, investments) => {
 				} else if (investment.rejectFrom) {
 					if (investment.rejectValue.lt(investment.grossValue)) {
 						// trader rejected with wrong value
-						let daysSince = NOW.diff(investment.rejectExitDate, 'days')
+						let daysSince = now.diff(investment.rejectExitDate, 'days')
 						if (daysSince < ONE_YEAR_DAYS) {
 							badValues.push(ONE_YEAR_DAYS - daysSince)
 						}
 					}
 				} else {
 					// still waiting
-					if (NOW.diff(investment.requestExitDate) > ONE_WEEK) {
-						currentLateApprovals.push(NOW.diff(investment.requestExitDate, 'days'))
+					if (now.diff(investment.requestExitDate) > ONE_WEEK_MS) {
+						currentLateApprovals.push(now.diff(investment.requestExitDate, 'days'))
 					}	
 				}
 			}
@@ -331,10 +386,11 @@ const calculateTrustRating = async (account, investments) => {
 		trustRating = 10 - penalty
 	}
 
-	console.log("trustRating", trustRating)
+	// console.log("trustRating", trustRating)
 
 	return trustRating
 }
+module.exports.calculateTrustRating = calculateTrustRating
 
 const getPenaltyScore = (scores, weight) => {
 	let score = scores.reduce((total, value) => {
@@ -353,9 +409,11 @@ const calculateLimits = async (account, investments, level) => {
 	investments.forEach((investment) => {
 		
 		if (investment.approveFrom) {
-			if (!latestApproval || investment.startDate.isAfter(latestApproval)) {
-				latestApproval = investment.startDate
-			}
+			// if (investment.nettValue.minus(investment.amount).gt(0)) {
+				if (!latestApproval || investment.startDate.isAfter(latestApproval)) {
+					latestApproval = investment.startDate
+				}
+			// }
 		} else {
 			if (investment.investmentType === helpers.INVESTMENT_DIRECT) {
 				if (investmentDirectTotals[investment.token]) {
@@ -373,6 +431,7 @@ const calculateLimits = async (account, investments, level) => {
 			const token = helpers.userTokens[i]
 
 			let allocations = await allocateMysql.getByTraderAndToken(account, token.address)
+
 			allocations = allocations.map(mapAllocate)
 
 			// find the allocation just before the start of this investment
@@ -397,6 +456,7 @@ const calculateLimits = async (account, investments, level) => {
 		directInvested: directInvested
 	}
 }
+module.exports.calculateLimits = calculateLimits
 
 const calculateTradingRatings = async (account, allTraders) => {
 
@@ -553,6 +613,7 @@ const calculateTradingRatings = async (account, allTraders) => {
 	// console.log("tradingRatings", ratings, averageProfits)
 	return { ratings, averageProfits }
 }
+module.exports.calculateTradingRatings = calculateTradingRatings
 
 const calculateProfitRatings = async (account, allTraders) => {
 	let allLowRel = {
@@ -680,9 +741,10 @@ const calculateProfitRatings = async (account, allTraders) => {
 			}
 		})
 
-
 		for (let investmentIndex=0; investmentIndex<investments.length; investmentIndex++) {
 			let investment = investments[investmentIndex]
+			await setInvestmentValue(investment)
+
 			// console.log("calculateProfitRatings - investment", investment)
 			const tokenSymbol = helpers.tokenSymbolForAddress(investment.token)
 
@@ -752,6 +814,7 @@ const calculateProfitRatings = async (account, allTraders) => {
 	// console.log("profitRatings", ratings, averageProfits)
 	return { ratings, averageProfits }
 }
+module.exports.calculateProfitRatings = calculateProfitRatings
 
 const mapTrade = (trade) => {
 	return {
@@ -855,11 +918,11 @@ const setInvestmentValue = async (investment) => {
 			allocation = allocations[0]
 		}
 
-		console.log("allocation", allocation)
+		// console.log("allocation", allocation)
 
 		// console.log("trade.profit", trade.profit.toString())
 		let {totalAmount, totalLimit} = await getTradeInvestmentsAmountAndTotalLimit(trade, allocation, investment, traderInvestments)
-		console.log("totalAmount, totalLimit", totalAmount.toString(), totalLimit.toString())
+		// console.log("totalAmount, totalLimit", totalAmount.toString(), totalLimit.toString())
 
 		let investorsShare = totalAmount.dividedBy(totalLimit)
 		// console.log("investorsShare", investorsShare.toString())
@@ -886,9 +949,9 @@ const setInvestmentValue = async (investment) => {
 
 	let traderProfit = grossProfit.multipliedBy(traderProfitPercent).multipliedBy(0.99)
 
-	console.log("grossProfit", grossProfit.toString())
-	console.log("investorProfit", investorProfit.toString())
-	console.log("traderProfit", traderProfit.toString())
+	// console.log("grossProfit", grossProfit.toString())
+	// console.log("investorProfit", investorProfit.toString())
+	// console.log("traderProfit", traderProfit.toString())
 	investment.grossValue = investment.amount.plus(grossProfit)
 	investment.nettValue = investment.amount.plus(investorProfit)
 
@@ -896,8 +959,8 @@ const setInvestmentValue = async (investment) => {
 	investment.investorProfit = investorProfit
 	investment.traderProfit = traderProfit
 
-	console.log("grossValue", investment.grossValue.toString())
-	console.log("nettValue", investment.nettValue.toString())
+	// console.log("grossValue", investment.grossValue.toString())
+	// console.log("nettValue", investment.nettValue.toString())
 
 	return investment
 }
@@ -1037,3 +1100,21 @@ const mapApproveExit = (event) => {
 	}
 }
 
+const mapTrader = (event) => {
+	return {
+		...event,
+		eventDate: moment.unix(event.eventDate).utc()
+	}
+}
+
+const mapInvestor = (event) => {
+	return {
+		...event,
+		eventDate: moment.unix(event.eventDate).utc()
+	}
+}
+
+const getPublicStatistics = async () => {
+
+}
+module.exports.getPublicStatistics = getPublicStatistics

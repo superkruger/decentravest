@@ -29,7 +29,7 @@ export const accountSelector = createSelector(account, a => a)
 const web3 = state => get(state, 'web3.connection')
 export const web3Selector = createSelector(web3, w => w)
 
-const network = state => get(state, 'web3.network', 'DEV')
+const network = state => get(state, 'web3.network', process.env.REACT_APP_DEFAULT_NETWORK)
 export const networkSelector = createSelector(network, w => w)
 
 const traderPairedLoaded = state => get(state, 'web3.traderPaired.loaded', false)
@@ -173,6 +173,9 @@ const investorStatistics = (state, investor) => {
 	return null
 }
 export const investorStatisticsSelector = createSelector(investorStatistics, s => s)
+
+const publicStatistics = state => get(state, 'web3.publicstatistics', {})
+export const publicStatisticsSelector = createSelector(publicStatistics, s => s)
 
 const hasValidAllocation = (state, account) => {
 	const trader = find(state.web3.traders, {user: account})

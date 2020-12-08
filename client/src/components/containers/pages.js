@@ -1,5 +1,6 @@
 export const Page = {
 	ROOT: 'root',
+	PUBLIC_STATISTICS: 'public_statistics',
 	ADMIN_DASHBOARD: 'admin_dashboard',
 	ADMIN_TRADERS: 'admin_traders',
 	ADMIN_INVESTORS: 'admin_investors',
