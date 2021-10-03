@@ -43,7 +43,8 @@ const disbursementRejectedMysql = require('./mysql/multisigfundwallet/disburseme
 const disbursementCompletedMysql = require('./mysql/multisigfundwallet/disbursementCompleted')
 const payoutMysql = require('./mysql/multisigfundwallet/payout')
 
-const positionsHandler = require('./dydx/positions')
+const dydxHandler = require('./exchange/dydx')
+const dmexHandler = require('./exchange/dmex')
 
 const traderStatisticsDao = require('./dao/traderStatistics')
 const investorStatisticsDao = require('./dao/investorStatistics')
@@ -116,7 +117,7 @@ const processAllEvents = async (web3, traderPaired, walletFactory) => {
 
 	// await mysqlCommon.dropTables() // TODO: remove!!
 
-	await mysqlCommon.createTables()
+	// await mysqlCommon.createTables()
 
 	let lastBlock = 0;
 	let result = true
@@ -858,7 +859,7 @@ const processStopEventsForInvestments = async (traderPaired) => {
 		investment.state = helpers.INVESTMENT_STATE_STOPPED
 		investment.stopTxHash = events[i].txHash
 
-		let result = await positionsHandler.loadTraderPositions(investment.trader)
+		let result = await dydxHandler.loadTraderPositions(investment.trader)
 		if (!result) {
 			console.error(`Could not process trades for investment ${events[i].investmentId} to stop`)
 			return false
@@ -1010,13 +1011,21 @@ const processApproveExitEventsForInvestments = async (traderPaired) => {
 const processTrades = async (trader) => {
 	console.log("processTrades", trader)
 	
-	let result = await positionsHandler.loadTraderPositions(traders)
+	let result = await dydxHandler.loadTraderPositions(trader)
+
+	if (result) {
+		result = await dmexHandler.loadTraderPositions(trader)
+	}
 
 	return result
 }
 
 const processAllTrades = async () => {
 	console.log("processAllTrades")
+
+	// let res = await mysqlCommon.updateTables()
+	// console.log("updateTables", res)
+
 	// Traders
 	//
 	let traders = await traderMysql.list()
@@ -1025,7 +1034,12 @@ const processAllTrades = async () => {
 
 	for (let i=0; i<traders.length; i++) {
 		// add positions
-		let result = await positionsHandler.loadTraderPositions(traders[i].user)
+		let result = await dydxHandler.loadTraderPositions(traders[i].user)
+
+		if (result) {
+			result = await dmexHandler.loadTraderPositions(traders[i].user)
+		}
+
 		if (!result) {
 			return false
 		}
@@ -1078,7 +1092,7 @@ const joinedInvestor = async (investor, traderPaired) => {
 }
 exports.joinedInvestor = joinedInvestor
 
-const createdInvestment = async (investmentId, traderPaired) => {
+const createdInvestment = async (investmentId, traderPaired, web3) => {
 	console.log("createdInvestment", investmentId)
 
 	let result = await processInvestEvents(traderPaired)
@@ -1087,21 +1101,22 @@ const createdInvestment = async (investmentId, traderPaired) => {
 		return null
 	}
 
-	let invest = await investMysql.get(investmentId)
+	let invest = await investMysql.getByInvestmentId(investmentId)
+	console.log(`investMysql.getByInvestmentId(${investmentId})`, invest)
 	if (!invest) {
 		return null
-	}
+	} 
 
 	const walletContract = await new web3.eth.Contract(MultiSigFundWallet.abi, invest.wallet, {handleRevert: true})
 
 	if (!walletContract) {
 		console.error("Invalid wallet for invest", invest)
-		return false
+		return null
 	}
 
 	result = await processFundEvents(invest.wallet, walletContract)
 	if (!result) {
-		return false
+		return null
 	}
 
 	result = await processInvestEventsForInvestments(traderPaired)
@@ -1121,7 +1136,7 @@ const createdInvestment = async (investmentId, traderPaired) => {
 }
 exports.createdInvestment = createdInvestment
 
-const stoppedInvestment = async (investmentId, traderPaired) => {
+const stoppedInvestment = async (investmentId, traderPaired, web3) => {
 	console.log("stoppedInvestment", investmentId)
 
 	let result = await processStopEvents(traderPaired)
@@ -1130,7 +1145,7 @@ const stoppedInvestment = async (investmentId, traderPaired) => {
 		return null
 	}
 
-	let invest = await investMysql.get(investmentId)
+	let invest = await investMysql.getByInvestmentId(investmentId)
 	if (!invest) {
 		return null
 	}
@@ -1139,12 +1154,12 @@ const stoppedInvestment = async (investmentId, traderPaired) => {
 
 	if (!walletContract) {
 		console.error("Invalid wallet for invest", invest)
-		return false
+		return null
 	}
 
 	result = await processStoppedEvents(invest.wallet, walletContract)
 	if (!result) {
-		return false
+		return null
 	}
 
 	result = await processStopEventsForInvestments(traderPaired)
@@ -1164,7 +1179,7 @@ const stoppedInvestment = async (investmentId, traderPaired) => {
 }
 exports.stoppedInvestment = stoppedInvestment
 
-const exitRequested = async (investmentId, web3, traderPaired) => {
+const exitRequested = async (investmentId, traderPaired, web3) => {
 	console.log("exitRequested", investmentId)
 
 	let result = await processRequestExitEvents(traderPaired)
@@ -1173,7 +1188,7 @@ const exitRequested = async (investmentId, web3, traderPaired) => {
 		return null
 	}
 
-	let invest = await investMysql.get(investmentId)
+	let invest = await investMysql.getByInvestmentId(investmentId)
 	if (!invest) {
 		return null
 	}
@@ -1182,12 +1197,12 @@ const exitRequested = async (investmentId, web3, traderPaired) => {
 
 	if (!walletContract) {
 		console.error("Invalid wallet for invest", invest)
-		return false
+		return null
 	}
 
 	result = await processDisbursementCreatedEvents(invest.wallet, walletContract)
 	if (!result) {
-		return false
+		return null
 	}
 
 	result = await processRequestExitEventsForInvestments(web3, traderPaired)
@@ -1202,7 +1217,7 @@ const exitRequested = async (investmentId, web3, traderPaired) => {
 }
 exports.exitRequested = exitRequested
 
-const exitRejected = async (investmentId, traderPaired) => {
+const exitRejected = async (investmentId, traderPaired, web3) => {
 	console.log("exitRejected", investmentId)
 
 	let result = await processRejectExitEvents(traderPaired)
@@ -1211,7 +1226,7 @@ const exitRejected = async (investmentId, traderPaired) => {
 		return null
 	}
 
-	let invest = await investMysql.get(investmentId)
+	let invest = await investMysql.getByInvestmentId(investmentId)
 	if (!invest) {
 		return null
 	}
@@ -1220,12 +1235,12 @@ const exitRejected = async (investmentId, traderPaired) => {
 
 	if (!walletContract) {
 		console.error("Invalid wallet for invest", invest)
-		return false
+		return null
 	}
 
 	result = await processDisbursementRejectedEvents(invest.wallet, walletContract)
 	if (!result) {
-		return false
+		return null
 	}
 
 	result = await processRejectExitEventsForInvestments(traderPaired)
@@ -1240,7 +1255,7 @@ const exitRejected = async (investmentId, traderPaired) => {
 }
 exports.exitRejected = exitRejected
 
-const exitApproved = async (investmentId, traderPaired) => {
+const exitApproved = async (investmentId, traderPaired, web3) => {
 	console.log("exitApproved", investmentId)
 
 	let result = await processApproveExitEvents(traderPaired)
@@ -1249,7 +1264,7 @@ const exitApproved = async (investmentId, traderPaired) => {
 		return null
 	}
 
-	let invest = await investMysql.get(investmentId)
+	let invest = await investMysql.getByInvestmentId(investmentId)
 	if (!invest) {
 		return null
 	}
@@ -1258,17 +1273,17 @@ const exitApproved = async (investmentId, traderPaired) => {
 
 	if (!walletContract) {
 		console.error("Invalid wallet for invest", invest)
-		return false
+		return null
 	}
 
 	result = await processDisbursementCompletedEvents(invest.wallet, walletContract)
 	if (!result) {
-		return false
+		return null
 	}
 	
 	result = await processPayoutEvents(invest.wallet, walletContract)
 	if (!result) {
-		return false
+		return null
 	}
 
 	result = await processApproveExitEventsForInvestments(traderPaired)

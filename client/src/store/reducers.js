@@ -185,10 +185,16 @@ function web3 (state = {}, action ) {
 				let index, data
 
 				if (!state.traders) {
-					state.traders = [{user: action.trader}]
+					state.traders = []
 				}
 
 				index = state.traders.findIndex(trader => trader.user === action.trader)
+
+				if (index === -1) {
+					state.traders.push({user: action.trader})
+					index = state.traders.findIndex(trader => trader.user === action.trader)
+				}
+
 				if (index !== -1) {
 					state.traders[index] = {
 						...state.traders[index],

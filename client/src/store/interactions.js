@@ -44,12 +44,16 @@ import {
 } from './actions.js'
 
 export const checkEthereum = (dispatch) => {
+	setTokens(process.env.REACT_APP_DEFAULT_NETWORK)
+
 	if (typeof window.ethereum !== 'undefined') {
 		dispatch(ethereumInstalled())
 	}
 }
 
 export const loadWebApp = async (dispatch) => {
+
+	await window.ethereum.enable()
 
   	let web3 = new Web3(window.ethereum)
 	await window.ethereum.request({ method: 'eth_requestAccounts' })
@@ -881,6 +885,8 @@ const mapInvestment = async (investment, web3) => {
 		value: new BigNumber(investment.value),
 		grossValue: new BigNumber(investment.grossValue),
 		nettValue: new BigNumber(investment.nettValue),
+		investorProfit: new BigNumber(investment.investorProfit),
+		traderProfit: new BigNumber(investment.traderProfit),
 		investorProfitPercent: new BigNumber(investment.investorProfitPercent),
 		investmentType: parseInt(investment.investmentType, 10),
 		start: moment.unix(investment.startDate).utc(),
@@ -1018,19 +1024,27 @@ export const loadInvestorStatistics = async (account, network, dispatch) => {
 }
 
 export const loadTradeCount = async (network, account, dispatch) => {
+	let count = 0
 	try {
-		let url = process.env['REACT_APP_' + network + '_API_BASE'] + 
-					process.env['REACT_APP_' + network + '_API_TRADES']
+		let url = process.env['REACT_APP_' + network + '_DYDX_CLOSED_URL']
 		url = url.replace('$1', account)
 
 		const response = await axios.get(url)
-		dispatch(tradeCountLoaded(response.data.length))
-		  
-		return true
+		count = count + response.data.positions.length
 	} catch (error) {
 		log('Could not get trades', error)
-		return false
 	}
+
+	try {
+		let url = process.env['REACT_APP_' + network + '_DMEX_CLOSED_POSITION_URL']
+		url = url.replace('$1', account)
+
+		const response = await axios.get(url)
+		count = count + response.data.data.length
+	} catch (error) {
+		log('Could not get trades', error)
+	}
+	dispatch(tradeCountLoaded(count))
 }
 
 export const traderJoined = async (network, account) => {

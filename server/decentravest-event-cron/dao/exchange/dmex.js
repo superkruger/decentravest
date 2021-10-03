@@ -4,7 +4,7 @@ const BigNumber = require('bignumber.js')
 const moment = require('moment')
 
 const s3Common = require("../../common/s3Common")
-const select = 'uuid, owner, market, type, status, updatedAt, dv_profit, dv_initialAmount, dv_asset, dv_start, dv_end'
+const select = 'position_hash, user_address, dv_profit, max_collateral, dv_asset, created_at, closed_at'
 
 module.exports.create = async (position) => {
 
@@ -12,8 +12,8 @@ module.exports.create = async (position) => {
 
   try {
     let res = await s3Common.s3.putObject({
-      Bucket: `${process.env.eventbucket}/trades/dydx/positions`,
-      Key: position.uuid,
+      Bucket: `${process.env.eventbucket}/trades/dmex/positions`,
+      Key: position.position_hash,
       Body: JSON.stringify(position)
     }).promise()
 
@@ -30,12 +30,12 @@ module.exports.get = async (uuid) => {
 
   console.log("get position", uuid)
 
-  if (!s3Common.hasData(`${process.env.eventbucket}/trades/dydx/positions`)) {
+  if (!s3Common.hasData(`${process.env.eventbucket}/trades/dmex/positions`)) {
     return null
   }
 
   const query = {
-    sql: `SELECT ${select} FROM dydx_positions WHERE uuid = '${uuid}'`
+    sql: `SELECT ${select} FROM dmex_positions WHERE position_hash = '${uuid}'`
   };
 
   try {
@@ -54,12 +54,12 @@ module.exports.getByOwner = async (owner) => {
 
   console.log("getByOwner", owner)
 
-  if (!s3Common.hasData(`${process.env.eventbucket}/trades/dydx/positions`)) {
+  if (!s3Common.hasData(`${process.env.eventbucket}/trades/dmex/positions`)) {
     return null
   }
 
   const query = {
-    sql: `SELECT ${select} FROM dydx_positions WHERE owner = '${owner}' ORDER by dv_end`
+    sql: `SELECT ${select} FROM dmex_positions WHERE user_address = '${owner}' ORDER by closed_at`
   };
 
   try {
@@ -79,12 +79,12 @@ module.exports.getLastByOwner = async (owner) => {
 
   console.log("getLastByOwner", owner)
 
-  if (!s3Common.hasData(`${process.env.eventbucket}/trades/dydx/positions`)) {
+  if (!s3Common.hasData(`${process.env.eventbucket}/trades/dmex/positions`)) {
     return null
   }
 
   const query = {
-    sql: `SELECT ${select} FROM dydx_positions WHERE owner = '${owner}' ORDER BY dv_end desc LIMIT 1`
+    sql: `SELECT ${select} FROM dmex_positions WHERE user_address = '${owner}' ORDER BY closed_at desc LIMIT 1`
   };
 
   try {
@@ -98,30 +98,3 @@ module.exports.getLastByOwner = async (owner) => {
   
   return null
 }
-
-const mapPosition = (event) => {
-  return {
-    uuid: event.uuid,
-    owner: event.owner,
-    market: event.market,
-    type: event.type,
-    status: event.status,
-    updatedAt: event.updatedAt,
-    dv_profit: new BigNumber(event.dv_profit),
-    dv_initialAmount: new BigNumber(event.dv_initialAmount),
-    dv_asset: event.dv_asset,
-    dv_start: moment(event.dv_start),
-    dv_end: moment(event.dv_end)
-    // standardActions: JSON.parse(event.standardActions).map(mapStandardAction)
-  }
-}
-
-const mapStandardAction = (standardAction) => {
-  return {
-    type: standardAction.type,
-    transferAmount: new BigNumber(standardAction.transferAmount),
-    asset: standardAction.asset,
-    confirmedAt: standardAction.confirmedAt
-  }
-}
-

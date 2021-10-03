@@ -59,6 +59,7 @@
   "devDependencies": {
     "@babel/plugin-transform-runtime": "^7.10.3",
     "@openzeppelin/cli": "2.8.2",
+    "@openzeppelin/contracts-ethereum-package": "2.5.0",
     "@openzeppelin/test-environment": "0.1.4",
     "@openzeppelin/test-helpers": "0.5.6",
     "chai": "^4.2.0",

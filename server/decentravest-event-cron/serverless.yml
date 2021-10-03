@@ -28,6 +28,8 @@ provider:
     INFURA_API_KEY: ${param:INFURA_API_KEY}
     #dydx
     DYDX_CLOSED_MARKET_URL: ${param:DYDX_CLOSED_MARKET_URL}
+    #dmex
+    DMEX_CLOSED_POSITION_URL: ${param:DMEX_CLOSED_POSITION_URL}
     #tokens
     DAI_ADDRESS: ${param:DAI_ADDRESS}
     USDC_ADDRESS: ${param:USDC_ADDRESS}
@@ -98,6 +100,7 @@ resources:
     AthenaTableMultiSigFundWalletStopped: ${file(./resource/tables/multisigfundwallet/Stopped.yml)}
 
     AthenaTableDydxPosition: ${file(./resource/tables/dydx/Position.yml)}
+    AthenaTableDmexPosition: ${file(./resource/tables/dmex/Position.yml)}
 
     AthenaTableInvestment: ${file(./resource/tables/Investment.yml)}
 
@@ -105,32 +108,32 @@ functions:
   processAllEvents:
     handler: handler.processAllEvents
     events:
-      - schedule: rate(1 day)
+      - schedule: rate(4 hours)
 
   processAllTrades:
     handler: handler.processAllTrades
     events:
-      - schedule: rate(1 day)
+      - schedule: rate(4 hours)
 
   calculateAllTradersStatistics:
     handler: handler.calculateAllTradersStatistics
     events:
-      - schedule: rate(10 minutes)
+      - schedule: rate(4 hours)
 
   calculateAllInvestorsStatistics:
     handler: handler.calculateAllInvestorsStatistics
     events:
-      - schedule: rate(10 minutes)
+      - schedule: rate(4 hours)
 
   calculatePublicStatistics:
     handler: handler.calculatePublicStatistics
     events:
-      - schedule: rate(10 minutes)
+      - schedule: rate(4 hours)
 
   calculateAllInvestmentValues:
     handler: handler.calculateAllInvestmentValues
     events:
-      - schedule: rate(1 day)
+      - schedule: rate(4 hours)
 
   getStatistics:
     handler: handler.statistics

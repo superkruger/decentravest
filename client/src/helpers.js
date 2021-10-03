@@ -56,6 +56,7 @@ export const tokenSymbolForAddress = (address) => {
 }
 
 export const tokenDecimalsForSymbol = (symbol) => {
+	log('tokenDecimalsForSymbol', symbol, tokens)
 	let token = tokens.find(token => token.symbol === symbol)
 	return token ? token.decimals : 18
 }
@@ -84,9 +85,15 @@ export const etherToWei = (e, decimals) => {
 }
 
 export const formatBalance = (balance, asset) => {
+	console.log(`formatBalance(${balance}, ${asset})`)
 	const precision = 10000
-	balance = weiToEther(balance, tokenDecimalsForSymbol(asset))
-	// console.log('balance', balance.toString())
+	const decimals = tokenDecimalsForSymbol(asset)
+
+	console.log(`tokenDecimalsForSymbol: ${decimals}`)
+
+	balance = weiToEther(balance, decimals)
+	console.log('balance', balance.toString())
+
 	const formatted = Math.round(balance.times(precision).toNumber()) / precision
 	return formatted
 }
@@ -122,4 +129,12 @@ export const uniqueByKey = (data, key) => {
 				data.map(x => [key(x), x])
 			).values()
 	]
+}
+
+export const mapNameValueObject = (obj) => {
+  const keys = Object.keys(obj)
+  let data = keys.map(key => {
+    return {name: key, value: obj[key]}
+  })
+  return data
 }

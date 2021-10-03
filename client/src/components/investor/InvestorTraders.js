@@ -44,7 +44,6 @@ class InvestorTraders extends Component {
 
 
       if (this.state.filterSearch && this.state.filterSearch !== '') {
-
         traders = traders.filter(trader => trader.user.toLowerCase().includes(this.state.filterSearch.toLowerCase()))
       }
 

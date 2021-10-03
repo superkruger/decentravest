@@ -7,8 +7,8 @@ import Token from '../Token'
 import Help from '../containers/Help'
 import InvestorInvestment from './InvestorInvestment'
 import { 
-  log, 
-  toBN, 
+  log,
+  toBN,
   uniqueByKey,
   INVESTMENT_STATE_INVESTED,
   INVESTMENT_STATE_STOPPED,

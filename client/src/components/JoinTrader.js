@@ -177,7 +177,9 @@ function TraderJourney(props) {
 
             tradeCount > 0 
             ? <TraderButton props={props.props} component={component} />
-            : <p>Before you can join as a trader, you need to have some trades on <a href="https://trade.dydx.exchange/margin/" target="_blank" rel="noopener">dydx.exchange</a></p>
+            : <p>
+                Before you can join as a trader, you need to have some trades on<br/> <a href="https://trade.dydx.exchange/margin/" target="_blank" rel="noopener">dydx.exchange</a> or <a href="https://dmex.app" target="_blank" rel="noopener">dmex.app</a>
+              </p>
           }
         </Col>
       </Row>

@@ -17,7 +17,13 @@ import TinyNumber from '../cards/TinyNumber'
 import TinyStars from '../cards/TinyStars'
 import TinyRelativeRatings from '../cards/TinyRelativeRatings'
 
-import { INVESTMENT_COLLATERAL, INVESTMENT_DIRECT, etherToWei, weiToEther, fail } from '../../helpers'
+import { 
+  INVESTMENT_COLLATERAL, 
+  INVESTMENT_DIRECT, 
+  etherToWei, 
+  weiToEther, 
+  fail, 
+  mapNameValueObject } from '../../helpers'
 import { 
   web3Selector,
   networkSelector,
@@ -292,14 +298,6 @@ function Direct(props) {
       </div>
     </div>
   )
-}
-
-function mapNameValueObject(obj) {
-  const keys = Object.keys(obj)
-  let data = keys.map(key => {
-    return {name: key, value: obj[key]}
-  })
-  return data
 }
 
 function Balance(props) {

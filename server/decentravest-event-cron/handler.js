@@ -9,6 +9,8 @@ const publicStatisticsDao = require('./dao/publicStatistics')
 const tradesMysql = require('./mysql/trades')
 const investmentsMysql = require('./mysql/investments')
 
+const dmexBot = require('./dmex_bot')
+
 const loadTraderPaired = async (web3, networkId) => {
   const traderPaired = await interactions.loadTraderPaired(web3, networkId)
   return traderPaired
@@ -305,7 +307,7 @@ const localCreatedInvestment = async (investmentId) => {
   try {
     const {web3, networkId} = await interactions.loadWeb3()
     const traderPaired = await loadTraderPaired(web3, networkId)
-    result = await interactions.createdInvestment(investmentId, traderPaired)
+    result = await interactions.createdInvestment(investmentId, traderPaired, web3)
     if (!result) {
       throw "error processing investment creation"
     }
@@ -324,7 +326,7 @@ const localStoppedInvestment = async (investmentId) => {
   try {
     const {web3, networkId} = await interactions.loadWeb3()
     const traderPaired = await loadTraderPaired(web3, networkId)
-    result = await interactions.stoppedInvestment(investmentId, traderPaired)
+    result = await interactions.stoppedInvestment(investmentId, traderPaired, web3)
     if (!result) {
       throw "error processing investment stop"
     }
@@ -343,7 +345,7 @@ const localExitRequested = async (investmentId) => {
   try {
     const {web3, networkId} = await interactions.loadWeb3()
     const traderPaired = await loadTraderPaired(web3, networkId)
-    result = await interactions.exitRequested(investmentId, web3, traderPaired)
+    result = await interactions.exitRequested(investmentId, traderPaired, web3)
     if (!result) {
       throw "error processing investment exit request"
     }
@@ -362,7 +364,7 @@ const localExitRejected = async (investmentId) => {
   try {
     const {web3, networkId} = await interactions.loadWeb3()
     const traderPaired = await loadTraderPaired(web3, networkId)
-    result = await interactions.exitRejected(investmentId, traderPaired)
+    result = await interactions.exitRejected(investmentId, traderPaired, web3)
     if (!result) {
       throw "error processing investment exit reject"
     }
@@ -381,7 +383,7 @@ const localExitApproved = async (investmentId) => {
   try {
     const {web3, networkId} = await interactions.loadWeb3()
     const traderPaired = await loadTraderPaired(web3, networkId)
-    result = await interactions.exitApproved(investmentId, traderPaired)
+    result = await interactions.exitApproved(investmentId, traderPaired, web3)
     if (!result) {
       throw "error processing investment exit approval"
     }
@@ -423,3 +425,8 @@ const localCalculateAllInvestmentValues = async () => {
   mysqlCommon.quitClient()
 }
 module.exports.localCalculateAllInvestmentValues = localCalculateAllInvestmentValues
+
+const localProcessDmexOrderbook = async () => {
+  await dmexBot.processOrderbook('0x0719981cd30d4f6b4acea267fab0428ee6dfd7a4433c0de98e25586d64195721')
+}
+module.exports.localProcessDmexOrderbook = localProcessDmexOrderbook

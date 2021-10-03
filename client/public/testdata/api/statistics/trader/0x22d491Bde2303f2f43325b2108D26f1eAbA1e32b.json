@@ -5,21 +5,21 @@
 				"approved": {
 					"positive": {
 						"count": 2,
-						"total": "10000000000000000"
+						"totalGrossProfit": "10000000000000000"
 					},
 					"negative": {
 						"count": 1,
-						"total": "5000000000000000"
+						"totalGrossProfit": "5000000000000000"
 					}
 				},
 				"active": {
 					"positive": {
 						"count": 3,
-						"total": "20000000000000000"
+						"totalGrossProfit": "20000000000000000"
 					},
 					"negative": {
 						"count": 1,
-						"total": "3000000000000000"
+						"totalGrossProfit": "3000000000000000"
 					}
 				}
 			},
@@ -27,7 +27,7 @@
 				"approved": {
 					"positive": {
 						"count": 1,
-						"total": "5000000000000000"
+						"totalGrossProfit": "5000000000000000"
 					}
 				}
 			}

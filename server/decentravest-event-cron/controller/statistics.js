@@ -1,7 +1,9 @@
 
 const BigNumber = require('bignumber.js')
 const moment = require('moment')
+const _ = require('lodash')
 
+const traderStatisticsDao = require('../dao/traderStatistics')
 const tradesController = require('./trades')
 
 const traderMysql = require('../mysql/traderpaired/trader')
@@ -177,23 +179,25 @@ module.exports.calculateInvestorStatistics = async (account) => {
 module.exports.calculatePublicStatistics = async () => {
 	let traderCount = 0
 	let investorCount = 0
+	let investments = []
 
 	let traders = await traderMysql.list()
 	for (let i=0; i<traders.length; i++) {
-		traders[i] = mapTrader(traders[i])
+		let trader = traders[i]
+		trader = mapTrader(trader)
 
-		traders[i].allocation = {}
+		trader.allocation = {}
 		let hasAllocation = false
 
 		for (let t=0; t<helpers.userTokens.length; t++) {
 
 			let token = helpers.userTokens[t]
 
-			traders[i].allocation[token.symbol] = {}
-			let allocation = traders[i].allocation[token.symbol]
+			trader.allocation[token.symbol] = {}
+			let allocation = trader.allocation[token.symbol]
 
 
-			let lastAllocate = await allocateMysql.getLastForTraderAndToken(traders[i].user, token.address)
+			let lastAllocate = await allocateMysql.getLastForTraderAndToken(trader.user, token.address)
 			if (lastAllocate) {
 				lastAllocate = mapAllocate(lastAllocate)
 				allocation.total = lastAllocate.total
@@ -209,22 +213,82 @@ module.exports.calculatePublicStatistics = async () => {
 
 		if (hasAllocation) {
 			traderCount++
+
+			const traderStats = await traderStatisticsDao.getStatistics(trader.user)
+			if (traderStats) {
+				for (let t=0; t<helpers.userTokens.length; t++) {
+
+					const token = helpers.userTokens[t]
+
+					for (let invType = 0; invType <= 1; invType++) {
+						const invState = ["approved", "pending", "active"]
+
+						for (let stateIdx = 0; stateIdx < invState.length; stateIdx++) {
+							const posNeg = ["positive", "negative"]
+
+							for (let sideIdx = 0; sideIdx < posNeg.length; sideIdx++) {
+								const propertyPath = `counts.${token.symbol}.${invType}.${invState[stateIdx]}.${posNeg[sideIdx]}`
+								//console.log('propertyPath', propertyPath)
+
+								let grossProfit = _.get(traderStats, propertyPath + '.totalGrossProfit', null)
+								let count = _.get(traderStats, propertyPath + '.count', null)
+
+								if (grossProfit && count) {
+									grossProfit = new BigNumber(grossProfit)
+
+									if (posNeg[sideIdx] == "negative") {
+										grossProfit = grossProfit.negated()
+									}
+
+									let investmentGroup = _.find(investments, ig => ig.asset === token.symbol)
+
+									if (!investmentGroup) {
+										investmentGroup = {
+											asset: token.symbol,
+											count: count,
+											profit: grossProfit
+										}
+										investments.push(investmentGroup)
+									} else {
+										investmentGroup.count += count
+										investmentGroup.profit = investmentGroup.profit.plus(grossProfit)
+									}
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
 	let investors = await investorMysql.list()
 	for (let i=0; i<investors.length; i++) {
-		investors[i] = mapInvestor(investors[i])
+		// investors[i] = mapInvestor(investors[i])
 
 		investorCount++
 	}
 
+	for (let i=0; i<investments.length; i++) {
+		investments[i].profit = investments[i].profit.toString()
+	}
+
+	traders = traders.map((trader) => {
+		return {
+			user: trader.user
+		}
+	})
+
 	console.log("traderCount", traderCount)
 	console.log("investorCount", investorCount)
+	console.log("investments", investments)
+	console.log("traders", traders)
 
 	return {
 		traderCount: traderCount,
-		investorCount: investorCount
+		investorCount: investorCount,
+		investments: investments,
+		traders: traders
 	}
 }
 
@@ -863,7 +927,7 @@ const getTraderDirectInvestmentsBefore = async (account, token, startDate) => {
 	    } else {
 	    	investments[i] = {
 				...investments[i],
-				...mapStop(stop)
+				// ...mapStop(stop)
 			}
 	    }
 	}
@@ -918,7 +982,7 @@ const setInvestmentValue = async (investment) => {
 			allocation = allocations[0]
 		}
 
-		// console.log("allocation", allocation)
+		// console.log("allocation", allocation, allocation.total.toString(), allocation.invested.toString())
 
 		// console.log("trade.profit", trade.profit.toString())
 		let {totalAmount, totalLimit} = await getTradeInvestmentsAmountAndTotalLimit(trade, allocation, investment, traderInvestments)
@@ -949,9 +1013,9 @@ const setInvestmentValue = async (investment) => {
 
 	let traderProfit = grossProfit.multipliedBy(traderProfitPercent).multipliedBy(0.99)
 
-	// console.log("grossProfit", grossProfit.toString())
-	// console.log("investorProfit", investorProfit.toString())
-	// console.log("traderProfit", traderProfit.toString())
+	console.log("grossProfit", grossProfit.toString())
+	console.log("investorProfit", investorProfit.toString())
+	console.log("traderProfit", traderProfit.toString())
 	investment.grossValue = investment.amount.plus(grossProfit)
 	investment.nettValue = investment.amount.plus(investorProfit)
 
@@ -959,8 +1023,8 @@ const setInvestmentValue = async (investment) => {
 	investment.investorProfit = investorProfit
 	investment.traderProfit = traderProfit
 
-	// console.log("grossValue", investment.grossValue.toString())
-	// console.log("nettValue", investment.nettValue.toString())
+	console.log("grossValue", investment.grossValue.toString())
+	console.log("nettValue", investment.nettValue.toString())
 
 	return investment
 }
@@ -974,19 +1038,24 @@ const getTradeInvestmentsAmountAndTotalLimit = async (trade, allocation, investm
 			&& (
 				(inv.endDate.unix() === 0 || inv.state === helpers.INVESTMENT_STATE_INVESTED) 
 					|| trade.end.isBefore(inv.endDate)))
+
+	console.log("getTradeInvestmentsAmountAndTotalLimit investments", investments)
 	
 	// totalAmount is the total of all investment amounts for this trade
 	let totalAmount = investments.reduce((total, inv) => total.plus(inv.amount), new BigNumber(0))
 
-	// totalLimit is the upper limit across which profits will be divided for this trade
+	let addedAllocationTotal = false
+
+	// totalLimit is the upper limit across which profits will be divided for this trade.
 	// in the case of collateral investments, it's the collateral limit set at the time of investment
 	// but we also have to include all direct investment amounts, since they add to the ceiling
 	let totalLimit = investments.reduce((total, inv) => {
 
-		if (inv.investmentId === investment.investmentId) {
-			return total.plus(allocation.total)
-		} else if (inv.investmentType === helpers.INVESTMENT_DIRECT) {
+		if (inv.investmentType === helpers.INVESTMENT_DIRECT) {
 			return total.plus(inv.amount)
+		} else if (!addedAllocationTotal) {
+			addedAllocationTotal = true
+			return total.plus(allocation.total)
 		} else {
 			return total
 		}

@@ -1,0 +1,33 @@
+DependsOn: AthenaDB
+Type: AWS::Glue::Table
+Properties:
+  CatalogId: !Ref AWS::AccountId
+  DatabaseName: "${self:custom.athenadb}"
+  TableInput:
+    Name: dmex_positions
+    Description: DMEX Positions
+    TableType: EXTERNAL_TABLE
+    Parameters: {
+      "classification": "json"
+    }
+    StorageDescriptor:
+      OutputFormat: org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+      Columns:
+      - Name: position_hash
+        Type: string
+      - Name: user_address
+        Type: string
+      - Name: dv_profit
+        Type: bigint
+      - Name: max_collateral
+        Type: bigint
+      - Name: dv_asset
+        Type: string
+      - Name: created_at
+        Type: string
+      - Name: closed_at
+        Type: string
+      InputFormat: org.apache.hadoop.mapred.TextInputFormat
+      Location: "s3://${self:custom.eventbucket}/trades/dmex/positions"
+      SerdeInfo:
+        SerializationLibrary: org.openx.data.jsonserde.JsonSerDe

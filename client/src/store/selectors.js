@@ -174,7 +174,7 @@ const investorStatistics = (state, investor) => {
 }
 export const investorStatisticsSelector = createSelector(investorStatistics, s => s)
 
-const publicStatistics = state => get(state, 'web3.publicstatistics', {})
+const publicStatistics = state => get(state, 'web3.publicstatistics', null)
 export const publicStatisticsSelector = createSelector(publicStatistics, s => s)
 
 const hasValidAllocation = (state, account) => {
@@ -309,7 +309,8 @@ const decorateInvestment = (investment) => {
 		formattedValue: formatBalance(investment.value, tokenSymbolForAddress(investment.token)),
 		formattedGrossValue: formatBalance(investment.grossValue, tokenSymbolForAddress(investment.token)),
 		formattedNettValue: formatBalance(investment.nettValue, tokenSymbolForAddress(investment.token)),
-		formattedInvestorProfit: formatBalance(investment.nettValue.minus(investment.amount), tokenSymbolForAddress(investment.token)),
+		formattedInvestorProfit: formatBalance(investment.investorProfit, tokenSymbolForAddress(investment.token)),
+		formattedTraderProfit: formatBalance(investment.traderProfit, tokenSymbolForAddress(investment.token)),
 		profitClass: investment.grossValue.gt(investment.amount) ? GREEN : investment.grossValue.lt(investment.amount) ? RED : NEUTRAL
 	})
 }

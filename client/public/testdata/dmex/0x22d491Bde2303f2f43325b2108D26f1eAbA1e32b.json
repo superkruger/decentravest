@@ -1,0 +1,46 @@
+{
+    "data": [
+        {
+            "id": 3729,
+            "position_hash": "0x2a9ffce4e5497551f3a9ee2c056a6356e22070cef42cbf7e85d4a528434a74a8",
+            "side": false,
+            "size": "0",
+            "price": "1920800000000",
+            "contract_address": "0x3584F3257b143109fF11E52266094241Fdb7984c",
+            "futures_contract_hash": "0x46ec08f5aff0def06fd5394a1901ec2bbc706fd973875ff61f7da416b6a1bc80",
+            "user_address": "0x22d491Bde2303f2f43325b2108D26f1eAbA1e32b",
+            "collateral": "0",
+            "max_collateral": "1234567",
+            "funding_cost": "0",
+            "entry_block": 7723049,
+            "fee": "0",
+            "created_at": "2020-12-01T08:47:41.000Z",
+            "closed_at": "2020-12-02T08:47:41.000Z",
+            "mark_price": "2227829000000",
+            "expires_in_seconds": 31380006,
+            "pnl": "6921531",
+            "realized_pnl": "6921531",
+            "liq_price": "0",
+            "leverage": 5,
+            "value": "0.00",
+            "futures_contract": {
+                "multiplier": "170902",
+                "expires_in_seconds": 31536000
+            },
+            "futures_asset": {
+                "name": "BTCUSD",
+                "label": "Bitcoin",
+                "symbol": "BTC",
+                "chart_symbol": "BITSTAMP:BTCUSD",
+                "decimals": 2,
+                "amount_dec": 3,
+                "notional": "0.500000000000000000",
+                "base_token": {
+                    "address": "0xF5593f40DD1a872466885ab9fE8eb8E9668628bE",
+                    "symbol": "ETH",
+                    "name": "ETH Test Token"
+                }
+            }
+        }
+    ]
+}

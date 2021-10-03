@@ -17,10 +17,11 @@ const create = async (trade) => {
   // asset char(10) not null,
   // profit char(36) not null,
   // initialAmount char(36) not null,
+  // exchange SMALLINT UNSIGNED not null,
 
   let resp = await client.query('INSERT INTO trades \
-    (id, trader, start, end, asset, profit, initialAmount) \
-    VALUES(?,?,?,?,?,?,?)', 
+    (id, trader, start, end, asset, profit, initialAmount, exchange) \
+    VALUES(?,?,?,?,?,?,?,?)', 
     [
       trade.id,
       trade.trader, 
@@ -28,7 +29,8 @@ const create = async (trade) => {
       trade.end,
       trade.asset,
       trade.profit,
-      trade.initialAmount
+      trade.initialAmount,
+      trade.exchange
     ]);
 
   console.log("created trade", resp)
@@ -61,7 +63,7 @@ const update = async (trade) => {
   const client = mysqlCommon.getClient()
 
   let resp = await client.query('UPDATE trades \
-    set trader = ?, start = ?, end = ?, asset = ?, profit = ?, initialAmount = ? \
+    set trader = ?, start = ?, end = ?, asset = ?, profit = ?, initialAmount = ?, exchange = ? \
     WHERE id = ?', 
     [
       trade.trader, 
@@ -70,7 +72,8 @@ const update = async (trade) => {
       trade.asset,
       trade.profit,
       trade.initialAmount,
-      trade.id
+      trade.id,
+      trade.exchange
     ]);
 
   console.log("updated trade", resp)
@@ -128,13 +131,13 @@ module.exports.list = async () => {
   return dbRes;
 }
 
-module.exports.getLastForTrader = async (trader) => {
+module.exports.getLastForTraderAndExchange = async (trader, exchange) => {
 
   console.log("getting last trade", trader)
 
   const client = mysqlCommon.getClient()
 
-  let dbRes = await client.query(`select * from trades where trader = ? order by start desc limit 1`, trader)
+  let dbRes = await client.query(`select * from trades where trader = ? and exchange = ? order by start desc limit 1`, [trader, exchange])
   if (dbRes.length == 0) {
       return null;
   }

@@ -19,7 +19,6 @@ import {
   web3Selector,
   networkSelector,
   accountSelector,
-  investorSelector,
   traderPairedSelector,
   pairedInvestmentsSelector,
   walletSelector,
@@ -197,11 +196,11 @@ function StopButton (props) {
 }
 
 function stopHandler (props) {
-  const { network, investment, investor, wallet, web3, dispatch } = props.props
+  const { network, investment, account, wallet, web3, dispatch } = props.props
 
-  console.log("stopHandler", network, investor.user, investment, wallet.contract)
+  console.log("stopHandler", network, account, investment, wallet.contract)
 
-  stopInvestment(network, investor.user, investment, wallet.contract, web3, dispatch)
+  stopInvestment(network, account, investment, wallet.contract, web3, dispatch)
 }
 
 function DisburseButton (props) {
@@ -222,13 +221,13 @@ function DisburseButton (props) {
 }
 
 function disburseHandler (props) {
-  const { network, investment, investor, wallet, tokens, pairedInvestments, web3, dispatch } = props.props
+  const { network, investment, account, wallet, tokens, pairedInvestments, web3, dispatch } = props.props
 
   log("--investment disburse--", investment)
 
   const token = tokens.find(t => t.contract.options.address === investment.token)
 
-  disburseInvestment(network, investor.user, investment, wallet.contract, token, pairedInvestments, web3, dispatch)
+  disburseInvestment(network, account, investment, wallet.contract, token, pairedInvestments, web3, dispatch)
 }
 
 function ApproveButton (props) {
@@ -274,21 +273,21 @@ function ApproveButton (props) {
 }
 
 function approveHandler (props) {
-  const { network, investment, investor, wallet, tokens, pairedInvestments, web3, dispatch } = props.props
+  const { network, investment, account, wallet, tokens, pairedInvestments, web3, dispatch } = props.props
 
   log("--investment approve--", investment)
 
   const token = tokens.find(t => t.contract.options.address === investment.token)
 
-  approveDisbursement(network, investor.user, investment, wallet.contract, token, pairedInvestments, web3, dispatch)
+  approveDisbursement(network, account, investment, wallet.contract, token, pairedInvestments, web3, dispatch)
 }
 
 function rejectHandler (props) {
-  const { network, investment, investor, wallet, pairedInvestments, web3, dispatch } = props.props
+  const { network, investment, account, wallet, pairedInvestments, web3, dispatch } = props.props
 
   log("--investment reject--", investment)
 
-  rejectDisbursement(network, investor.user, investment, wallet.contract, pairedInvestments, web3, dispatch)
+  rejectDisbursement(network, account, investment, wallet.contract, pairedInvestments, web3, dispatch)
 }
 
 function mapStateToProps(state, props) {
@@ -297,7 +296,6 @@ function mapStateToProps(state, props) {
     web3: web3Selector(state),
     network: networkSelector(state),
     account: accountSelector(state),
-    investor: investorSelector(state),
     traderPaired: traderPairedSelector(state),
     pairedInvestments: pairedInvestmentsSelector(state),
     wallet: walletSelector(state),

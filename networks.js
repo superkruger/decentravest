@@ -13,6 +13,19 @@ module.exports = {
       gasPrice: 88000000000,
       networkId: '*'
     },
+    rinkeby: {
+      provider: function() {
+        return new HDWalletProvider(
+          process.env.PRIVATE_KEYS_ROPSTEN.split(','), // Array of account private keys
+          `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`,// Url to an Ethereum Node
+          0,
+          2
+        )
+      },
+      gas: 7000000,
+      gasPrice: 50000000000,
+      network_id: 4
+    },
     ropsten: {
       provider: function() {
         return new HDWalletProvider(

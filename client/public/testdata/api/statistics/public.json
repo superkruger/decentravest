@@ -1,4 +1,24 @@
 {
 	"traderCount": "2",
-	"investorCount": "10"
+	"investorCount": "10",
+	"investments": [
+		{
+			"asset": "ETH",
+			"count": 15,
+			"profit": 30000000000000000000
+		},
+		{
+			"asset": "USDC",
+			"count": 5,
+			"profit": 700000000
+		}
+	],
+	"traders": [
+		{
+			"user": "0x22d491Bde2303f2f43325b2108D26f1eAbA1e32b"
+		},
+		{
+			"user": "0xE11BA2b4D45Eaed5996Cd0823791E0C93114882d"
+		}
+	]
 }

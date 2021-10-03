@@ -49,9 +49,11 @@ class Sidebar extends Component {
           
         }
 
-        <div className="col-sm-12">
+          <hr className="sidebar-divider my-0"/>
+
           <StatisticsButton props={this.props} /> 
-        </div>
+
+          <DocsButton props={this.props} /> 
 
         {/* Divider */}
         <hr className="sidebar-divider d-none d-md-block"/>
@@ -79,7 +81,7 @@ function Logo(props) {
 
 function StatisticsButton(props) {
   return (
-    <li className="nav-item active">
+    <li className="nav-item">
       <PageLink page={Page.PUBLIC_STATISTICS} styles="nav-link">
         <div className="row no-gutters align-items-left">
           <div className="col-auto">
@@ -90,6 +92,28 @@ function StatisticsButton(props) {
           </div>
         </div>
       </PageLink>
+    </li>
+  )
+}
+
+function DocsButton(props) {
+  return (
+    <li className="nav-item">
+      <a className="nav-link collapsed" data-toggle="collapse" data-target="#collapseDocumentation" aria-expanded="true" aria-controls="collapseDocumentation">
+        <i className="fas fa-fw fa-book"></i>
+        <span>Documentation</span>
+      </a>
+      <div id="collapseDocumentation" className="collapse" aria-labelledby="headingDocumentation" data-parent="#accordionSidebar">
+        <div className="bg-light py-2 collapse-inner rounded">
+          <h6 className="collapse-header">Traders:</h6>
+          <PageLink page={Page.DOCUMENTATION_TRADERS_TRADING} styles="collapse-item">Trading</PageLink>
+          <PageLink page={Page.DOCUMENTATION_TRADERS_SETTINGS} styles="collapse-item">Settings</PageLink>
+          <PageLink page={Page.DOCUMENTATION_TRADERS_INVESTMENTS} styles="collapse-item">Investments</PageLink>
+          <h6 className="collapse-header">Investors:</h6>
+          <PageLink page={Page.DOCUMENTATION_INVESTORS_TRADERS} styles="collapse-item">Traders</PageLink>
+          <PageLink page={Page.DOCUMENTATION_INVESTORS_INVESTMENTS} styles="collapse-item">Investments</PageLink>
+        </div>
+      </div>
     </li>
   )
 }

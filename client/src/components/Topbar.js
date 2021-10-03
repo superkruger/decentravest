@@ -92,7 +92,7 @@ function ConnectButton(props) {
         variant="primary"
         onClick={handleClick}
         >
-        Connect Ethereum
+        Connect Wallet
       </Button>
     </div>
   );

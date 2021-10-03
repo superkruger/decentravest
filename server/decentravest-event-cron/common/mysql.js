@@ -463,14 +463,38 @@ exports.createTables = async () => {
         asset char(10) not null,
         profit char(36) not null,
         initialAmount char(36) not null,
+        exchange SMALLINT UNSIGNED not null,
         PRIMARY KEY (id),
         INDEX USING BTREE (trader),
         INDEX USING BTREE (start),
         INDEX USING BTREE (end),
-        INDEX USING BTREE (asset)
+        INDEX USING BTREE (asset),
+        INDEX USING BTREE (exchange)
     );  
     `)
 
     quitClient()
     return res
 }
+
+exports.updateTables = async () => {
+
+    let client = getClient()
+    
+    let res = await client.query(`
+        ALTER TABLE trades
+        ADD exchange SMALLINT UNSIGNED not null
+        AFTER initialAmount;
+    `)
+
+    res = await client.query(`
+        CREATE INDEX exchange
+        USING BTREE 
+        ON trades (exchange);
+    `)
+
+    quitClient()
+    return res
+}
+
+

@@ -9,6 +9,13 @@ import JoinTrader from './JoinTrader'
 import JoinInvestor from './JoinInvestor'
 
 import PublicStatistics from './PublicStatistics'
+
+import DocsTradersTrading from './docs/DocsTradersTrading'
+import DocsTradersSettings from './docs/DocsTradersSettings'
+import DocsTradersInvestments from './docs/DocsTradersInvestments'
+import DocsInvestorsTraders from './docs/DocsInvestorsTraders'
+import DocsInvestorsInvestments from './docs/DocsInvestorsInvestments'
+
 import Trader from './trader/Trader'
 import Profile from './trader/Profile'
 import Investor from './investor/Investor'
@@ -62,6 +69,11 @@ class Content extends Component {
                 {
                   {
                     'public_statistics': <PublicStatistics />,
+                    'docs_traders_trading': <DocsTradersTrading />,
+                    'docs_traders_settings': <DocsTradersSettings />,
+                    'docs_traders_investments': <DocsTradersInvestments />,
+                    'docs_investors_traders': <DocsInvestorsTraders />,
+                    'docs_investors_investments': <DocsInvestorsInvestments />,
                     'join_trader': <JoinTrader />,
                     'join_investor': <JoinInvestor />,
                     'trader_profile': <Profile page={page} section={section} />,
@@ -95,7 +107,13 @@ class Content extends Component {
 }
 
 function requiresWeb3(page) {
-  return page !== 'trader_profile' && page !== 'public_statistics'
+  return page !== 'trader_profile' && 
+         page !== 'public_statistics' &&
+         page !== 'docs_traders_trading' &&
+         page !== 'docs_traders_settings' &&
+         page !== 'docs_traders_investments' &&
+         page !== 'docs_investors_traders' &&
+         page !== 'docs_investors_investments'
 }
 
 function mapStateToProps(state, ownProps) {
